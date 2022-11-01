@@ -1,4 +1,10 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 package types
+
+import "time"
 
 // /activities/%s/date/%s/%s.json
 
@@ -7,8 +13,8 @@ type ActivityCaloriesSeries struct {
 }
 
 type TimeStep struct {
-	DateTime string `json:"dateTime"`
-	Value    string `json:"value"`
+	DateTime time.Time `json:"dateTime"`
+	Value    string    `json:"value"`
 }
 
 // /activities/%s/date/%s/%s.json

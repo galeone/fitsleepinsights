@@ -1,4 +1,10 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 package types
+
+import "time"
 
 // /activities/goals/%s.json
 
@@ -40,22 +46,22 @@ type ActivityLog struct {
 	LogType               string                `json:"logType"`
 	ManualValuesSpecified ManualValuesSpecified `json:"manualValuesSpecified"`
 	OriginalDuration      int64                 `json:"originalDuration"`
-	OriginalStartTime     string                `json:"originalStartTime"`
+	OriginalStartTime     time.Time             `json:"originalStartTime"`
 	Pace                  float64               `json:"pace"`
 	Source                LogSource             `json:"source"`
 	Speed                 float64               `json:"speed"`
-	StartTime             string                `json:"startTime"`
+	StartTime             time.Time             `json:"startTime"`
 	Steps                 int64                 `json:"steps"`
 	TcxLink               string                `json:"tcxLink"`
 }
 
 type Pagination struct {
-	AfterDate string `json:"afterDate"`
-	Limit     int64  `json:"limit"`
-	Next      string `json:"next"`
-	Offset    int64  `json:"offset"`
-	Previous  string `json:"previous"`
-	Sort      string `json:"sort"`
+	AfterDate time.Time `json:"afterDate"`
+	Limit     int64     `json:"limit"`
+	Next      string    `json:"next"`
+	Offset    int64     `json:"offset"`
+	Previous  string    `json:"previous"`
+	Sort      string    `json:"sort"`
 }
 
 type ManualValuesSpecified struct {
@@ -101,10 +107,9 @@ type ActiveZoneMinutes struct {
 // /activities/date/%s.json
 
 type DailySummary struct {
-	// TODO: repeat and remove this interface{}
-	Activities []interface{}     `json:"activities"`
-	Goals      Goal              `json:"goals"`
-	Summary    ActivitiesSummary `json:"summary"`
+	Activities []ActivitiesSummary `json:"activities"`
+	Goals      Goal                `json:"goals"`
+	Summary    ActivitiesSummary   `json:"summary"`
 }
 
 type ActivitiesSummary struct {
@@ -148,8 +153,8 @@ type LifeTimeStats struct {
 }
 
 type LifeTimeTimeStep struct {
-	Date  string  `json:"date"`
-	Value float64 `json:"value"`
+	Date  time.Time `json:"date"`
+	Value float64   `json:"value"`
 }
 
 type LifeTimeActivities struct {

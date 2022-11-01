@@ -29,6 +29,10 @@ func UserAPI(userID, endpoint string) string {
 	return fmt.Sprintf("%s/user/%s/%s", APIURL, userID, strings.TrimLeft(endpoint, "/"))
 }
 
+func UserAPIDot2(userID, endpoint string) string {
+	return fmt.Sprintf("%s.2/user/%s/%s", APIURL, userID, strings.TrimLeft(endpoint, "/"))
+}
+
 func FitbitAPI(endpoint string) string {
 	return fmt.Sprintf("%s/%s", APIURL, strings.TrimLeft(endpoint, "/"))
 }
@@ -50,7 +54,7 @@ func GenerateTypes() echo.HandlerFunc {
 			return err
 		}
 
-		yesterday := time.Now().Add(time.Hour * -24).Format("2006-01-02")
+		//yesterday := time.Now().Add(time.Hour * -24).Format("2006-01-02")
 		//today := time.Now().Format("2006-01-02")
 
 		// https://dev.fitbit.com/build/reference/web-api/activity/
@@ -96,10 +100,16 @@ func GenerateTypes() echo.HandlerFunc {
 			// Intraday requires a dedicated request TODO
 
 			// TODO: nutrition & nutrition time series. I have no data for generating meaningful responses
+			/*
+					"/spo2/date/%s.json",
+					"/temp/core/date/%s.json",
+					"/temp/skin/date/%s.json",
 
-			"/spo2/date/%s.json",
-			"/temp/core/date/%s.json",
-			"/temp/skin/date/%s.json",
+				"/sleep/date/%s.json",
+				"/sleep/date/%s/%s.json",
+				fmt.Sprintf("/sleep/list.json?afterDate=%s&sort=asc&offset=0&limit=2", yesterday),
+				"/sleep/goal.json",
+			*/
 		}
 		uriArgs := [][]any{
 			/*
@@ -108,7 +118,7 @@ func GenerateTypes() echo.HandlerFunc {
 				{},
 				{},
 				{activityID},
-				{yesterday},
+				{today},
 				{},
 				{},
 				// Set as period 1 day, ending yesterday
@@ -142,11 +152,16 @@ func GenerateTypes() echo.HandlerFunc {
 				{today, "1d"},
 				{yesterday},
 			*/
+			/*
+					{yesterday},
+					{yesterday},
+					{yesterday},
 
-			{yesterday},
-
-			{yesterday},
-			{yesterday},
+				{yesterday},
+				{yesterday, today},
+				{},
+				{},
+			*/
 		}
 		isUser := []bool{
 			/*
@@ -185,10 +200,15 @@ func GenerateTypes() echo.HandlerFunc {
 				true,
 				true,
 			*/
-
-			true,
-			true,
-			true,
+			/*
+					true,
+					true,
+					true,
+				true,
+				true,
+				true,
+				true,
+			*/
 		}
 
 		if len(paths) != len(isUser) || len(paths) != len(uriArgs) {
@@ -216,7 +236,11 @@ func GenerateTypes() echo.HandlerFunc {
 			var res *http.Response
 			var dest string
 			if userReq {
-				dest = UserAPI(*user, fmt.Sprintf(path, args...))
+				if strings.Contains(path, "/sleep/") {
+					dest = UserAPIDot2(*user, fmt.Sprintf(path, args...))
+				} else {
+					dest = UserAPI(*user, fmt.Sprintf(path, args...))
+				}
 			} else {
 				dest = FitbitAPI(fmt.Sprintf(path, args...))
 			}

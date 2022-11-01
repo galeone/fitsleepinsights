@@ -1,4 +1,10 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 package types
+
+import "time"
 
 // /temp/core/date/%s.json
 
@@ -7,8 +13,8 @@ type CoreTemperature struct {
 }
 
 type CoreTemperatureTimePoint struct {
-	DateTime string  `json:"dateTime"`
-	Value    float64 `json:"value"`
+	DateTime time.Time `json:"dateTime"`
+	Value    float64   `json:"value"`
 }
 
 // /temp/skin/date/%s.json
@@ -18,7 +24,7 @@ type SkinTemperature struct {
 }
 
 type SkinTemperatureTimePoint struct {
-	DateTime string               `json:"dateTime"`
+	DateTime time.Time            `json:"dateTime"`
 	LogType  string               `json:"logType"`
 	Value    SkinTemperatureValue `json:"value"`
 }

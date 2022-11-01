@@ -1,4 +1,10 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 package types
+
+import "time"
 
 // /body/log/%s/goal.json
 
@@ -7,11 +13,11 @@ type UserWeightGoal struct {
 }
 
 type WeightGoal struct {
-	GoalType        string  `json:"goalType"`
-	StartDate       string  `json:"startDate"`
-	StartWeight     int64   `json:"startWeight"`
-	Weight          int64   `json:"weight"`
-	WeightThreshold float64 `json:"weightThreshold"`
+	GoalType        string    `json:"goalType"`
+	StartDate       time.Time `json:"startDate"`
+	StartWeight     int64     `json:"startWeight"`
+	Weight          int64     `json:"weight"`
+	WeightThreshold float64   `json:"weightThreshold"`
 }
 
 // /body/log/%s/goal.json

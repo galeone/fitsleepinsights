@@ -8,6 +8,8 @@ github.com/galeone/igor v1.0.2 h1:eO71hglI/eiEnMRADmEXdv+8RAGKayrfUhzEywkYLYs=
 github.com/galeone/igor v1.0.2/go.mod h1:k3YZxUlEEMU++QjKElsoxOQNenSYw7YzqZkHsONgxAo=
 github.com/galeone/rts v1.0.0 h1:eKtvj8CBL9cSt7mCTyTJ+LJNJW4WM/mZfZp8vl50BiE=
 github.com/galeone/rts v1.0.0/go.mod h1:S/yG1JoAT2eiT2E3Y2ZXsqbfTYbeLmkti5rh3ZYGGsE=
+github.com/galeone/tcx v1.0.0 h1:rmSSL/+qDFWH+9YjoyU5mmm2R2tJUxvwr5nS+1Oq6sY=
+github.com/galeone/tcx v1.0.0/go.mod h1:cHrVurc4epPGjwvJt8kDkQgp4hEUhk0UiWPSN6/dykI=
 github.com/golang-jwt/jwt v3.2.2+incompatible h1:IfV12K8xAKAnZqdXVzCZ+TOjboZ2keLg81eXfW3O+oY=
 github.com/golang-jwt/jwt v3.2.2+incompatible/go.mod h1:8pz2t5EyA70fFQQSrl6XZXzqecmYZeUEB8OUGHkxJ+I=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
@@ -36,6 +38,8 @@ github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovk
 github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
 github.com/mattn/go-isatty v0.0.16 h1:bq3VjFmv/sOjHtdEhmkEV4x1AJtvUvOJ2PFAZ5+peKQ=
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
+github.com/philhofer/vec v0.0.0-20140421144027-536fc796d369 h1:3tLX6+/o9lWIdsG4AIHZKgd/qTP6auJASIV434u/WTI=
+github.com/philhofer/vec v0.0.0-20140421144027-536fc796d369/go.mod h1:VGTjob2K0ciQ6Ad9+wH9rLOQbmYZFlKh9Ma4yqRW3bo=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
