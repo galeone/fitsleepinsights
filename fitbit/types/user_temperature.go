@@ -4,8 +4,6 @@
 
 package types
 
-import "time"
-
 // /temp/core/date/%s.json
 
 type CoreTemperature struct {
@@ -13,8 +11,8 @@ type CoreTemperature struct {
 }
 
 type CoreTemperatureTimePoint struct {
-	DateTime time.Time `json:"dateTime"`
-	Value    float64   `json:"value"`
+	DateTime FitbitDateTime `json:"dateTime"`
+	Value    float64        `json:"value"`
 }
 
 // /temp/skin/date/%s.json
@@ -24,7 +22,7 @@ type SkinTemperature struct {
 }
 
 type SkinTemperatureTimePoint struct {
-	DateTime time.Time            `json:"dateTime"`
+	DateTime FitbitDateTime       `json:"dateTime"`
 	LogType  string               `json:"logType"`
 	Value    SkinTemperatureValue `json:"value"`
 }

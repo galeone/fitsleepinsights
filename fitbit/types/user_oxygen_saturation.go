@@ -5,10 +5,8 @@
 // /spo2/date/%s.json
 package types
 
-import "time"
-
 type OxygenSaturationSummary struct {
-	DateTime time.Time             `json:"dateTime"`
+	DateTime FitbitDateTime        `json:"dateTime"`
 	Value    OxygenSaturationValue `json:"value"`
 }
 

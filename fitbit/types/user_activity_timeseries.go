@@ -4,8 +4,6 @@
 
 package types
 
-import "time"
-
 // /activities/%s/date/%s/%s.json
 
 type ActivityCaloriesSeries struct {
@@ -13,8 +11,8 @@ type ActivityCaloriesSeries struct {
 }
 
 type TimeStep struct {
-	DateTime time.Time `json:"dateTime"`
-	Value    string    `json:"value"`
+	DateTime FitbitDateTime `json:"dateTime"`
+	Value    string         `json:"value"`
 }
 
 // /activities/%s/date/%s/%s.json

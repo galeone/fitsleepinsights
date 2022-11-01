@@ -4,8 +4,6 @@
 
 package types
 
-import "time"
-
 // /activities/goals/%s.json
 
 type UserGoal struct {
@@ -46,23 +44,23 @@ type ActivityLog struct {
 	LogType               string                `json:"logType"`
 	ManualValuesSpecified ManualValuesSpecified `json:"manualValuesSpecified"`
 	OriginalDuration      int64                 `json:"originalDuration"`
-	OriginalStartTime     time.Time             `json:"originalStartTime"`
+	OriginalStartTime     FitbitDateTime        `json:"originalStartTime"`
 	Pace                  float64               `json:"pace"`
 	Source                LogSource             `json:"source"`
 	Speed                 float64               `json:"speed"`
-	StartTime             time.Time             `json:"startTime"`
+	StartTime             FitbitDateTime        `json:"startTime"`
 	Steps                 int64                 `json:"steps"`
 	TcxLink               string                `json:"tcxLink"`
 }
 
 type Pagination struct {
-	AfterDate  time.Time `json:"afterDate,omitempty"`
-	BeforeDate time.Time `json:"beforeDate,omitempty"`
-	Limit      int64     `json:"limit"`
-	Next       string    `json:"next"`
-	Offset     int64     `json:"offset"`
-	Previous   string    `json:"previous"`
-	Sort       string    `json:"sort"`
+	AfterDate  FitbitDateTime `json:"afterDate,omitempty"`
+	BeforeDate FitbitDateTime `json:"beforeDate,omitempty"`
+	Limit      int64          `json:"limit"`
+	Next       string         `json:"next"`
+	Offset     int64          `json:"offset"`
+	Previous   string         `json:"previous"`
+	Sort       string         `json:"sort"`
 }
 
 type ManualValuesSpecified struct {
@@ -150,8 +148,8 @@ type LifeTimeStats struct {
 }
 
 type LifeTimeTimeStep struct {
-	Date  time.Time `json:"date"`
-	Value float64   `json:"value"`
+	Date  FitbitDate `json:"date"`
+	Value float64    `json:"value"`
 }
 
 type LifeTimeActivities struct {

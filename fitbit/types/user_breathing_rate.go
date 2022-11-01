@@ -4,8 +4,6 @@
 
 package types
 
-import "time"
-
 // /br/date/%s.json
 
 type BreathingRate struct {
@@ -17,6 +15,6 @@ type BreathingRateValue struct {
 }
 
 type BreathingRateTimePoint struct {
-	DateTime time.Time          `json:"dateTime"`
+	DateTime FitbitDateTime     `json:"dateTime"`
 	Value    BreathingRateValue `json:"value"`
 }

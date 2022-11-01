@@ -4,8 +4,6 @@
 
 package types
 
-import "time"
-
 // hrv/date/%s.json
 
 type HRVSummary struct {
@@ -18,6 +16,6 @@ type HRVSummaryValue struct {
 }
 
 type HRVTimeStep struct {
-	DateTime time.Time       `json:"dateTime"`
+	DateTime FitbitDateTime  `json:"dateTime"`
 	Value    HRVSummaryValue `json:"value"`
 }

@@ -4,8 +4,6 @@
 
 package types
 
-import "time"
-
 // /sleep/date/%s.json
 // /sleep/date/%s/%s.json
 // /sleep/list.json?afterDate=2022-10-31&sort=asc&offset=0&limit=2
@@ -28,7 +26,7 @@ type SleepLevel struct {
 }
 
 type SleepLog struct {
-	DateOfSleep         time.Time  `json:"dateOfSleep"`
+	DateOfSleep         FitbitDate `json:"dateOfSleep"`
 	Duration            int64      `json:"duration"`
 	Efficiency          int64      `json:"efficiency"`
 	EndTime             string     `json:"endTime"`
@@ -47,9 +45,9 @@ type SleepLog struct {
 }
 
 type SleepData struct {
-	DateTime time.Time `json:"dateTime"`
-	Level    string    `json:"level"`
-	Seconds  int64     `json:"seconds"`
+	DateTime FitbitDateTime `json:"dateTime"`
+	Level    string         `json:"level"`
+	Seconds  int64          `json:"seconds"`
 }
 
 type SleepStages struct {
@@ -89,8 +87,8 @@ type SleepConsistency struct {
 }
 
 type SleepGoal struct {
-	Bedtime     string    `json:"bedtime"`
-	MinDuration int64     `json:"minDuration"`
-	UpdatedOn   time.Time `json:"updatedOn"`
-	WakeupTime  string    `json:"wakeupTime"`
+	Bedtime     string         `json:"bedtime"`
+	MinDuration int64          `json:"minDuration"`
+	UpdatedOn   FitbitDateTime `json:"updatedOn"`
+	WakeupTime  string         `json:"wakeupTime"`
 }

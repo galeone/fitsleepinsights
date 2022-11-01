@@ -4,8 +4,6 @@
 
 package types
 
-import "time"
-
 // /activities/heart/date/%s/%s.json
 
 type HRSeries struct {
@@ -27,6 +25,6 @@ type HRTimePointValue struct {
 }
 
 type HRActivities struct {
-	DateTime time.Time        `json:"dateTime"`
+	DateTime FitbitDateTime   `json:"dateTime"`
 	Value    HRTimePointValue `json:"value"`
 }

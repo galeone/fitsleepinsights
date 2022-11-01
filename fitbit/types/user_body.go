@@ -4,8 +4,6 @@
 
 package types
 
-import "time"
-
 // /body/log/%s/goal.json
 
 type UserWeightGoal struct {
@@ -13,11 +11,11 @@ type UserWeightGoal struct {
 }
 
 type WeightGoal struct {
-	GoalType        string    `json:"goalType"`
-	StartDate       time.Time `json:"startDate"`
-	StartWeight     int64     `json:"startWeight"`
-	Weight          int64     `json:"weight"`
-	WeightThreshold float64   `json:"weightThreshold"`
+	GoalType        string     `json:"goalType"`
+	StartDate       FitbitDate `json:"startDate"`
+	StartWeight     int64      `json:"startWeight"`
+	Weight          int64      `json:"weight"`
+	WeightThreshold float64    `json:"weightThreshold"`
 }
 
 // /body/log/%s/goal.json
