@@ -43,13 +43,14 @@ func FitbitAPI(endpoint string) string {
 // It doesn't use the fitbitClient methods, because it has been used
 // to create the types used by the fitbitClient itself.
 func GenerateTypes() echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c echo.Context) (err error) {
 		// Safe because of middleware
 		fitbitClient := c.Get("fitbit").(*fitbit.FitbitClient)
 		user, _ := fitbitClient.UserID()
 		//activityID := "90009" // from "activityTypeId"
 
-		req, err := fitbitClient.HTTP()
+		var req *http.Client
+		req, err = fitbitClient.HTTP()
 		if err != nil {
 			return err
 		}
@@ -215,6 +216,9 @@ func GenerateTypes() echo.HandlerFunc {
 			fmt.Println(len(paths), len(isUser), len(uriArgs))
 			panic("check the config")
 		}
+		if len(paths) == 0 {
+			return nil
+		}
 
 		var userFile *os.File
 		if userFile, err = os.Create("user_generated.go"); err != nil {
@@ -269,8 +273,12 @@ func GenerateTypes() echo.HandlerFunc {
 			time.Sleep(time.Second * 1)
 		}
 
-		userFile.WriteString(userSb.String())
-		genericFile.WriteString(genericSb.String())
-		return nil
+		if _, err = userFile.WriteString(userSb.String()); err != nil {
+			fmt.Println(err.Error())
+		}
+		if _, err = genericFile.WriteString(genericSb.String()); err != nil {
+			fmt.Println(err.Error())
+		}
+		return
 	}
 }

@@ -23,8 +23,12 @@ func NewRouter() (*echo.Echo, error) {
 	router.Logger.SetLevel(log.DEBUG)
 
 	router.GET("/auth", Auth())
-
 	router.GET("/redirect", Redirect(), RequireFitbit())
+
+	// Internal routes, used for:
+	// Generating types and testing the FitbitClient
 	router.GET("/generate", GenerateTypes(), RequireFitbit())
+	// Testing the API(*FitbitClient)
+	router.GET("/test", TestGET(), RequireFitbit())
 	return router, nil
 }
