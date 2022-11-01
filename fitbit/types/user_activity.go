@@ -56,12 +56,13 @@ type ActivityLog struct {
 }
 
 type Pagination struct {
-	AfterDate time.Time `json:"afterDate"`
-	Limit     int64     `json:"limit"`
-	Next      string    `json:"next"`
-	Offset    int64     `json:"offset"`
-	Previous  string    `json:"previous"`
-	Sort      string    `json:"sort"`
+	AfterDate  time.Time `json:"afterDate,omitempty"`
+	BeforeDate time.Time `json:"beforeDate,omitempty"`
+	Limit      int64     `json:"limit"`
+	Next       string    `json:"next"`
+	Offset     int64     `json:"offset"`
+	Previous   string    `json:"previous"`
+	Sort       string    `json:"sort"`
 }
 
 type ManualValuesSpecified struct {
@@ -106,7 +107,7 @@ type ActiveZoneMinutes struct {
 
 // /activities/date/%s.json
 
-type DailySummary struct {
+type DailyActivitySummary struct {
 	Activities []ActivitiesSummary `json:"activities"`
 	Goals      Goal                `json:"goals"`
 	Summary    ActivitiesSummary   `json:"summary"`
@@ -133,15 +134,11 @@ type Distance struct {
 	Distance float64 `json:"distance"`
 }
 
-// /activities/favorite.json
-// TODO
-type Favorites []interface{}
-
 // activities.json
 
 type UserLifeTimeStats struct {
-	Best     StatsSource `json:"best"`
-	Lifetime StatsSource `json:"lifetime"`
+	Best     BestStatsSource     `json:"best"`
+	Lifetime LifetimeStatsSource `json:"lifetime"`
 }
 
 type LifeTimeStats struct {
@@ -163,14 +160,24 @@ type LifeTimeActivities struct {
 	Floors   LifeTimeTimeStep `json:"floors"`
 }
 
-type StatsSource struct {
+type BestStatsSource struct {
 	Total   LifeTimeActivities `json:"total"`
 	Tracker LifeTimeActivities `json:"tracker"`
 }
+
+type LifetimeStatsSource struct {
+	Total   LifeTimeStats `json:"total"`
+	Tracker LifeTimeStats `json:"tracker"`
+}
+
+// /activities/favorite.json
+// TODO
+type Favorites []interface{}
 
 // /activities/frequent.json
 // TODO
 type Frequents []interface{}
 
 // /activities/recent.json
+// TODO
 type Recents []interface{}
