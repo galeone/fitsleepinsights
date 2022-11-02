@@ -16,11 +16,23 @@ type (
 
 	// Custom type for the Date (without time) fields returned by the Fitbit API
 	FitbitDate struct{ time.Time }
+
+	Period string
 )
 
 const (
 	DateTimeLayout = "2006-01-02T15:04"
 	DateLayout     = "2006-01-02"
+
+	// 1d | 7d | 30d | 1w | 1m | 3m | 6m | 1y
+	Period1Day    Period = "1d"
+	Period7Days   Period = "7d"
+	Period30Days  Period = "30d"
+	Period1Week   Period = "1w"
+	Period1Month  Period = "1m"
+	Period3Months Period = "3m"
+	Period6Months Period = "6m"
+	Period1Year   Period = "1y"
 )
 
 func (d *FitbitDateTime) UnmarshalJSON(b []byte) (err error) {

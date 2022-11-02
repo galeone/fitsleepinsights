@@ -55,6 +55,25 @@ func TestGET() echo.HandlerFunc {
 			}
 		}
 
+		now := time.Now()
+		yesterday := time.Now().Add(-24 * time.Hour)
+		var series *types.ActivityCaloriesSeries
+		if series, err = fb.UserActivityCaloriesTimeseries(&yesterday, &now); err != nil {
+			return
+		}
+		fmt.Println("yesterday - today")
+		for day := range series.TimeSeries {
+			fmt.Println(series.TimeSeries[day])
+		}
+
+		fmt.Println("only today")
+		if series, err = fb.UserActivityCaloriesTimeseries(&now, nil); err != nil {
+			return
+		}
+		for day := range series.TimeSeries {
+			fmt.Println(series.TimeSeries[day])
+		}
+
 		return nil
 	}
 

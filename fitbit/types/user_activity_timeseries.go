@@ -4,15 +4,16 @@
 
 package types
 
+type TimeStep struct {
+	// Field with name DateTime, but it's just a date
+	DateTime FitbitDate `json:"dateTime"`
+	Value    string     `json:"value"`
+}
+
 // /activities/%s/date/%s/%s.json
 
 type ActivityCaloriesSeries struct {
 	TimeSeries []TimeStep `json:"activities-activityCalories"`
-}
-
-type TimeStep struct {
-	DateTime FitbitDateTime `json:"dateTime"`
-	Value    string         `json:"value"`
 }
 
 // /activities/%s/date/%s/%s.json

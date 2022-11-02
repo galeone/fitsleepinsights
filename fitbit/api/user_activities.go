@@ -101,7 +101,7 @@ func (c *API) UserActivityTCX(activityLogID int64) (ret *tcx.TCXDB, err error) {
 // GET: /1/user/[user-id]/activities/date/[date].json
 func (c *API) UserDailyActivitySummary(date *time.Time) (ret *types.DailyActivitySummary, err error) {
 	var res *http.Response
-	if res, err = c.req.Get(UserV1(fmt.Sprintf("/activities/date/%s.json", date.Format("2006-01-02")))); err != nil {
+	if res, err = c.req.Get(UserV1(fmt.Sprintf("/activities/date/%s.json", date.Format(types.DateLayout)))); err != nil {
 		return
 	}
 	var body []byte
