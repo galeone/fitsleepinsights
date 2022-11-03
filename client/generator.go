@@ -64,7 +64,6 @@ func GenerateTypes() echo.HandlerFunc {
 				"/activities/goals/%s.json",
 				"/activities/goals/%s.json",
 				fmt.Sprintf("/activities/list.json?afterDate=%s&sort=asc&offset=0&limit=2", yesterday),
-				// TODO: /1/user/[user-id]/activities/[log-id].tcx <-- IS XML!
 				"/activities.json",
 				"/activities/%s.json",
 				"/activities/date/%s.json",
