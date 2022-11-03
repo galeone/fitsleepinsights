@@ -5,7 +5,7 @@
 // /spo2/date/%s.json
 package types
 
-type OxygenSaturationSummary struct {
+type OxygenSaturation struct {
 	DateTime FitbitDateTime        `json:"dateTime"`
 	Value    OxygenSaturationValue `json:"value"`
 }

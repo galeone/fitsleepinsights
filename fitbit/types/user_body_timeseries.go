@@ -12,7 +12,7 @@ type BodyWeightSeries struct {
 
 // /body/%s/date/%s/%s.json
 
-type BodyBMISeries struct {
+type BMISeries struct {
 	TimeSeries []TimeStep `json:"body-bmi"`
 }
 

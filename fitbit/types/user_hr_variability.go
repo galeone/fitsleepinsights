@@ -4,18 +4,18 @@
 
 package types
 
-// hrv/date/%s.json
+// /hrv/date/%s.json
 
-type HRVSummary struct {
-	Hrv []HRVTimeStep `json:"hrv"`
+type HeartRateVariability struct {
+	Hrv []HeartRateVTimeStep `json:"hrv"`
 }
 
-type HRVSummaryValue struct {
+type HeartRateVariabilityValue struct {
 	DailyRmssd float64 `json:"dailyRmssd"`
 	DeepRmssd  float64 `json:"deepRmssd"`
 }
 
-type HRVTimeStep struct {
-	DateTime FitbitDateTime  `json:"dateTime"`
-	Value    HRVSummaryValue `json:"value"`
+type HeartRateVTimeStep struct {
+	DateTime FitbitDateTime            `json:"dateTime"`
+	Value    HeartRateVariabilityValue `json:"value"`
 }

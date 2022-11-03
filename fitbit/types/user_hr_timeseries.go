@@ -6,11 +6,11 @@ package types
 
 // /activities/heart/date/%s/%s.json
 
-type HRSeries struct {
-	Heart []HRActivities `json:"activities-heart"`
+type HeartRateSeries struct {
+	Heart []HeartRateActivities `json:"activities-heart"`
 }
 
-type HRZones struct {
+type HeartRateZones struct {
 	CaloriesOut float64 `json:"caloriesOut"`
 	Max         int64   `json:"max"`
 	Min         int64   `json:"min"`
@@ -18,13 +18,13 @@ type HRZones struct {
 	Name        string  `json:"name"`
 }
 
-type HRTimePointValue struct {
-	CustomHeartRateZones []HRZones `json:"customHeartRateZones"`
-	HeartRateZones       []HRZones `json:"heartRateZones"`
-	RestingHeartRate     int64     `json:"restingHeartRate"`
+type HeartRateTimePointValue struct {
+	CustomHeartRateZones []HeartRateZones `json:"customHeartRateZones"`
+	HeartRateZones       []HeartRateZones `json:"heartRateZones"`
+	RestingHeartRate     int64            `json:"restingHeartRate"`
 }
 
-type HRActivities struct {
-	DateTime FitbitDateTime   `json:"dateTime"`
-	Value    HRTimePointValue `json:"value"`
+type HeartRateActivities struct {
+	DateTime FitbitDate              `json:"dateTime"`
+	Value    HeartRateTimePointValue `json:"value"`
 }

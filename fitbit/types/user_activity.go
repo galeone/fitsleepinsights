@@ -169,13 +169,26 @@ type LifetimeStatsSource struct {
 }
 
 // /activities/favorite.json
-// TODO
-type Favorites []interface{}
+type FavoriteActivities []FavoriteActivity
+
+type FavoriteActivity struct {
+	ActivityID  int64  `json:"activityId"`
+	Description string `json:"description"`
+	Mets        int64  `json:"mets"`
+	Name        string `json:"name"`
+}
+
+type MinimalActivity struct {
+	ActivityID  int64   `json:"activityId"`
+	Calories    int64   `json:"calories"`
+	Description string  `json:"description"`
+	Distance    float64 `json:"distance"`
+	Duration    int64   `json:"duration"`
+	Name        string  `json:"name"`
+}
 
 // /activities/frequent.json
-// TODO
-type Frequents []interface{}
+type FrequentActivities []MinimalActivity
 
 // /activities/recent.json
-// TODO
-type Recents []interface{}
+type RecentActivities []MinimalActivity

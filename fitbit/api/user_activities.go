@@ -117,7 +117,7 @@ func (c *API) UserDailyActivitySummary(date *time.Time) (ret *types.DailyActivit
 // UserFavoriteActivities retrieves a list of a user's favorite activities.
 //
 // GET: /1/user/[user-id]/activities/favorite.json
-func (c *API) UserFavoriteActivities() (ret *types.Favorites, err error) {
+func (c *API) UserFavoriteActivities() (ret *types.FavoriteActivities, err error) {
 	var res *http.Response
 	if res, err = c.req.Get(UserV1("/activities/favorite.json")); err != nil {
 		return
@@ -126,7 +126,7 @@ func (c *API) UserFavoriteActivities() (ret *types.Favorites, err error) {
 	if body, err = c.resRead(res); err != nil {
 		return
 	}
-	ret = &types.Favorites{}
+	ret = &types.FavoriteActivities{}
 	err = json.Unmarshal(body, ret)
 	return
 }
@@ -134,7 +134,7 @@ func (c *API) UserFavoriteActivities() (ret *types.Favorites, err error) {
 // UserFrequentActivities retrieves a list of a user's frequent activities.
 //
 // GET: /1/user/[user-id]/activities/frequent.json
-func (c *API) UserFrequentActivities() (ret *types.Frequents, err error) {
+func (c *API) UserFrequentActivities() (ret *types.FrequentActivities, err error) {
 	var res *http.Response
 	if res, err = c.req.Get(UserV1("/activities/frequent.json")); err != nil {
 		return
@@ -143,7 +143,7 @@ func (c *API) UserFrequentActivities() (ret *types.Frequents, err error) {
 	if body, err = c.resRead(res); err != nil {
 		return
 	}
-	ret = &types.Frequents{}
+	ret = &types.FrequentActivities{}
 	err = json.Unmarshal(body, ret)
 	return
 }
@@ -151,7 +151,7 @@ func (c *API) UserFrequentActivities() (ret *types.Frequents, err error) {
 // UserRecentActivities retrieves a list of a user's recent activities.
 //
 // GET: /1/user/[user-id]/activities/recent.json
-func (c *API) UserRecentActivities() (ret *types.Recents, err error) {
+func (c *API) UserRecentActivities() (ret *types.RecentActivities, err error) {
 	var res *http.Response
 	if res, err = c.req.Get(UserV1("/activities/recent.json")); err != nil {
 		return
@@ -160,7 +160,7 @@ func (c *API) UserRecentActivities() (ret *types.Recents, err error) {
 	if body, err = c.resRead(res); err != nil {
 		return
 	}
-	ret = &types.Recents{}
+	ret = &types.RecentActivities{}
 	err = json.Unmarshal(body, ret)
 	return
 }
