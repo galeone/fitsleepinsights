@@ -12,27 +12,28 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
-	"github.com/galeone/sleepbit/database"
 	"github.com/galeone/sleepbit/fitbit"
 	"github.com/galeone/sleepbit/fitbit/types"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
-var db = database.NewStorage()
-
 // Auth redirects the user to the fitbit authorization page
 // It sets a cookie the univocally identifies the user
 // because the fitbitClient.Exchange (used in Redirect)
 // needs to check the `code` and CSRF tokens - and these tokens
 // are attributes of the fitbit client that needs to persist
-// from Auth() to Redirect()
+// from Auth() to Redirect().
+// NOTE: it uses the environment variables:
+// - FITBIT_CLIENT_ID
+// - FITBIT_CLIENT_SECRET
+// - FITBIT_REDIRECT_URL
+// Loaded from a .env file - if any.
 func Auth() func(echo.Context) error {
 	return func(c echo.Context) (err error) {
-		fitbitClient := fitbit.NewClient(db)
+		fitbitClient := fitbit.NewClient(_db, _clientID, _clientSecret, _redirectURL)
 
 		authorizing := types.AuthorizingUser{
 			CSRFToken: uuid.New().String(),
@@ -52,7 +53,7 @@ func Auth() func(echo.Context) error {
 			HttpOnly: true,
 		})
 
-		if err = db.InsertAuhorizingUser(&authorizing); err != nil {
+		if err = _db.InsertAuhorizingUser(&authorizing); err != nil {
 			return err
 		}
 
@@ -92,13 +93,13 @@ func Redirect() func(echo.Context) error {
 		fitbitClient.SetToken(token)
 
 		// Save token and redirect user to the application
-		if err = db.UpsertAuthorizedUser(token); err != nil {
+		if err = _db.UpsertAuthorizedUser(token); err != nil {
 			return err
 		}
 		cookie := http.Cookie{
 			Name:     "token",
 			Value:    token.AccessToken,
-			Domain:   os.Getenv("DOMAIN"),
+			Domain:   _domain,
 			Expires:  time.Now().Add(time.Second * time.Duration(token.ExpiresIn)),
 			HttpOnly: true,
 		}

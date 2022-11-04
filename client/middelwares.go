@@ -23,7 +23,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if c.Get("fitbit") == nil {
-				fitbitClient := fitbit.NewClient(db)
+				fitbitClient := fitbit.NewClient(_db, _clientID, _clientSecret, _redirectURL)
 
 				// If there's the auth cookie, we could be in the
 				// authorization phase, and thus we set it.
@@ -36,7 +36,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 				cookie, err = c.Cookie("authorizing")
 				if err == nil {
 					var authorizing *types.AuthorizingUser
-					if authorizing, err = db.AuthorizingUser(cookie.Value); err != nil {
+					if authorizing, err = _db.AuthorizingUser(cookie.Value); err != nil {
 						return err
 					}
 					fitbitClient.SetAuthorizing(authorizing)
@@ -47,7 +47,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 				cookie, err = c.Cookie("token")
 				if err == nil {
 					var dbToken *types.AuthorizedUser
-					if dbToken, err = db.AuthorizedUser(cookie.Value); err != nil {
+					if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
 						return err
 					}
 					if dbToken.UserID == "" {
