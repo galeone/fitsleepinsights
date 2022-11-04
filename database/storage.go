@@ -14,12 +14,20 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-// Storage implements the fitbit.Storage interface
-type Storage struct {
-	db *igor.Database
+// PQDB implements the fitbit.Storage interface
+type PQDB struct {
+	*igor.Database
 }
 
-func NewStorage() *Storage {
+// NewPQDB creates a new connection to a PostgreSQL server
+// using the following environement variables:
+// - DB_USER
+// - DB_PASS
+// - DB_NAME
+// Loaded from a `.env` file, if present.
+//
+// It implements the `fitbit.Storage` interface.
+func NewPQDB() *PQDB {
 	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_NAME"))
 	var err error
 	var db *igor.Database
@@ -27,40 +35,40 @@ func NewStorage() *Storage {
 		panic(err.Error())
 	}
 
-	return &Storage{
+	return &PQDB{
 		db,
 	}
 }
 
-func (s *Storage) InsertAuhorizingUser(authorizing *types.AuthorizingUser) error {
-	return db.Create(authorizing)
+func (s *PQDB) InsertAuhorizingUser(authorizing *types.AuthorizingUser) error {
+	return s.Create(authorizing)
 }
 
-func (s *Storage) UpsertAuthorizedUser(user *types.AuthorizedUser) error {
+func (s *PQDB) UpsertAuthorizedUser(user *types.AuthorizedUser) error {
 	var exists types.AuthorizedUser
 	var err error
-	if err = db.First(&exists, user.UserID); err != nil {
+	if err = s.First(&exists, user.UserID); err != nil {
 		// First time we see this user
-		err = db.Create(user)
+		err = s.Create(user)
 	} else {
-		err = db.Updates(user)
+		err = s.Updates(user)
 	}
 	return err
 }
 
-func (s *Storage) AuthorizedUser(accessToken string) (*types.AuthorizedUser, error) {
+func (s *PQDB) AuthorizedUser(accessToken string) (*types.AuthorizedUser, error) {
 	var dbToken types.AuthorizedUser
 	var err error
-	if err = db.Model(types.AuthorizedUser{}).Where(&types.AuthorizedUser{AccessToken: accessToken}).Scan(&dbToken); err != nil {
+	if err = s.Model(types.AuthorizedUser{}).Where(&types.AuthorizedUser{AccessToken: accessToken}).Scan(&dbToken); err != nil {
 		return nil, err
 	}
 	return &dbToken, nil
 }
 
-func (s *Storage) AuthorizingUser(id string) (*types.AuthorizingUser, error) {
+func (s *PQDB) AuthorizingUser(id string) (*types.AuthorizingUser, error) {
 	var authorizing types.AuthorizingUser
 	var err error
-	if err = db.First(&authorizing, id); err != nil {
+	if err = s.First(&authorizing, id); err != nil {
 		return nil, err
 	}
 	return &authorizing, nil
