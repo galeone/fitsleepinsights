@@ -14,7 +14,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -24,10 +23,11 @@ import (
 	"github.com/galeone/sleepbit/fitbit/scopes"
 	"github.com/galeone/sleepbit/fitbit/types"
 	"github.com/google/uuid"
-
-	_ "github.com/joho/godotenv/autoload"
 )
 
+// FitbitClient is the structure that manages the OAuth2
+// authorization process. It depends on a `Storage`
+// where the tokens are stored during the various exchanges.
 type FitbitClient struct {
 	config      *oauth2.Config
 	authorizing *types.AuthorizingUser
@@ -41,16 +41,16 @@ type FitbitClient struct {
 // make authenticathed/authorized requests to the fitbit API.
 // The db parameter must be a valid implementation of the Storage
 // interface.
-func NewClient(db Storage) *FitbitClient {
+func NewClient(db Storage, clientID, clientSecret, redirectURL string) *FitbitClient {
 	client := FitbitClient{}
 
 	client.db = db
 
 	// OAuth2 Client configuration
 	config := &oauth2.Config{}
-	config.ClientID = os.Getenv("FITBIT_CLIENT_ID")
-	config.ClientSecret = os.Getenv("FITBIT_CLIENT_SECRET")
-	config.RedirectURL = os.Getenv("FITBIT_REDIRECT_URL")
+	config.ClientID = clientID
+	config.ClientSecret = clientSecret
+	config.RedirectURL = redirectURL
 	config.Endpoint = fitbit.Endpoint
 	config.Scopes = scopes.All()
 	client.config = config
@@ -121,7 +121,7 @@ func (c *FitbitClient) ExchangeAuthorizationCode(code string) (token *types.Auth
 		"redirect_uri": {c.config.RedirectURL},
 
 		// From step 4
-		"client_id":     {os.Getenv("FITBIT_CLIENT_ID")},
+		"client_id":     {c.config.ClientID},
 		"code_verifier": {c.authorizing.Code},
 	}
 
@@ -131,7 +131,7 @@ func (c *FitbitClient) ExchangeAuthorizationCode(code string) (token *types.Auth
 		return nil, err
 	}
 
-	auth := base64.RawStdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", os.Getenv("FITBIT_CLIENT_ID"), os.Getenv("FITBIT_CLIENT_SECRET"))))
+	auth := base64.RawStdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", c.config.ClientID, c.config.ClientSecret)))
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
