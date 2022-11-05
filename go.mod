@@ -15,6 +15,8 @@ require (
 
 require (
 	github.com/ChimeraCoder/gojson v1.1.0 // indirect
+	github.com/galeone/fitbit v0.0.0-20221105104043-e1b4248c89ca // indirect
+	github.com/galeone/fitbit-pgdb v0.0.0-20221105115558-0ae21690fbe4 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect

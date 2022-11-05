@@ -7,13 +7,13 @@ package client
 import (
 	"os"
 
-	"github.com/galeone/sleepbit/database"
+	pgdb "github.com/galeone/fitbit-pgdb"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
 var (
-	_db           = database.NewPQDB()
+	_db           = pgdb.NewPGDB()
 	_clientID     = os.Getenv("FITBIT_CLIENT_ID")
 	_clientSecret = os.Getenv("FITBIT_CLIENT_SECRET")
 	_redirectURL  = os.Getenv("FITBIT_REDIRECT_URL")

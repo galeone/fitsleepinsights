@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/galeone/rts"
-	"github.com/galeone/sleepbit/fitbit"
+	"github.com/galeone/fitbit"
 	"github.com/labstack/echo/v4"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -40,17 +40,17 @@ func FitbitAPI(endpoint string) string {
 // GenerateTypes is an internal use endpoint
 // That allows to have a Go representation of the JSON responses
 // for all the GET endpoints of the Fitbit API.
-// It doesn't use the fitbitClient methods, because it has been used
-// to create the types used by the fitbitClient itself.
+// It doesn't use the authorizer methods, because it has been used
+// to create the types used by the authorizer itself.
 func GenerateTypes() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// Safe because of middleware
-		fitbitClient := c.Get("fitbit").(*fitbit.FitbitClient)
-		user, _ := fitbitClient.UserID()
+		authorizer := c.Get("fitbit").(*fitbit.Authorizer)
+		user, _ := authorizer.UserID()
 		//activityID := "90009" // from "activityTypeId"
 
 		var req *http.Client
-		req, err = fitbitClient.HTTP()
+		req, err = authorizer.HTTP()
 		if err != nil {
 			return err
 		}

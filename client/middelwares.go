@@ -8,8 +8,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/galeone/sleepbit/fitbit"
-	"github.com/galeone/sleepbit/fitbit/types"
+	"github.com/galeone/fitbit"
+	"github.com/galeone/fitbit/types"
 	"github.com/labstack/echo/v4"
 )
 
@@ -17,13 +17,13 @@ import (
 // to interact with the fitbit API.
 // The middleware uses the cookies to identify the user and
 // understand in which phase of the oauth2 authorization flows we are
-// and set the context's fitbit variable (c.Get("fitbit")) to a valid fitbitClient
+// and set the context's fitbit variable (c.Get("fitbit")) to a valid authorizer
 // If and only if the required cookies have been previosly set.
 func RequireFitbit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if c.Get("fitbit") == nil {
-				fitbitClient := fitbit.NewClient(_db, _clientID, _clientSecret, _redirectURL)
+				authorizer := fitbit.NewAuthorizer(_db, _clientID, _clientSecret, _redirectURL)
 
 				// If there's the auth cookie, we could be in the
 				// authorization phase, and thus we set it.
@@ -39,7 +39,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 					if authorizing, err = _db.AuthorizingUser(cookie.Value); err != nil {
 						return err
 					}
-					fitbitClient.SetAuthorizing(authorizing)
+					authorizer.SetAuthorizing(authorizing)
 					condition = true
 				}
 
@@ -53,7 +53,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 					if dbToken.UserID == "" {
 						return errors.New("Invalid token. Please login again")
 					}
-					fitbitClient.SetToken(dbToken)
+					authorizer.SetToken(dbToken)
 					condition = true
 				}
 
@@ -62,7 +62,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 				}
 
-				c.Set("fitbit", fitbitClient)
+				c.Set("fitbit", authorizer)
 			}
 			return next(c)
 		}

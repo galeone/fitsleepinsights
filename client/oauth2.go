@@ -14,15 +14,15 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/galeone/sleepbit/fitbit"
-	"github.com/galeone/sleepbit/fitbit/types"
+	"github.com/galeone/fitbit"
+	"github.com/galeone/fitbit/types"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 // Auth redirects the user to the fitbit authorization page
 // It sets a cookie the univocally identifies the user
-// because the fitbitClient.Exchange (used in Redirect)
+// because the authorizer.Exchange (used in Redirect)
 // needs to check the `code` and CSRF tokens - and these tokens
 // are attributes of the fitbit client that needs to persist
 // from Auth() to Redirect().
@@ -33,7 +33,7 @@ import (
 // Loaded from a .env file - if any.
 func Auth() func(echo.Context) error {
 	return func(c echo.Context) (err error) {
-		fitbitClient := fitbit.NewClient(_db, _clientID, _clientSecret, _redirectURL)
+		authorizer := fitbit.NewAuthorizer(_db, _clientID, _clientSecret, _redirectURL)
 
 		authorizing := types.AuthorizingUser{
 			CSRFToken: uuid.New().String(),
@@ -42,13 +42,13 @@ func Auth() func(echo.Context) error {
 			Code: fmt.Sprintf("%s-%s", uuid.New().String(), uuid.New().String()),
 		}
 
-		fitbitClient.SetAuthorizing(&authorizing)
+		authorizer.SetAuthorizing(&authorizing)
 
 		c.SetCookie(&http.Cookie{
 			Name: "authorizing",
 			// Also used as primary key in db for retrieval (see middelware
-			// RequireFitbitClient).
-			Value: fitbitClient.CSRFToken().String(),
+			// RequireAuthorizer).
+			Value: authorizer.CSRFToken().String(),
 			// No Expires = Session cookie
 			HttpOnly: true,
 		})
@@ -58,7 +58,7 @@ func Auth() func(echo.Context) error {
 		}
 
 		var auth_url *url.URL
-		if auth_url, err = fitbitClient.AuthorizationURL(); err != nil {
+		if auth_url, err = authorizer.AuthorizationURL(); err != nil {
 			return err
 		}
 
@@ -72,25 +72,25 @@ func Auth() func(echo.Context) error {
 // access token expires.
 func Redirect() func(echo.Context) error {
 	return func(c echo.Context) error {
-		// We can assume fitbitClient is present and valid
+		// We can assume authorizer is present and valid
 		// because this route is protected by the RequireFitbit middleware
-		fitbitClient := c.Get("fitbit").(*fitbit.FitbitClient)
+		authorizer := c.Get("fitbit").(*fitbit.Authorizer)
 
 		state := c.QueryParam("state")
-		if state != fitbitClient.CSRFToken().String() {
-			c.Logger().Warnf("Invalid state in /redirect. Expected %s got %s", fitbitClient.CSRFToken().String(), state)
+		if state != authorizer.CSRFToken().String() {
+			c.Logger().Warnf("Invalid state in /redirect. Expected %s got %s", authorizer.CSRFToken().String(), state)
 			return c.Redirect(http.StatusTemporaryRedirect, "/error?status=csrf")
 		}
 
 		code := c.QueryParam("code")
 		var token *types.AuthorizedUser
 		var err error
-		if token, err = fitbitClient.ExchangeAuthorizationCode(code); err != nil {
+		if token, err = authorizer.ExchangeAuthorizationCode(code); err != nil {
 			c.Logger().Warnf("ExchangeAuthorizationCode: %s", err.Error())
 			return c.Redirect(http.StatusTemporaryRedirect, "/error?status=exchange")
 		}
 		// Update the fitbitclient. Now it contains a valid token and HTTP can be used to query the API
-		fitbitClient.SetToken(token)
+		authorizer.SetToken(token)
 
 		// Save token and redirect user to the application
 		if err = _db.UpsertAuthorizedUser(token); err != nil {

@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/galeone/igor"
-	"github.com/galeone/sleepbit/fitbit/types"
+	"github.com/galeone/fitbit/types"
 	_ "github.com/joho/godotenv/autoload"
 )
 

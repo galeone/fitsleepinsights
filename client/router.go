@@ -26,9 +26,9 @@ func NewRouter() (*echo.Echo, error) {
 	router.GET("/redirect", Redirect(), RequireFitbit())
 
 	// Internal routes, used for:
-	// Generating types and testing the FitbitClient
+	// Generating types and testing the Authorizer
 	router.GET("/generate", GenerateTypes(), RequireFitbit())
-	// Testing the API(*FitbitClient)
+	// Testing the API(*Authorizer)
 	router.GET("/test", TestGET(), RequireFitbit())
 	return router, nil
 }

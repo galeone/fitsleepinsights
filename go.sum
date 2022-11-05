@@ -4,6 +4,10 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/galeone/fitbit v0.0.0-20221105104043-e1b4248c89ca h1:kA1CAVoqEOTUbay02xSuCwdLONGMrvGZ4vaMWte3E+w=
+github.com/galeone/fitbit v0.0.0-20221105104043-e1b4248c89ca/go.mod h1:M/P7T+6DysL1brhNPriIACTV6oJq7Dh4ig4ZU50Xn0w=
+github.com/galeone/fitbit-pgdb v0.0.0-20221105115558-0ae21690fbe4 h1:ZJ1mKjRyahsI/C7/9n28XVKx5dxDchevR91hom/f36A=
+github.com/galeone/fitbit-pgdb v0.0.0-20221105115558-0ae21690fbe4/go.mod h1:PIifeqQP7izTT2oaIx7u+42iBvNFZbFZiLUJT6f7ho8=
 github.com/galeone/igor v1.0.2 h1:eO71hglI/eiEnMRADmEXdv+8RAGKayrfUhzEywkYLYs=
 github.com/galeone/igor v1.0.2/go.mod h1:k3YZxUlEEMU++QjKElsoxOQNenSYw7YzqZkHsONgxAo=
 github.com/galeone/rts v1.0.0 h1:eKtvj8CBL9cSt7mCTyTJ+LJNJW4WM/mZfZp8vl50BiE=
