@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/galeone/sleepbit/fitbit"
-	"github.com/galeone/sleepbit/fitbit/api"
-	"github.com/galeone/sleepbit/fitbit/types"
+	"github.com/galeone/fitbit"
+	"github.com/galeone/fitbit/client"
+	"github.com/galeone/fitbit/types"
 	"github.com/galeone/tcx"
 	"github.com/labstack/echo/v4"
 )
@@ -18,10 +18,10 @@ import (
 func TestGET() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// secure, under middelware
-		fitbitClient := c.Get("fitbit").(*fitbit.FitbitClient)
+		authorizer := c.Get("fitbit").(*fitbit.Authorizer)
 
-		var fb *api.API
-		if fb, err = api.NewAPI(fitbitClient); err != nil {
+		var fb *client.Client
+		if fb, err = client.NewClient(authorizer); err != nil {
 			fmt.Println(1)
 			return
 		}
