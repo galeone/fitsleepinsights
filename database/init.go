@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/galeone/igor"
 	"github.com/galeone/fitbit/types"
+	"github.com/galeone/igor"
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -43,6 +43,32 @@ func init() {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
+
+	// Create the trigger that sends a notitificaiton every time a new
+	// user is added into the authorizedUser table
+
+	/*
+		if err = tx.Exec(
+			`CREATE FUNCTION IF NOT EXISTS notify_new_user()
+			RETURNS TRIGGER
+			LANGUAGE plpgsql
+			AS $$
+			BEGIN
+				PERFORM pg_notify('new_users', NEW.user_id);
+				RETURN NULL;
+			END $$`); err != nil {
+			_ = tx.Rollback()
+			panic(err.Error())
+		}
+
+		if err = tx.Exec(fmt.Sprintf(
+			`CREATE TRIGGER IF NOT EXISTS after_insert_user
+			AFTER INSERT ON %s
+			FOR EACH ROW EXECUTE FUNCTION notify_new_user()`, authorizedUser.TableName())); err != nil {
+			_ = tx.Rollback()
+			panic(err.Error())
+		}
+	*/
 
 	var authorizingUser types.AuthorizingUser
 	if err = tx.Exec(fmt.Sprintf(

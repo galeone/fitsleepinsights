@@ -16,6 +16,7 @@ import (
 
 	"github.com/galeone/fitbit"
 	"github.com/galeone/fitbit/types"
+	"github.com/galeone/sleepbit/database"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -96,6 +97,9 @@ func Redirect() func(echo.Context) error {
 		if err = _db.UpsertAuthorizedUser(token); err != nil {
 			return err
 		}
+		// Send a database notification over the channel.
+		// The receiver will start the routing for fetching all the data
+		_db.Notify(database.NewUsersChannel, token.UserID)
 		cookie := http.Cookie{
 			Name:     "token",
 			Value:    token.AccessToken,
