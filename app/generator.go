@@ -6,7 +6,7 @@
 // The client subdomain is the subdomain that interacts
 // with the Fitbit API
 
-package client
+package app
 
 import (
 	"fmt"
@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/galeone/rts"
 	"github.com/galeone/fitbit"
+	"github.com/galeone/rts"
 	"github.com/labstack/echo/v4"
 
 	_ "github.com/joho/godotenv/autoload"
