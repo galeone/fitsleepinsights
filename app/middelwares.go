@@ -33,8 +33,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 				// At least one of these 2 conditions should be met
 				var condition bool
 				var cookie *http.Cookie
-				cookie, err = c.Cookie("authorizing")
-				if err == nil {
+				if cookie, err = c.Cookie("authorizing"); err == nil {
 					var authorizing *types.AuthorizingUser
 					if authorizing, err = _db.AuthorizingUser(cookie.Value); err != nil {
 						return err
@@ -44,8 +43,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 				}
 
 				// Auhtorization token (after exhange)
-				cookie, err = c.Cookie("token")
-				if err == nil {
+				if cookie, err = c.Cookie("token"); err == nil {
 					var dbToken *types.AuthorizedUser
 					if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
 						return err
