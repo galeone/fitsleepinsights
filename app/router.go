@@ -6,7 +6,7 @@
 // The client subdomain is the subdomain that interacts
 // with the Fitbit API
 
-package client
+package app
 
 import (
 	"github.com/labstack/echo/v4"

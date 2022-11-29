@@ -6,7 +6,7 @@
 // The client subdomain is the endpoint for commnuicating with
 // the Fitbit API.
 
-package client
+package app
 
 import (
 	"fmt"
@@ -92,7 +92,7 @@ func Redirect() func(echo.Context) error {
 		// Update the fitbitclient. Now it contains a valid token and HTTP can be used to query the API
 		authorizer.SetToken(token)
 
-		// Save token and redirect user to the application
+		// Save token and redirect user to the application dashboard
 		if err = _db.UpsertAuthorizedUser(token); err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ func Redirect() func(echo.Context) error {
 			HttpOnly: true,
 		}
 		c.SetCookie(&cookie)
-		return c.Redirect(http.StatusTemporaryRedirect, "/app")
+		return c.Redirect(http.StatusTemporaryRedirect, "/dashboard")
 	}
 }
 
@@ -122,7 +122,7 @@ func Error() func(echo.Context) error {
 			})
 		case "exchange":
 			return c.JSON(http.StatusBadGateway, ErrorMessage{
-				Error: "Error exchanging OAuht2 Authorization code for the tokens",
+				Error: "Error exchanging OAuth2 Authorization code for the tokens",
 			})
 		}
 		return nil

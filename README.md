@@ -1,4 +1,4 @@
-# Sleepbit
+# PredictBit (Sleepbit)
 
 Web application that connects with your [Fitbit](https://www.fitbit.com/) account and tries to do explainable predictions of your sleep quality - using all the available data.
 

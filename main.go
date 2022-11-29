@@ -8,14 +8,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/galeone/sleepbit/client"
+	"github.com/galeone/sleepbit/app"
+	_ "github.com/galeone/sleepbit/database"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
 	hosts := map[string]*echo.Echo{}
-	client, err := client.NewRouter()
+	app, err := app.NewRouter()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -26,7 +27,8 @@ func main() {
 	} else {
 		port = fmt.Sprintf(":%s", port)
 	}
-	hosts[fmt.Sprintf("client.%s%s", os.Getenv("DOMAIN"), port)] = client
+	fmt.Println(fmt.Sprintf("%s%s", os.Getenv("DOMAIN"), port))
+	hosts[fmt.Sprintf("%s%s", os.Getenv("DOMAIN"), port)] = app
 
 	// Catch-all server & dispatch
 	e := echo.New()
@@ -45,5 +47,6 @@ func main() {
 	if port == "" {
 		port = ":80"
 	}
+
 	e.Logger.Fatal(e.Start(port))
 }
