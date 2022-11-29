@@ -17,6 +17,8 @@ import (
 
 func TestGET() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
+		now := time.Now()
+		yesterday := now.Add(-24 * time.Hour)
 		// secure, under middelware
 		authorizer := c.Get("fitbit").(*fitbit.Authorizer)
 
@@ -25,7 +27,6 @@ func TestGET() echo.HandlerFunc {
 			fmt.Println(1)
 			return
 		}
-
 		var logs *types.ActivityLogList
 		if logs, err = fb.UserActivityLogList(&types.Pagination{
 			Offset:     0,
@@ -55,8 +56,6 @@ func TestGET() echo.HandlerFunc {
 			}
 		}
 
-		now := time.Now()
-		yesterday := time.Now().Add(-24 * time.Hour)
 		var series *types.ActivityCaloriesSeries
 		if series, err = fb.UserActivityCaloriesTimeseries(&yesterday, &now); err != nil {
 			return
@@ -73,6 +72,42 @@ func TestGET() echo.HandlerFunc {
 		for day := range series.TimeSeries {
 			fmt.Println(series.TimeSeries[day])
 		}
+
+		var intradayCalories *types.CaloriesSeriesIntraday
+		twentyMinAgo := now.Add(-20 * time.Minute)
+		if intradayCalories, err = fb.UserCaloriesIntraday(&twentyMinAgo, &now); err != nil { //, &now); err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(intradayCalories)
+
+		var brIntraday *types.BreathingRateIntraday
+		if brIntraday, err = fb.UserBreathingRateIntraday(&now, nil); err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(brIntraday)
+
+		var hrIntraday *types.HeartRateIntraday
+		if hrIntraday, err = fb.UserHeartRateIntraday(&now, nil); err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(hrIntraday)
+
+		var hrvIntraday *types.HeartRateVariabilityIntraday
+		if hrvIntraday, err = fb.UserHeartRateVariabilityIntraday(&now, nil); err != nil {
+			fmt.Println(err)
+			return err
+		}
+		fmt.Println(hrvIntraday)
+
+		var spo2Intraday *types.OxygenSaturationIntraday
+		if spo2Intraday, err = fb.UserOxygenSaturationIntraday(&now, nil); err != nil {
+			fmt.Println(err)
+			return err
+		}
+		fmt.Println(spo2Intraday)
 
 		return nil
 	}

@@ -55,8 +55,8 @@ func GenerateTypes() echo.HandlerFunc {
 			return err
 		}
 
-		//yesterday := time.Now().Add(time.Hour * -24).Format("2006-01-02")
-		//today := time.Now().Format("2006-01-02")
+		yesterday := time.Now().Add(time.Hour * -24).Format("2006-01-02")
+		today := time.Now().Format("2006-01-02")
 
 		// https://dev.fitbit.com/build/reference/web-api/activity/
 		paths := []string{
@@ -96,9 +96,6 @@ func GenerateTypes() echo.HandlerFunc {
 				"/activities/heart/date/%s/%s.json",
 				"hrv/date/%s.json",
 			*/
-			// https://dev.fitbit.com/build/reference/web-api/intraday/
-			// Intraday requires a dedicated request TODO
-
 			// TODO: nutrition & nutrition time series. I have no data for generating meaningful responses
 			/*
 					"/spo2/date/%s.json",
@@ -110,6 +107,26 @@ func GenerateTypes() echo.HandlerFunc {
 				fmt.Sprintf("/sleep/list.json?afterDate=%s&sort=asc&offset=0&limit=2", yesterday),
 				"/sleep/goal.json",
 			*/
+
+			// Intraday
+
+			// /1/user/[user-id]/activities/[resource]/date/[start-date][end-date]/[detail-level]/time/[start-time]/[end-time].json
+			// resource in calories | distance | elevation | floors | steps
+			// datail level in 1min | 1min (using 1min, hope 1min has the same response)
+			"/activities/%s/date/%s/%s/%s/time/%s/%s.json",
+			"/activities/%s/date/%s/%s/%s/time/%s/%s.json",
+			"/activities/%s/date/%s/%s/%s/time/%s/%s.json",
+			"/activities/%s/date/%s/%s/%s/time/%s/%s.json",
+			"/activities/%s/date/%s/%s/%s/time/%s/%s.json",
+
+			"/br/date/%s/%s/all.json",
+			// /1/user/[user-id]/activities/heart/date/[date]/1d/[detail-level]/time/[start-time]/[end-time].json
+			// /1/user/[user-id]/activities/heart/date/[start-date]/[end-date]/[detail-level]/time/[start-time]/[end-time].json
+			"/activities/heart/date/%s/%s/%s/time/%s/%s.json",
+			// /1/user/[user-id]/hrv/date/[startDate]/[endDate]/all.json
+			"/hrv/date/%s/%s/all.json",
+			// /1/user/[user-id]/spo2/date/[start-date]/[end-date]/all.json
+			"/spo2/date/%s/%s/all.json",
 		}
 		uriArgs := [][]any{
 			/*
@@ -162,6 +179,17 @@ func GenerateTypes() echo.HandlerFunc {
 				{},
 				{},
 			*/
+
+			{"calories", today, today, "1min", "8:00", "8:30"},
+			{"distance", today, today, "1min", "8:00", "8:30"},
+			{"elevation", today, today, "1min", "8:00", "8:30"},
+			{"floors", today, today, "1min", "8:00", "8:30"},
+			{"steps", today, today, "1min", "8:00", "8:30"},
+			{yesterday, today},
+			// /1/user/[user-id]/activities/heart/date/[start-date]/[end-date]/[detail-level]/time/[start-time]/[end-time].json
+			{yesterday, yesterday, "1min", "8:00", "8:30"},
+			{yesterday, today},
+			{yesterday, today},
 		}
 		isUser := []bool{
 			/*
@@ -209,6 +237,16 @@ func GenerateTypes() echo.HandlerFunc {
 				true,
 				true,
 			*/
+
+			true,
+			true,
+			true,
+			true,
+			true,
+			true,
+			true,
+			true,
+			true,
 		}
 
 		if len(paths) != len(isUser) || len(paths) != len(uriArgs) {
