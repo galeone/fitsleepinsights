@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/galeone/fitbit/types"
+	fitbit_pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/igor"
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -25,58 +25,60 @@ func init() {
 	}
 
 	//logger := log.New(os.Stdout, "igor: ", log.LUTC)
-	//db.Log(logger)
+	//_db.Log(logger)
 
 	tx := _db.Begin()
 
-	var authorizedUser types.AuthorizedUser
+	var authorizedUser fitbit_pgdb.AuthorizedUser
 	if err = tx.Exec(fmt.Sprintf(
 		`CREATE TABLE IF NOT EXISTS "%s" (
-		user_id TEXT NOT NULL PRIMARY KEY,
+		id BIGSERIAL NOT NULL PRIMARY KEY,
+		user_id TEXT NOT NULL,
 		token_type TEXT NOT NULL,
 		scope TEXT NOT NULL,
 		refresh_token TEXT NOT NULL,
 		expires_in INTEGER NOT NULL,
 		access_token TEXT NOT NULL,
 		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-		UNIQUE(access_token))`, authorizedUser.TableName())); err != nil {
+		UNIQUE(access_token),
+		UNIQUE(user_id)
+	)`, authorizedUser.TableName())); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
 
 	// Create the trigger that sends a notitificaiton every time a new
 	// user is added into the authorizedUser table
-
-	/*
-		if err = tx.Exec(
-			`CREATE FUNCTION IF NOT EXISTS notify_new_user()
+	if err = tx.Exec(
+		fmt.Sprintf(`CREATE OR REPLACE FUNCTION notify_new_user()
 			RETURNS TRIGGER
 			LANGUAGE plpgsql
 			AS $$
 			BEGIN
-				PERFORM pg_notify('new_users', NEW.user_id);
+				PERFORM pg_notify('%s', NEW.id::text);
 				RETURN NULL;
-			END $$`); err != nil {
-			_ = tx.Rollback()
-			panic(err.Error())
-		}
+			END $$`, NewUsersChannel)); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
 
-		if err = tx.Exec(fmt.Sprintf(
-			`CREATE TRIGGER IF NOT EXISTS after_insert_user
+	if err = tx.Exec(fmt.Sprintf(
+		`CREATE OR REPLACE TRIGGER after_insert_user
 			AFTER INSERT ON %s
 			FOR EACH ROW EXECUTE FUNCTION notify_new_user()`, authorizedUser.TableName())); err != nil {
-			_ = tx.Rollback()
-			panic(err.Error())
-		}
-	*/
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
 
-	var authorizingUser types.AuthorizingUser
+	var authorizingUser fitbit_pgdb.AuthorizingUser
 	if err = tx.Exec(fmt.Sprintf(
 		`CREATE TABLE IF NOT EXISTS "%s" (
-		csrftoken TEXT NOT NULL PRIMARY KEY,
+		id BIGSERIAL NOT NULL PRIMARY KEY,
+		csrftoken TEXT NOT NULL,
 		code TEXT NOT NULL,
-		created_at TIMESTAMP NOT NULL DEFAULT NOW()
-		)`, authorizingUser.TableName())); err != nil {
+		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+		UNIQUE(csrftoken)
+	)`, authorizingUser.TableName())); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
