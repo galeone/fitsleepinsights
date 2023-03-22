@@ -27,7 +27,7 @@ func main() {
 	} else {
 		port = fmt.Sprintf(":%s", port)
 	}
-	fmt.Println(fmt.Sprintf("%s%s", os.Getenv("DOMAIN"), port))
+	fmt.Printf("%s%s\n", os.Getenv("DOMAIN"), port)
 	hosts[fmt.Sprintf("%s%s", os.Getenv("DOMAIN"), port)] = app
 
 	// Catch-all server & dispatch
