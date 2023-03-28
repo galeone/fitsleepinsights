@@ -99,8 +99,9 @@ func Redirect() func(echo.Context) error {
 		}
 		// Send a database notification over the channel.
 		// The receiver will start the routing for fetching all the data
-		_db.Notify(database.NewUsersChannel, token.AccessToken)
-		fmt.Println("notification sent")
+		if err = _db.Notify(database.NewUsersChannel, token.AccessToken); err != nil {
+			c.Logger().Error("Unable to sent new user creation notification")
+		}
 		cookie := http.Cookie{
 			Name:     "token",
 			Value:    token.AccessToken,
