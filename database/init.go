@@ -6,15 +6,59 @@
 package database
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/igor"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 var _db *igor.Database
+
+var (
+	//go:embed schema/user.sql
+	user string
+
+	//go:embed schema/activities.sql
+	activities string
+
+	//go:embed schema/user_activity.sql
+	user_activity string
+
+	//go:embed schema/user_activity_timeseries.sql
+	user_activity_timeseries string
+
+	//go:embed schema/user_body.sql
+	user_body string
+
+	//go:embed schema/user_body_timeseries.sql
+	user_body_timeseries string
+
+	//go:embed schema/user_breathing_rate.sql
+	user_breathing_rate string
+
+	//go:embed schema/user_cardio_score.sql
+	user_cardio_score string
+
+	//go:embed schema/user_hr_timeseries.sql
+	user_hr_timeseries string
+
+	//go:embed schema/user_hr_variability.sql
+	user_hr_variability string
+
+	//go:embed schema/user_intraday.sql
+	user_intraday string
+
+	//go:embed schema/user_oxygen_saturation.sql
+	user_oxygen_saturation string
+
+	//go:embed schema/user_sleep.sql
+	user_sleep string
+
+	//go:embed schema/user_temperature.sql
+	user_temperature string
+)
 
 func init() {
 	var err error
@@ -29,56 +73,81 @@ func init() {
 
 	tx := _db.Begin()
 
-	var authorizedUser fitbit_pgdb.AuthorizedUser
-	if err = tx.Exec(fmt.Sprintf(
-		`CREATE TABLE IF NOT EXISTS "%s" (
-		id BIGSERIAL NOT NULL PRIMARY KEY,
-		user_id TEXT NOT NULL,
-		token_type TEXT NOT NULL,
-		scope TEXT NOT NULL,
-		refresh_token TEXT NOT NULL,
-		expires_in INTEGER NOT NULL,
-		access_token TEXT NOT NULL,
-		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-		UNIQUE(access_token),
-		UNIQUE(user_id)
-	)`, authorizedUser.TableName())); err != nil {
+	// There's only one dependency between sql files: user_hr_timeseries.sql
+	// uses a table defined in user_activity.sql.
+	// All the other tables just depend on the users tables.
+
+	if err = tx.Exec(user); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
 
-	// Create the trigger that sends a notitificaiton every time a new
-	// user is added into the authorizedUser table
-	if err = tx.Exec(
-		fmt.Sprintf(`CREATE OR REPLACE FUNCTION notify_new_user()
-			RETURNS TRIGGER
-			LANGUAGE plpgsql
-			AS $$
-			BEGIN
-				PERFORM pg_notify('%s', NEW.id::text);
-				RETURN NULL;
-			END $$`, NewUsersChannel)); err != nil {
+	if err = tx.Exec(activities); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
 
-	if err = tx.Exec(fmt.Sprintf(
-		`CREATE OR REPLACE TRIGGER after_insert_user
-			AFTER INSERT ON %s
-			FOR EACH ROW EXECUTE FUNCTION notify_new_user()`, authorizedUser.TableName())); err != nil {
+	if err = tx.Exec(user_activity); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
 
-	var authorizingUser fitbit_pgdb.AuthorizingUser
-	if err = tx.Exec(fmt.Sprintf(
-		`CREATE TABLE IF NOT EXISTS "%s" (
-		id BIGSERIAL NOT NULL PRIMARY KEY,
-		csrftoken TEXT NOT NULL,
-		code TEXT NOT NULL,
-		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-		UNIQUE(csrftoken)
-	)`, authorizingUser.TableName())); err != nil {
+	if err = tx.Exec(user_activity_timeseries); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_body); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_body_timeseries); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_breathing_rate); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_cardio_score); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_hr_timeseries); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_hr_variability); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_intraday); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_oxygen_saturation); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_sleep); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_temperature); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
