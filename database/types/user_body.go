@@ -11,8 +11,9 @@ import (
 
 type WeightGoal struct {
 	types.WeightGoal
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (WeightGoal) TableName() string {
@@ -21,8 +22,9 @@ func (WeightGoal) TableName() string {
 
 type FatGoal struct {
 	types.WeightGoal
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (FatGoal) TableName() string {
@@ -31,8 +33,9 @@ func (FatGoal) TableName() string {
 
 type FatLog struct {
 	types.UserFatLog
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (FatLog) TableName() string {
@@ -41,8 +44,9 @@ func (FatLog) TableName() string {
 
 type WeightLog struct {
 	types.UserWeightLog
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (WeightLog) TableName() string {

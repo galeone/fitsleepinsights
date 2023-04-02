@@ -11,8 +11,9 @@ import (
 
 type CoreTemperature struct {
 	types.CoreTemperature
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (CoreTemperature) TableName() string {
@@ -21,8 +22,9 @@ func (CoreTemperature) TableName() string {
 
 type SkinTemperature struct {
 	types.SkinTemperature
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (SkinTemperature) TableName() string {

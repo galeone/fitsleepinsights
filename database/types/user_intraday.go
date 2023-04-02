@@ -13,8 +13,9 @@ import (
 
 type CaloriesSeriesIntraday struct {
 	types.CaloriesSeriesIntraday
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (CaloriesSeriesIntraday) TableName() string {
@@ -23,8 +24,9 @@ func (CaloriesSeriesIntraday) TableName() string {
 
 type DistanceSeriesIntraday struct {
 	types.DistanceSeriesIntraday
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (DistanceSeriesIntraday) TableName() string {
@@ -33,8 +35,9 @@ func (DistanceSeriesIntraday) TableName() string {
 
 type ElevationSeriesIntraday struct {
 	types.ElevationSeriesIntraday
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (ElevationSeriesIntraday) TableName() string {
@@ -43,8 +46,9 @@ func (ElevationSeriesIntraday) TableName() string {
 
 type FloorsSeriesIntraday struct {
 	types.FloorsSeriesIntraday
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (FloorsSeriesIntraday) TableName() string {
@@ -53,8 +57,9 @@ func (FloorsSeriesIntraday) TableName() string {
 
 type StepsSeriesIntraday struct {
 	types.StepsSeriesIntraday
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (StepsSeriesIntraday) TableName() string {
@@ -63,8 +68,9 @@ func (StepsSeriesIntraday) TableName() string {
 
 type OxygenSaturationIntraday struct {
 	types.OxygenSaturationIntraday
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (OxygenSaturationIntraday) TableName() string {
@@ -75,7 +81,8 @@ type HeartRateVariabilityIntradayHRV struct {
 	types.HeartRateVariabilityValueIntraday
 	ID       int64               `igor:"primary_key"`
 	User     pgdb.AuthorizedUser `sql:"-"`
-	DateTime time.Time           // required
+	UserID   int64
+	DateTime time.Time // required
 }
 
 func (HeartRateVariabilityIntradayHRV) TableName() string {
@@ -84,8 +91,9 @@ func (HeartRateVariabilityIntradayHRV) TableName() string {
 
 type BreathingRateIntraday struct {
 	types.BreathingRateIntradaySummary
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (BreathingRateIntraday) TableName() string {

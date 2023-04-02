@@ -5,14 +5,19 @@
 package types
 
 import (
+	"time"
+
 	pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/fitbit/types"
 )
 
 type Goal struct {
 	types.Goal
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID        int64               `igor:"primary_key"`
+	User      pgdb.AuthorizedUser `sql:"-"`
+	UserID    int64
+	StartDate time.Time
+	EndDate   time.Time
 }
 
 func (Goal) TableName() string {
@@ -66,7 +71,8 @@ func (LoggedActivityLevel) TableName() string {
 
 type ActiveZoneMinutes struct {
 	types.ActiveZoneMinutes
-	ID int64 `igor:"primary_key"`
+	ID                      int64                    `igor:"primary_key"`
+	MinutesInHeartRateZones []MinutesInHeartRateZone `sql:"-"`
 }
 
 func (ActiveZoneMinutes) TableName() string {
@@ -75,11 +81,15 @@ func (ActiveZoneMinutes) TableName() string {
 
 type ActivityLog struct {
 	types.ActivityLog
-	ID                    int64                 `igor:"primary_key"`
-	User                  pgdb.AuthorizedUser   `sql:"-"`
-	ActiveZoneMinutes     ActiveZoneMinutes     `sql:"-"`
-	ManualValuesSpecified ManualValuesSpecified `sql:"-"`
-	Source                LogSource             `sql:"-"`
+	ID                      int64               `igor:"primary_key"`
+	User                    pgdb.AuthorizedUser `sql:"-"`
+	UserID                  int64
+	ActiveZoneMinutes       ActiveZoneMinutes `sql:"-"`
+	ActiveZoneMinutesID     int64
+	ManualValuesSpecified   ManualValuesSpecified `sql:"-"`
+	ManualValuesSpecifiedID int64
+	Source                  LogSource `sql:"-"`
+	SourceID                int64
 }
 
 func (ActivityLog) TableName() string {
@@ -97,8 +107,9 @@ func (Distance) TableName() string {
 
 type ActivitiesSummary struct {
 	types.ActivitiesSummary
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (ActivitiesSummary) TableName() string {
@@ -107,10 +118,13 @@ func (ActivitiesSummary) TableName() string {
 
 type DailyActivitySummary struct {
 	types.DailyActivitySummary
-	ID      int64               `igor:"primary_key"`
-	User    pgdb.AuthorizedUser `sql:"-"`
-	Goal    Goal                `sql:"-"`
-	Summary ActivitiesSummary   `sql:"-"`
+	ID        int64               `igor:"primary_key"`
+	User      pgdb.AuthorizedUser `sql:"-"`
+	UserID    int64
+	Goal      Goal `sql:"-"`
+	GoalID    int64
+	Summary   ActivitiesSummary `sql:"-"`
+	SummaryID int64
 }
 
 func (DailyActivitySummary) TableName() string {
@@ -128,11 +142,15 @@ func (LifetimeTimeStep) TableName() string {
 
 type LifetimeActivity struct {
 	types.LifeTimeActivities
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	Distance Distance            `sql:"-"`
-	Steps    LifetimeTimeStep    `sql:"-"`
-	Floors   LifetimeTimeStep    `sql:"-"`
+	ID         int64               `igor:"primary_key"`
+	User       pgdb.AuthorizedUser `sql:"-"`
+	UserID     int64
+	Distance   Distance `sql:"-"`
+	DistanceID int64
+	Steps      LifetimeTimeStep `sql:"-"`
+	StepsID    int64
+	Floors     LifetimeTimeStep `sql:"-"`
+	FloorsID   int64
 }
 
 func (LifetimeActivity) TableName() string {
@@ -141,8 +159,9 @@ func (LifetimeActivity) TableName() string {
 
 type LifetimeStats struct {
 	types.LifeTimeStats
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (LifetimeStats) TableName() string {
@@ -151,9 +170,11 @@ func (LifetimeStats) TableName() string {
 
 type BestStatsSource struct {
 	types.BestStatsSource
-	ID      int64            `igor:"primary_key"`
-	Total   LifetimeActivity `sql:"-"`
-	Tracker LifetimeActivity `sql:"-"`
+	ID        int64            `igor:"primary_key"`
+	Total     LifetimeActivity `sql:"-"`
+	TotalID   int64
+	Tracker   LifetimeActivity `sql:"-"`
+	TrackerID int64
 }
 
 func (BestStatsSource) TableName() string {
@@ -162,9 +183,11 @@ func (BestStatsSource) TableName() string {
 
 type LifetimeStatsSource struct {
 	types.LifetimeStatsSource
-	ID      int64            `igor:"primary_key"`
-	Total   LifetimeActivity `sql:"-"`
-	Tracker LifetimeActivity `sql:"-"`
+	ID        int64            `igor:"primary_key"`
+	Total     LifetimeActivity `sql:"-"`
+	TotalID   int64
+	Tracker   LifetimeActivity `sql:"-"`
+	TrackerID int64
 }
 
 func (LifetimeStatsSource) TableName() string {
@@ -173,9 +196,11 @@ func (LifetimeStatsSource) TableName() string {
 
 type UserLifeTimeStats struct {
 	types.UserLifeTimeStats
-	ID       int64               `igor:"primary_key"`
-	Best     BestStatsSource     `sql:"-"`
-	Lifetime LifetimeStatsSource `sql:"-"`
+	ID         int64           `igor:"primary_key"`
+	Best       BestStatsSource `sql:"-"`
+	BestID     int64
+	Lifetime   LifetimeStatsSource `sql:"-"`
+	LifetimeID int64
 }
 
 func (UserLifeTimeStats) TableName() string {
@@ -184,8 +209,9 @@ func (UserLifeTimeStats) TableName() string {
 
 type FavoriteActivity struct {
 	types.FavoriteActivity
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (FavoriteActivity) TableName() string {
@@ -194,8 +220,9 @@ func (FavoriteActivity) TableName() string {
 
 type MinimalActivity struct {
 	types.MinimalActivity
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinimalActivity) TableName() string {
@@ -204,8 +231,9 @@ func (MinimalActivity) TableName() string {
 
 type FrequentActivities struct {
 	types.FrequentActivities
-	ID              int64           `igor:"primary_key"`
-	MinimalActivity MinimalActivity `sql:"-"`
+	ID                int64           `igor:"primary_key"`
+	MinimalActivity   MinimalActivity `sql:"-"`
+	MinimalActivityID int64
 }
 
 func (FrequentActivities) TableName() string {
@@ -214,8 +242,9 @@ func (FrequentActivities) TableName() string {
 
 type RecentActivity struct {
 	types.RecentActivities
-	ID              int64           `igor:"primary_key"`
-	MinimalActivity MinimalActivity `sql:"-"`
+	ID                int64           `igor:"primary_key"`
+	MinimalActivity   MinimalActivity `sql:"-"`
+	MinimalActivityID int64
 }
 
 func (RecentActivity) TableName() string {

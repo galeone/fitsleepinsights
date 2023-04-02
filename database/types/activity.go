@@ -19,8 +19,9 @@ func (Category) TableName() string {
 
 type SubCategory struct {
 	types.SubCategory
-	ID       int64    `igor:"primary_key"`
-	Category Category `sql:"-"`
+	ID         int64    `igor:"primary_key"`
+	Category   Category `sql:"-"`
+	CategoryID int64
 }
 
 func (SubCategory) TableName() string {
@@ -29,9 +30,11 @@ func (SubCategory) TableName() string {
 
 type ActivityDescription struct {
 	types.ActivityDescription
-	ID          int64       `igor:"primary_key"`
-	SubCategory SubCategory `sql:"-"`
-	Category    Category    `sql:"-"`
+	ID            int64       `igor:"primary_key"`
+	SubCategory   SubCategory `sql:"-"`
+	SubCategoryID int64
+	Category      Category `sql:"-"`
+	CategoryID    int64
 }
 
 func (ActivityDescription) TableName() string {
@@ -40,8 +43,9 @@ func (ActivityDescription) TableName() string {
 
 type ActivityLevel struct {
 	types.ActivityLevel
-	ID                  int64               `igor:"primary_key"`
-	ActivityDescription ActivityDescription `sql:"-"`
+	ID                    int64               `igor:"primary_key"`
+	ActivityDescription   ActivityDescription `sql:"-"`
+	ActivityDescriptionID int64
 }
 
 func (ActivityLevel) TableName() string {

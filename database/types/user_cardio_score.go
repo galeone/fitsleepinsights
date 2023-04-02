@@ -11,8 +11,9 @@ import (
 
 type BreathingRate struct {
 	types.BreathingRate
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (BreathingRate) TableName() string {
@@ -21,8 +22,9 @@ func (BreathingRate) TableName() string {
 
 type CardioFitnessScore struct {
 	types.CardioFitnessScore
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (CardioFitnessScore) TableName() string {

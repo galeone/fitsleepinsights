@@ -11,8 +11,9 @@ import (
 
 type HeartRateVariabilityTimeSeries struct {
 	types.HeartRateVariabilityTimeStep
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (HeartRateVariabilityTimeSeries) TableName() string {

@@ -11,8 +11,9 @@ import (
 
 type ActivityCaloriesSeries struct {
 	types.ActivityCaloriesSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (ActivityCaloriesSeries) TableName() string {
@@ -21,8 +22,9 @@ func (ActivityCaloriesSeries) TableName() string {
 
 type CaloriesSeries struct {
 	types.CaloriesSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (CaloriesSeries) TableName() string {
@@ -31,8 +33,9 @@ func (CaloriesSeries) TableName() string {
 
 type CaloriesBMRSeries struct {
 	types.CaloriesBMRSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (CaloriesBMRSeries) TableName() string {
@@ -41,8 +44,9 @@ func (CaloriesBMRSeries) TableName() string {
 
 type DistanceSeries struct {
 	types.DistanceSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (DistanceSeries) TableName() string {
@@ -51,8 +55,9 @@ func (DistanceSeries) TableName() string {
 
 type ElevationSeries struct {
 	types.ElevationSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (ElevationSeries) TableName() string {
@@ -61,8 +66,9 @@ func (ElevationSeries) TableName() string {
 
 type FloorsSeries struct {
 	types.FloorsSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (FloorsSeries) TableName() string {
@@ -71,8 +77,9 @@ func (FloorsSeries) TableName() string {
 
 type MinutesSedentarySeries struct {
 	types.MinutesSedentarySeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinutesSedentarySeries) TableName() string {
@@ -81,8 +88,9 @@ func (MinutesSedentarySeries) TableName() string {
 
 type MinutesLightlyActiveSeries struct {
 	types.MinutesLightlyActiveSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinutesLightlyActiveSeries) TableName() string {
@@ -91,8 +99,9 @@ func (MinutesLightlyActiveSeries) TableName() string {
 
 type MinutesFairlyActiveSeries struct {
 	types.MinutesFairlyActiveSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinutesFairlyActiveSeries) TableName() string {
@@ -101,8 +110,9 @@ func (MinutesFairlyActiveSeries) TableName() string {
 
 type MinutesVeryActiveSeries struct {
 	types.MinutesVeryActiveSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinutesVeryActiveSeries) TableName() string {
@@ -111,8 +121,9 @@ func (MinutesVeryActiveSeries) TableName() string {
 
 type StepsSeries struct {
 	types.StepsSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (StepsSeries) TableName() string {

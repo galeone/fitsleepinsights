@@ -11,8 +11,9 @@ import (
 
 type BodyWeightSeries struct {
 	types.BodyWeightSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (BodyWeightSeries) TableName() string {
@@ -21,8 +22,9 @@ func (BodyWeightSeries) TableName() string {
 
 type BMISeries struct {
 	types.BMISeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (BMISeries) TableName() string {
@@ -31,8 +33,9 @@ func (BMISeries) TableName() string {
 
 type BodyFatSeries struct {
 	types.BodyFatSeries
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (BodyFatSeries) TableName() string {

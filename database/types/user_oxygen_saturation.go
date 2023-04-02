@@ -11,8 +11,9 @@ import (
 
 type OxygenSaturation struct {
 	types.OxygenSaturation
-	ID   int64               `igor:"primary_key"`
-	User pgdb.AuthorizedUser `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (OxygenSaturation) TableName() string {

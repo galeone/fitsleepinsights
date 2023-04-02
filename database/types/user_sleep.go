@@ -29,10 +29,13 @@ func (SleepData) TableName() string {
 
 type SleepLevel struct {
 	types.SleepLevel
-	ID        int64            `igor:"primary_key"`
-	SleepData SleepData        `sql:"-"`
-	ShortData SleepData        `sql:"-"`
-	Summary   SleepStageDetail `sql:"-"`
+	ID          int64     `igor:"primary_key"`
+	SleepData   SleepData `sql:"-"`
+	SleepDataID int64
+	ShortData   SleepData `sql:"-"`
+	ShortDataID int64
+	Summary     SleepStageDetail `sql:"-"`
+	SummaryID   int64
 }
 
 func (SleepLevel) TableName() string {
@@ -41,9 +44,11 @@ func (SleepLevel) TableName() string {
 
 type SleepLog struct {
 	types.SleepLog
-	ID     int64               `igor:"primary_key"`
-	User   pgdb.AuthorizedUser `sql:"-"`
-	Levels SleepLevel          `sql:"-"`
+	ID       int64               `igor:"primary_key"`
+	User     pgdb.AuthorizedUser `sql:"-"`
+	UserID   int64
+	Levels   SleepLevel `sql:"-"`
+	LevelsID int64
 }
 
 func (SleepLog) TableName() string {
@@ -61,9 +66,11 @@ func (SleepStagesSummary) TableName() string {
 
 type SleepSummary struct {
 	types.SleepSummary
-	ID     int64               `igor:"primary_key"`
-	User   pgdb.AuthorizedUser `sql:"-"`
-	Stages SleepStagesSummary  `sql:"-"`
+	ID       int64               `igor:"primary_key"`
+	User     pgdb.AuthorizedUser `sql:"-"`
+	UserID   int64
+	Stages   SleepStagesSummary `sql:"-"`
+	StagesID int64
 }
 
 func (SleepSummary) TableName() string {

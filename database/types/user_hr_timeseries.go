@@ -21,8 +21,9 @@ func (HeartRateTimePointValue) TableName() string {
 
 type HeartRateActivities struct {
 	types.HeartRateActivities
-	ID                      int64                   `igor:"primary_key"`
-	User                    pgdb.AuthorizedUser     `sql:"-"`
+	ID                      int64               `igor:"primary_key"`
+	User                    pgdb.AuthorizedUser `sql:"-"`
+	UserID                  int64
 	HeartRateTimePointValue HeartRateTimePointValue `sql:"-"`
 }
 
