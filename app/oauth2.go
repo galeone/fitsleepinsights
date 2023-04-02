@@ -110,6 +110,13 @@ func Redirect() func(echo.Context) error {
 			HttpOnly: true,
 		}
 		c.SetCookie(&cookie)
+
+		// Unset the authorizing cookie
+		c.SetCookie(&http.Cookie{
+			Name:     "authorizing",
+			HttpOnly: true,
+			MaxAge:   -1,
+		})
 		return c.Redirect(http.StatusTemporaryRedirect, "/dashboard")
 	}
 }
