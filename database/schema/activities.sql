@@ -1,17 +1,17 @@
 -- /activities.json
 create table if not exists categories(
-    id bigint not null primary key,
+    id bigserial primary key not null,
     name text not null
 );
 
 create table if not exists subcategories(
-    id bigint not null primary key,
+    id bigserial primary key not null,
     name text not null,
     category bigint references categories(id)
 );
 
 create table if not exists activities_descriptions(
-    id bigint not null primary key,
+    id bigserial primary key not null,
     access_level text not null,
     has_speed bool not null,
     mets bigint not null,
@@ -21,7 +21,7 @@ create table if not exists activities_descriptions(
 );
 
 create table if not exists activity_levels(
-    id bigint not null primary key,
+    id bigserial primary key not null,
     max_speed_mph double precision not null,
     min_speed_mph double precision not null,
     mets bigint not null,

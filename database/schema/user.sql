@@ -1,12 +1,12 @@
 CREATE TABLE IF NOT EXISTS oauth2_authorized(
-    id BIGSERIAL NOT NULL PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    token_type TEXT NOT NULL,
-    scope TEXT NOT NULL,
-    refresh_token TEXT NOT NULL,
-    expires_in INTEGER NOT NULL,
-    access_token TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    id bigserial primary key not null,
+    user_id TEXT not null,
+    token_type TEXT not null,
+    scope TEXT not null,
+    refresh_token TEXT not null,
+    expires_in INTEGER not null,
+    access_token TEXT not null,
+    created_at TIMESTAMP not null DEFAULT NOW(),
     UNIQUE(access_token),
     UNIQUE(user_id)
 );
@@ -27,9 +27,9 @@ CREATE OR REPLACE TRIGGER after_insert_user
 	FOR EACH ROW EXECUTE FUNCTION notify_new_user();
 
 CREATE TABLE IF NOT EXISTS oauth2_authorizing(
-    id BIGSERIAL NOT NULL PRIMARY KEY,
-    csrftoken TEXT NOT NULL,
-    code TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    id bigserial primary key not null,
+    csrftoken TEXT not null,
+    code TEXT not null,
+    created_at TIMESTAMP not null DEFAULT NOW(),
     UNIQUE(csrftoken)
 );

@@ -115,15 +115,17 @@ create table if not exists activity_logs(
 );
 
 create table if not exists activity_log_heart_rate_zones(
+    id bigserial primary key not null,
     activity_log_id integer not null references activity_logs(id),
     heart_rate_zone_id integer not null references heart_rate_zones(id),
-    primary key (activity_log_id, heart_rate_zone_id)
+    unique (activity_log_id, heart_rate_zone_id)
 );
 
 create table if not exists activity_log_activity_levels(
+    id bigserial primary key not null,
     activity_log_id integer not null references activity_logs(id),
     logged_activity_level_id integer not null references logged_activity_levels(id),
-    primary key (activity_log_id, logged_activity_level_id)
+    unique (activity_log_id, logged_activity_level_id)
 );
 
 -- /activities/date/%s.json
@@ -150,15 +152,17 @@ create table if not exists activities_summaries(
 );
 
 create table if not exists activities_summary_distances(
+    id bigserial primary key not null,
     activities_summary_id integer not null references activities_summaries(id),
     distance_id integer not null references distances(id),
-    primary key (activities_summary_id, distance_id)
+    unique (activities_summary_id, distance_id)
 );
 
 create table if not exists activities_summary_heart_rate_zones(
+    id bigserial primary key not null,
     activities_summary_id integer not null references activities_summaries(id),
     heart_rate_zone_id integer not null references heart_rate_zones(id),
-    primary key (activities_summary_id, heart_rate_zone_id)
+    unique (activities_summary_id, heart_rate_zone_id)
 );
 
 create table if not exists daily_activity_summaries(
@@ -169,20 +173,21 @@ create table if not exists daily_activity_summaries(
 );
 
 create table if not exists daily_activity_summary_activities(
+    id bigserial primary key not null,
     daily_activity_summary_id integer not null references daily_activity_summaries(id),
     activities_summary_id integer not null references activities_summaries(id),
-    primary key (daily_activity_summary_id, activities_summary_id)
+    unique (daily_activity_summary_id, activities_summary_id)
 );
 
 -- /activities.json
 create table if not exists life_time_time_steps(
-    id bigserial primary key,
+    id bigserial primary key not null,
     date date not null,
     value double precision not null
 );
 
 create table if not exists life_time_activities(
-    id bigserial primary key,
+    id bigserial primary key not null,
     user_id bigint not null references oauth2_authorized(id),
     distance_id integer not null references life_time_time_steps(id),
     steps_id integer not null references life_time_time_steps(id),
@@ -190,7 +195,7 @@ create table if not exists life_time_activities(
 );
 
 create table if not exists life_time_stats(
-    id bigserial primary key,
+    id bigserial primary key not null,
     user_id bigint not null references oauth2_authorized(id),
     active_score bigint not null,
     calories_out bigint not null,
@@ -200,26 +205,26 @@ create table if not exists life_time_stats(
 );
 
 create table if not exists best_stats_sources(
-    id bigserial primary key,
+    id bigserial primary key not null,
     total_id integer not null references life_time_activities(id),
     tracker_id integer not null references life_time_activities(id)
 );
 
 create table if not exists lifetime_stats_sources(
-    id bigserial primary key,
+    id bigserial primary key not null,
     total_id integer not null references life_time_stats(id),
     tracker_id integer not null references life_time_stats(id)
 );
 
 create table if not exists user_life_time_stats(
-    id bigserial primary key,
+    id bigserial primary key not null,
     best_id integer not null references best_stats_sources(id),
     lifetime_id integer not null references lifetime_stats_sources(id)
 );
 
 -- /activities/favorite.json
 create table if not exists favorite_activities(
-    id bigserial primary key,
+    id bigserial primary key not null,
     user_id bigint not null references oauth2_authorized(id),
     activity_id bigint not null,
     description text not null,
@@ -228,7 +233,7 @@ create table if not exists favorite_activities(
 );
 
 create table if not exists minimal_activities(
-    id bigserial primary key,
+    id bigserial primary key not null,
     user_id bigint not null references oauth2_authorized(id),
     activity_id bigint not null,
     calories bigint not null,
@@ -240,12 +245,12 @@ create table if not exists minimal_activities(
 
 -- /activities/frequent.json
 create table if not exists frequent_activities(
-    id bigserial primary key,
+    id bigserial primary key not null,
     minimal_activity_id integer not null references minimal_activities(id)
 );
 
 -- /activities/recent.json
 create table if not exists recent_activities(
-    id bigserial primary key,
+    id bigserial primary key not null,
     minimal_activity_id integer not null references minimal_activities(id)
 );
