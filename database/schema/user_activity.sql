@@ -5,7 +5,10 @@ create table if not exists goals(
     active_minutes bigint not null,
     calories_out bigint not null,
     distance double precision not null,
-    steps bigint not null
+    steps bigint not null,
+    -- manually added (period: weekly, daily)
+    start_date date not null,
+    end_date date not null
 );
 
 -- /activities/list.json?afterDate=2022-10-29&sort=asc&offset=0&limit=2
@@ -76,9 +79,10 @@ create table if not exists active_zone_minutes(
 );
 
 create table if not exists minutes_in_heart_rate_zones_list(
+    id bigserial primary key not null,
     active_zone_minutes_id integer not null references active_zone_minutes(id),
     minutes_in_heart_rate_zone_id integer not null references minutes_in_heart_rate_zone(id),
-    primary key(
+    unique(
         active_zone_minutes_id,
         minutes_in_heart_rate_zone_id
     )
