@@ -5,7 +5,6 @@
 package app
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/galeone/fitbit"
@@ -28,7 +27,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 				// If there's the auth cookie, we could be in the
 				// authorization phase, and thus we set it.
 				// Anyway, if it's not present, it's not a problem IF
-				// and only IF  there's the "token" cookie that contains
+				// and only IF there's the "token" cookie that contains
 				// the access token.
 				// At least one of these 2 conditions should be met
 				var condition bool
@@ -36,7 +35,8 @@ func RequireFitbit() echo.MiddlewareFunc {
 				if cookie, err = c.Cookie("authorizing"); err == nil {
 					var authorizing *types.AuthorizingUser
 					if authorizing, err = _db.AuthorizingUser(cookie.Value); err != nil {
-						return err
+						c.Logger().Printf("[RequireFitbit] _db.AuthorizingUser: %s", err)
+						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					authorizer.SetAuthorizing(authorizing)
 					condition = true
@@ -46,10 +46,12 @@ func RequireFitbit() echo.MiddlewareFunc {
 				if cookie, err = c.Cookie("token"); err == nil {
 					var dbToken *types.AuthorizedUser
 					if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
-						return err
+						c.Logger().Printf("[RequireFitbit] _db.AuthorizedUser: %s", err)
+						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					if dbToken.UserID == "" {
-						return errors.New("Invalid token. Please login again")
+						c.Logger().Printf("Invalid token. Please login again")
+						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					authorizer.SetToken(dbToken)
 					condition = true
