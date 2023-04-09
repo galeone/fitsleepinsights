@@ -13,7 +13,7 @@ create table if not exists subcategories(
 create table if not exists activities_descriptions(
     id bigserial primary key not null,
     access_level text not null,
-    has_speed bool not null,
+    has_speed bool not null default false,
     mets bigint not null,
     name text not null,
     subcategory bigint references subcategories(id),

@@ -31,6 +31,9 @@ func NewRouter() (*echo.Echo, error) {
 	// Testing the API(*Authorizer)
 	router.GET("/test", TestGET(), RequireFitbit())
 
+	// Dump all data endpoint (TESTING)
+	router.GET("/dump", Dump(), RequireFitbit())
+
 	router.GET("/vertex", TestVertexAI())
 	return router, nil
 }

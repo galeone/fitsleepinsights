@@ -5,6 +5,7 @@
 package types
 
 import (
+	"database/sql"
 	"time"
 
 	pgdb "github.com/galeone/fitbit-pgdb"
@@ -35,7 +36,8 @@ func (ManualValuesSpecified) TableName() string {
 
 type HeartRateZone struct {
 	types.HeartRateZone
-	ID int64 `igor:"primary_key"`
+	ID            int64 `igor:"primary_key"`
+	ActivityLogID sql.NullInt64
 }
 
 func (HeartRateZone) TableName() string {
@@ -54,6 +56,8 @@ func (LogSource) TableName() string {
 type MinutesInHeartRateZone struct {
 	types.MinutesInHeartRateZone
 	ID int64 `igor:"primary_key"`
+	// FK
+	ActiveZoneMinutesID int64
 }
 
 func (MinutesInHeartRateZone) TableName() string {
@@ -62,7 +66,8 @@ func (MinutesInHeartRateZone) TableName() string {
 
 type LoggedActivityLevel struct {
 	types.LoggedActivityLevel
-	ID int64 `igor:"primary_key"`
+	ID            int64 `igor:"primary_key"`
+	ActivityLogID int64
 }
 
 func (LoggedActivityLevel) TableName() string {
@@ -81,7 +86,9 @@ func (ActiveZoneMinutes) TableName() string {
 
 type ActivityLog struct {
 	types.ActivityLog
-	ID                      int64               `igor:"primary_key"`
+	// Disable all the concrete types and add the corresponding Type+ID field
+	// that contains the foreign key value.
+	LogID                   int64               `igor:"primary_key"`
 	User                    pgdb.AuthorizedUser `sql:"-"`
 	UserID                  int64
 	ActiveZoneMinutes       ActiveZoneMinutes `sql:"-"`
@@ -89,7 +96,14 @@ type ActivityLog struct {
 	ManualValuesSpecified   ManualValuesSpecified `sql:"-"`
 	ManualValuesSpecifiedID int64
 	Source                  LogSource `sql:"-"`
-	SourceID                int64
+	SourceID                sql.NullInt64
+	// Disable these fields: will be populated manually
+	// since those have dedicated tables where the info are stored.
+	ActivityLevel  []LoggedActivityLevel `sql:"-"`
+	HeartRateZones []HeartRateZone       `sql:"-"`
+	// Overwrite the custom FitbitDate(Time) fields and overwrite with the SQL-compatible time.Time
+	OriginalStartTime time.Time `json:"originalStartTime"`
+	StartTime         time.Time `json:"startTime"`
 }
 
 func (ActivityLog) TableName() string {

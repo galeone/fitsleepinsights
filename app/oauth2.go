@@ -47,7 +47,7 @@ func Auth() func(echo.Context) error {
 
 		c.SetCookie(&http.Cookie{
 			Name: "authorizing",
-			// Also used as primary key in db for retrieval (see middelware
+			// Also used as primary key in db for retrieval (see middleware
 			// RequireAuthorizer).
 			Value: authorizer.CSRFToken().String(),
 			// No Expires = Session cookie

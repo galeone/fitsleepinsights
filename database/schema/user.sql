@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS oauth2_authorized(
     token_type TEXT not null,
     scope TEXT not null,
     refresh_token TEXT not null,
-    expires_in INTEGER not null,
+    expires_in bigint not null,
     access_token TEXT not null,
     created_at TIMESTAMP not null DEFAULT NOW(),
     UNIQUE(access_token),

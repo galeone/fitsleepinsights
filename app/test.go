@@ -19,7 +19,7 @@ func TestGET() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		now := time.Now()
 		yesterday := now.Add(-24 * time.Hour)
-		// secure, under middelware
+		// secure, under middleware
 		authorizer := c.Get("fitbit").(*fitbit.Authorizer)
 
 		var fb *client.Client

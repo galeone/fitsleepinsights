@@ -17,7 +17,7 @@ import (
 // The middleware uses the cookies to identify the user and
 // understand in which phase of the oauth2 authorization flows we are
 // and set the context's fitbit variable (c.Get("fitbit")) to a valid authorizer
-// If and only if the required cookies have been previosly set.
+// If and only if the required cookies have been previously set.
 func RequireFitbit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -42,7 +42,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 					condition = true
 				}
 
-				// Auhtorization token (after exhange)
+				// Authorization token (after exchange)
 				if cookie, err = c.Cookie("token"); err == nil {
 					var dbToken *types.AuthorizedUser
 					if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {

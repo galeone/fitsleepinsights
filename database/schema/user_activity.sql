@@ -12,6 +12,7 @@ create table if not exists goals(
 );
 
 -- /activities/list.json?afterDate=2022-10-29&sort=asc&offset=0&limit=2
+/*
 do $$
 begin create type fitbit_features as enum(
     'CALORIES',
@@ -26,51 +27,24 @@ begin create type fitbit_features as enum(
 EXCEPTION
 WHEN duplicate_object THEN null;
 end $$;
+*/
 
 create table if not exists manual_values_specified(
     id bigserial primary key not null,
-    calories bool not null,
-    distance bool not null,
-    steps bool not null
-);
-
-do $$
-begin create type heart_rate_zone_type as enum ('CUSTOM', 'DEFAULT');
-EXCEPTION
-WHEN duplicate_object THEN null;
-end $$;
-
-create table if not exists heart_rate_zones(
-    id bigserial primary key not null,
-    calories_out double precision not null,
-    max bigint not null,
-    min bigint not null,
-    minutes bigint not null,
-    name text not null,
-    type heart_rate_zone_type not null default 'DEFAULT'::heart_rate_zone_type
+    calories bool not null default false,
+    distance bool not null default false,
+    steps bool not null default false
 );
 
 create table if not exists log_sources(
-    id bigserial primary key not null,
-    source_id text not null,
+    -- ID is not a big serial because this is the ID of the device
+    -- that's unique and sent by the API.
+    id bigint primary key not null,
+    -- tracker_features fitbit_features [] not null,
+    tracker_features text[] not null,
     name text not null,
-    type text not null,
-    url text not null
-);
-
-create table if not exists minutes_in_heart_rate_zone(
-    id bigserial primary key not null,
-    minute_multiplier bigint not null,
-    minutes bigint not null,
-    "order" bigint not null,
     "type" text not null,
-    zone_name text not null
-);
-
-create table if not exists logged_activity_levels(
-    id bigserial primary key not null,
-    minutes bigint not null,
-    name text not null
+    url text not null
 );
 
 create table if not exists active_zone_minutes(
@@ -78,58 +52,72 @@ create table if not exists active_zone_minutes(
     total_minutes bigint not null
 );
 
-create table if not exists minutes_in_heart_rate_zones_list(
+create table if not exists minutes_in_heart_rate_zone(
     id bigserial primary key not null,
-    active_zone_minutes_id integer not null references active_zone_minutes(id),
-    minutes_in_heart_rate_zone_id integer not null references minutes_in_heart_rate_zone(id),
-    unique(
-        active_zone_minutes_id,
-        minutes_in_heart_rate_zone_id
-    )
+    active_zone_minutes_id bigint not null references active_zone_minutes(id),
+    minute_multiplier bigint not null,
+    minutes bigint not null,
+    "order" bigint not null,
+    "type" text not null,
+    zone_name text not null
 );
 
 create table if not exists activity_logs(
-    id bigserial primary key not null,
+    -- where the default is 0 (or equivalent) is because
+    -- there could be activities without these values
+    -- e.g sedentary = 0 distance, thus useless distance unit, 0 pace, 0 speed, ...
+    log_id bigint primary key not null,
     user_id bigint not null references oauth2_authorized(id),
     active_duration bigint not null,
-    active_zone_minutes_id integer not null references active_zone_minutes(id),
-    source_tracker_features fitbit_features [] not null,
+    active_zone_minutes_id bigint not null references active_zone_minutes(id),
     activity_name text not null,
     activity_type_id bigint not null,
     average_heart_rate bigint not null,
     calories bigint not null,
-    distance double precision not null,
-    distance_unit text not null,
+    distance double precision not null default 0,
+    distance_unit text not null default 'nd',
     duration bigint not null,
-    elevation_gain bigint not null,
-    has_active_zone_minutes bool not null,
+    elevation_gain bigint not null default 0,
+    has_active_zone_minutes bool not null default false,
     heart_rate_link text not null,
     last_modified text not null,
-    log_id bigint not null,
     log_type text not null,
-    manual_values_specified_id integer not null references manual_values_specified(id),
+    manual_values_specified_id bigint not null references manual_values_specified(id),
     original_duration bigint not null,
     original_start_time timestamp not null,
-    pace double precision not null,
-    source_id integer not null references log_sources(id),
-    speed double precision not null,
+    pace double precision not null default 0,
+    source_id bigint references log_sources(id), --nullable
+    speed double precision not null default 0,
     start_time timestamp not null,
-    steps bigint not null,
+    steps bigint not null default 0,
     tcx_link text not null
 );
 
-create table if not exists activity_log_heart_rate_zones(
+/*
+ do $$
+ begin create type heart_rate_zone_type as enum ('CUSTOM', 'DEFAULT');
+ EXCEPTION
+ WHEN duplicate_object THEN null;
+ end $$;
+ */
+create table if not exists heart_rate_zones(
     id bigserial primary key not null,
-    activity_log_id integer not null references activity_logs(id),
-    heart_rate_zone_id integer not null references heart_rate_zones(id),
-    unique (activity_log_id, heart_rate_zone_id)
+    -- nullable activity_log_id because heart_rate_zones is also used in
+    -- user_hr_timeseries that's not connected to an activity_log
+    activity_log_id bigint null references activity_logs(log_id),
+    calories_out double precision not null,
+    max bigint not null,
+    min bigint not null,
+    minutes bigint not null,
+    name text not null,
+    "type" text null default 'DEFAULT'
 );
 
-create table if not exists activity_log_activity_levels(
+create table if not exists logged_activity_levels(
     id bigserial primary key not null,
-    activity_log_id integer not null references activity_logs(id),
-    logged_activity_level_id integer not null references logged_activity_levels(id),
-    unique (activity_log_id, logged_activity_level_id)
+    activity_log_id bigint not null references activity_logs(log_id),
+    minutes bigint not null,
+    name text not null
 );
 
 -- /activities/date/%s.json
@@ -157,29 +145,29 @@ create table if not exists activities_summaries(
 
 create table if not exists activities_summary_distances(
     id bigserial primary key not null,
-    activities_summary_id integer not null references activities_summaries(id),
-    distance_id integer not null references distances(id),
+    activities_summary_id bigint not null references activities_summaries(id),
+    distance_id bigint not null references distances(id),
     unique (activities_summary_id, distance_id)
 );
 
 create table if not exists activities_summary_heart_rate_zones(
     id bigserial primary key not null,
-    activities_summary_id integer not null references activities_summaries(id),
-    heart_rate_zone_id integer not null references heart_rate_zones(id),
+    activities_summary_id bigint not null references activities_summaries(id),
+    heart_rate_zone_id bigint not null references heart_rate_zones(id),
     unique (activities_summary_id, heart_rate_zone_id)
 );
 
 create table if not exists daily_activity_summaries(
     id bigserial primary key not null,
     user_id bigint not null references oauth2_authorized(id),
-    goals_id integer not null references goals(id),
-    summary_id integer not null references activities_summaries(id)
+    goals_id bigint not null references goals(id),
+    summary_id bigint not null references activities_summaries(id)
 );
 
 create table if not exists daily_activity_summary_activities(
     id bigserial primary key not null,
-    daily_activity_summary_id integer not null references daily_activity_summaries(id),
-    activities_summary_id integer not null references activities_summaries(id),
+    daily_activity_summary_id bigint not null references daily_activity_summaries(id),
+    activities_summary_id bigint not null references activities_summaries(id),
     unique (daily_activity_summary_id, activities_summary_id)
 );
 
@@ -193,9 +181,9 @@ create table if not exists life_time_time_steps(
 create table if not exists life_time_activities(
     id bigserial primary key not null,
     user_id bigint not null references oauth2_authorized(id),
-    distance_id integer not null references life_time_time_steps(id),
-    steps_id integer not null references life_time_time_steps(id),
-    floors_id integer not null references life_time_time_steps(id)
+    distance_id bigint not null references life_time_time_steps(id),
+    steps_id bigint not null references life_time_time_steps(id),
+    floors_id bigint not null references life_time_time_steps(id)
 );
 
 create table if not exists life_time_stats(
@@ -210,20 +198,20 @@ create table if not exists life_time_stats(
 
 create table if not exists best_stats_sources(
     id bigserial primary key not null,
-    total_id integer not null references life_time_activities(id),
-    tracker_id integer not null references life_time_activities(id)
+    total_id bigint not null references life_time_activities(id),
+    tracker_id bigint not null references life_time_activities(id)
 );
 
 create table if not exists lifetime_stats_sources(
     id bigserial primary key not null,
-    total_id integer not null references life_time_stats(id),
-    tracker_id integer not null references life_time_stats(id)
+    total_id bigint not null references life_time_stats(id),
+    tracker_id bigint not null references life_time_stats(id)
 );
 
 create table if not exists user_life_time_stats(
     id bigserial primary key not null,
-    best_id integer not null references best_stats_sources(id),
-    lifetime_id integer not null references lifetime_stats_sources(id)
+    best_id bigint not null references best_stats_sources(id),
+    lifetime_id bigint not null references lifetime_stats_sources(id)
 );
 
 -- /activities/favorite.json
@@ -250,11 +238,11 @@ create table if not exists minimal_activities(
 -- /activities/frequent.json
 create table if not exists frequent_activities(
     id bigserial primary key not null,
-    minimal_activity_id integer not null references minimal_activities(id)
+    minimal_activity_id bigint not null references minimal_activities(id)
 );
 
 -- /activities/recent.json
 create table if not exists recent_activities(
     id bigserial primary key not null,
-    minimal_activity_id integer not null references minimal_activities(id)
+    minimal_activity_id bigint not null references minimal_activities(id)
 );

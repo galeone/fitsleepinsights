@@ -1,8 +1,10 @@
 package app
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/galeone/fitbit"
@@ -11,6 +13,7 @@ import (
 	fitbit_types "github.com/galeone/fitbit/types"
 	"github.com/galeone/sleepbit/database"
 	"github.com/galeone/sleepbit/database/types"
+	"github.com/labstack/echo/v4"
 )
 
 func init() {
@@ -26,7 +29,7 @@ func init() {
 				fmt.Printf("dumper.Dump(all): %s", err)
 			}
 		} else {
-			fmt.Println(err.Error())
+			fmt.Println("here: ", err.Error())
 		}
 	})
 }
@@ -36,14 +39,14 @@ type dumper struct {
 	User *fitbit_pgdb.AuthorizedUser
 }
 
-// NewDumper creates a new dumper using the provided accesstoken
+// NewDumper creates a new dumper using the provided access token
 func NewDumper(accessToken string) (*dumper, error) {
 	authorizer := fitbit.NewAuthorizer(_db, _clientID, _clientSecret, _redirectURL)
 	if dbToken, err := _db.AuthorizedUser(accessToken); err != nil {
 		return nil, err
 	} else {
 		if dbToken.UserID == "" {
-			return nil, errors.New("Invalid token. Please login again")
+			return nil, errors.New("invalid token. Please login again")
 		}
 		authorizer.SetToken(dbToken)
 	}
@@ -54,10 +57,8 @@ func NewDumper(accessToken string) (*dumper, error) {
 		return nil, err
 	}
 
-	db := fitbit_pgdb.NewPGDB()
-
 	var abstractUser *fitbit_types.AuthorizedUser
-	if abstractUser, err = db.AuthorizedUser(accessToken); err != nil {
+	if abstractUser, err = _db.AuthorizedUser(accessToken); err != nil {
 		return nil, err
 	}
 
@@ -137,11 +138,7 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 			ActiveZoneMinutes: activity.ActiveZoneMinutes,
 			ID:                0,
 		}
-		// TODO: 	MinutesInHeartRateZones []MinutesInHeartRateZone `sql:"-"`
-		// igor creates the correct INSERT INTO but the RETURNING clause
-		// still contains the minutes_in_heart_rate_zones field that's NOT present
-		// and should have been ignored because marked as sql:"-".
-		//
+
 		if err = tx.Create(&activeZoneMinutes); err != nil {
 			fmt.Println(err)
 			break
@@ -149,33 +146,100 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 
 		manualValuesSpecified := types.ManualValuesSpecified{
 			ManualValuesSpecified: activity.ManualValuesSpecified,
-			ID:                    0,
+			// Just a number to create the query. Under the hood the ID is a bigserial
+			ID: 42,
 		}
 		if err = tx.Create(&manualValuesSpecified); err != nil {
 			fmt.Println(err)
 			break
 		}
 
-		source := types.LogSource{
-			LogSource: activity.Source,
-			ID:        0,
+		activityRow := types.ActivityLog{}
+
+		// There are activities without source
+		if activity.Source != nil {
+			// the API returns a string ID, but it contains a number
+			if numericID, err := strconv.ParseInt(activity.Source.ID, 10, 64); err == nil {
+				source := types.LogSource{
+					LogSource: *activity.Source,
+					ID:        numericID,
+				}
+				// If not present, then create
+				if tx.First(&source, numericID) != nil {
+					if err = tx.Create(&source); err != nil {
+						fmt.Println(err)
+						break
+					}
+				}
+
+				// Handle optional FK
+				activityRow.SourceID = sql.NullInt64{
+					Int64: source.ID,
+					Valid: true,
+				}
+			} else {
+				fmt.Println(err)
+				break
+			}
 		}
-		if err = tx.Create(&source); err != nil {
+
+		// Primary Key (not serial)
+		activityRow.LogID = activity.LogID
+		// All the retrieved fields
+		activityRow.ActivityLog = activity
+		// Non optional FKs: child already created
+		activityRow.UserID = d.User.ID
+		activityRow.ManualValuesSpecifiedID = manualValuesSpecified.ID
+		activityRow.ActiveZoneMinutesID = activeZoneMinutes.ID
+		// Overwritten time fields
+		activityRow.OriginalStartTime = activity.OriginalStartTime.Time
+		activityRow.StartTime = activity.StartTime.Time
+
+		if err = tx.Create(&activityRow); err != nil {
 			fmt.Println(err)
 			break
 		}
 
-		insert := types.ActivityLog{}
-		insert.ActivityLog = activity
+		// Once we have the activity stored, we can save the array types returned by the API
+		for _, activityLevel := range activity.ActivityLevel {
+			// TODO: i random values per PK non van bene, NON bisogna passare un valore
+			// provare a ridefinirli come sql.NullInt64 come primo tentativo, e non passarli alla struct
+			activityLevelRow := types.LoggedActivityLevel{
+				LoggedActivityLevel: activityLevel,
+				ActivityLogID:       activityRow.LogID,
+				ID:                  1, // random. it's bigserial
+			}
+			if err = tx.Create(&activityLevelRow); err != nil {
+				fmt.Println(err)
+				break
+			}
+		}
 
-		// FKs
-		insert.UserID = d.User.ID
-		insert.SourceID = source.ID
-		insert.ManualValuesSpecifiedID = manualValuesSpecified.ID
-		insert.ActiveZoneMinutesID = activeZoneMinutes.ID
-		if err = tx.Create(&insert); err != nil {
-			fmt.Println(err)
-			break
+		for _, hrZone := range activity.HeartRateZones {
+			hrZoneRow := types.HeartRateZone{
+				HeartRateZone: hrZone,
+				ActivityLogID: sql.NullInt64{
+					Int64: activityRow.LogID,
+					Valid: true,
+				},
+				ID: 1, // random, bigserial
+			}
+			if err = tx.Create(&hrZoneRow); err != nil {
+				fmt.Println(err)
+				break
+			}
+		}
+
+		for _, minInHRZone := range activity.ActiveZoneMinutes.MinutesInHeartRateZones {
+			minInHRZoneRow := types.MinutesInHeartRateZone{
+				MinutesInHeartRateZone: minInHRZone,
+				ActiveZoneMinutesID:    activeZoneMinutes.ID,
+				ID:                     1, // random
+			}
+			if err = tx.Create(&minInHRZoneRow); err != nil {
+				fmt.Println(err)
+				break
+			}
 		}
 
 		if err = tx.Commit(); err != nil {
@@ -198,4 +262,32 @@ func (d *dumper) Dump(after *time.Time) error {
 	// fmt.Println(d.userActivityDailyGoal())
 	fmt.Println(d.userActivityLogList(nil))
 	return nil
+}
+
+func Dump() echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
+		// secure, under middleware
+		authorizer := c.Get("fitbit").(*fitbit.Authorizer)
+		var userID *string
+		if userID, err = authorizer.UserID(); err != nil {
+			return err
+		}
+
+		var user fitbit_pgdb.AuthorizedUser
+		condition := fitbit_pgdb.AuthorizedUser{}
+		condition.UserID = *userID
+		if err = _db.Model(fitbit_pgdb.AuthorizedUser{}).Where(&condition).Scan(&user); err != nil {
+			return err
+		}
+
+		if dumper, err := NewDumper(user.AccessToken); err == nil {
+			var all *time.Time = nil
+			if err := dumper.Dump(all); err != nil {
+				fmt.Printf("dumper.Dump(all): %s", err)
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
+		return err
+	}
 }

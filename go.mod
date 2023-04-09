@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/aiplatform v1.35.0
 	github.com/galeone/fitbit v1.0.0
 	github.com/galeone/fitbit-pgdb v0.0.0-20221119131208-134dc5f90cf7
-	github.com/galeone/igor v1.0.3
+	github.com/galeone/igor v1.0.4
 	github.com/galeone/rts v1.0.0
 	github.com/galeone/tcx v1.0.0
 	github.com/google/uuid v1.3.0
@@ -53,3 +53,5 @@ require (
 replace github.com/galeone/fitbit => /home/pgaleone/go/src/github.com/galeone/fitbit
 
 replace github.com/galeone/fitbit-pgdb => /home/pgaleone/go/src/github.com/galeone/fitbit-pgdb
+
+replace github.com/galeone/igor => /home/pgaleone/go/src/github.com/galeone/igor
