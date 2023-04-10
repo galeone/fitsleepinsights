@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS heart_rate_time_point_values(
     id bigserial PRIMARY KEY not null,
-    resting_heart_rate bigint not null,
+    resting_heart_rate bigint not null default 0,
     heart_rate_zone_id bigint references heart_rate_zones(id)
 );
 

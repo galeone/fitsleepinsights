@@ -25,15 +25,6 @@ func (Goal) TableName() string {
 	return "goals"
 }
 
-type ManualValuesSpecified struct {
-	types.ManualValuesSpecified
-	ID int64 `igor:"primary_key"`
-}
-
-func (ManualValuesSpecified) TableName() string {
-	return "manual_values_specified"
-}
-
 type HeartRateZone struct {
 	types.HeartRateZone
 	ID            int64 `igor:"primary_key"`
@@ -46,7 +37,9 @@ func (HeartRateZone) TableName() string {
 
 type LogSource struct {
 	types.LogSource
-	ID int64 `igor:"primary_key"`
+	// String because the API sets the primary key and
+	// for example Fitbit4Android has an alphanumeric ID.
+	ID string `igor:"primary_key"`
 }
 
 func (LogSource) TableName() string {
@@ -88,15 +81,13 @@ type ActivityLog struct {
 	types.ActivityLog
 	// Disable all the concrete types and add the corresponding Type+ID field
 	// that contains the foreign key value.
-	LogID                   int64               `igor:"primary_key"`
-	User                    pgdb.AuthorizedUser `sql:"-"`
-	UserID                  int64
-	ActiveZoneMinutes       ActiveZoneMinutes `sql:"-"`
-	ActiveZoneMinutesID     int64
-	ManualValuesSpecified   ManualValuesSpecified `sql:"-"`
-	ManualValuesSpecifiedID int64
-	Source                  LogSource `sql:"-"`
-	SourceID                sql.NullInt64
+	LogID               int64               `igor:"primary_key"`
+	User                pgdb.AuthorizedUser `sql:"-"`
+	UserID              int64
+	ActiveZoneMinutes   ActiveZoneMinutes `sql:"-"`
+	ActiveZoneMinutesID sql.NullInt64
+	Source              LogSource `sql:"-"`
+	SourceID            sql.NullString
 	// Disable these fields: will be populated manually
 	// since those have dedicated tables where the info are stored.
 	ActivityLevel  []LoggedActivityLevel `sql:"-"`
@@ -104,6 +95,15 @@ type ActivityLog struct {
 	// Overwrite the custom FitbitDate(Time) fields and overwrite with the SQL-compatible time.Time
 	OriginalStartTime time.Time `json:"originalStartTime"`
 	StartTime         time.Time `json:"startTime"`
+	// Fields that the API for some reason puts on a different type, but have a 1:1 relationship
+	// with the activity, and so they have been merged
+	ManualValuesSpecified  interface{} `sql:"-"`
+	ManualInsertedCalories bool
+	ManualInsertedDistance bool
+	ManualInsertedSteps    bool
+	// Nullable types
+	HeartRateLink sql.NullString // e.g. custom activities don't have hr tracking
+	TcxLink       sql.NullString
 }
 
 func (ActivityLog) TableName() string {

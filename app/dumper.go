@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/galeone/fitbit"
@@ -132,55 +131,60 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 	}
 
 	for _, activity := range value.Activities {
-		tx := _db.Begin()
-		// Child first
-		activeZoneMinutes := types.ActiveZoneMinutes{
-			ActiveZoneMinutes: activity.ActiveZoneMinutes,
-			ID:                0,
-		}
-
-		if err = tx.Create(&activeZoneMinutes); err != nil {
-			fmt.Println(err)
-			break
-		}
-
-		manualValuesSpecified := types.ManualValuesSpecified{
-			ManualValuesSpecified: activity.ManualValuesSpecified,
-			// Just a number to create the query. Under the hood the ID is a bigserial
-			ID: 42,
-		}
-		if err = tx.Create(&manualValuesSpecified); err != nil {
-			fmt.Println(err)
-			break
-		}
-
 		activityRow := types.ActivityLog{}
+		if err = _db.First(&activityRow, activity.LogID); err == nil {
+			fmt.Println("skipping activity ", activity.LogID, ": already present")
+			continue
+		}
 
-		// There are activities without source
-		if activity.Source != nil {
-			// the API returns a string ID, but it contains a number
-			if numericID, err := strconv.ParseInt(activity.Source.ID, 10, 64); err == nil {
-				source := types.LogSource{
-					LogSource: *activity.Source,
-					ID:        numericID,
-				}
-				// If not present, then create
-				if tx.First(&source, numericID) != nil {
-					if err = tx.Create(&source); err != nil {
-						fmt.Println(err)
-						break
-					}
-				}
+		tx := _db.Begin()
+		// There are activities without active zone minutes
+		if activity.ActiveZoneMinutes.TotalMinutes > 0 {
+			activeZoneMinutes := types.ActiveZoneMinutes{
+				ActiveZoneMinutes: activity.ActiveZoneMinutes,
+			}
 
-				// Handle optional FK
-				activityRow.SourceID = sql.NullInt64{
-					Int64: source.ID,
-					Valid: true,
-				}
-			} else {
+			if err = tx.Create(&activeZoneMinutes); err != nil {
 				fmt.Println(err)
 				break
 			}
+			for _, minInHRZone := range activity.ActiveZoneMinutes.MinutesInHeartRateZones {
+				minInHRZoneRow := types.MinutesInHeartRateZone{
+					MinutesInHeartRateZone: minInHRZone,
+					ActiveZoneMinutesID:    activeZoneMinutes.ID,
+				}
+				if err = tx.Create(&minInHRZoneRow); err != nil {
+					fmt.Println(err)
+					break
+				}
+			}
+			activityRow.ActiveZoneMinutesID = sql.NullInt64{
+				Int64: activeZoneMinutes.ID,
+				Valid: true,
+			}
+		}
+
+		// There are activities without source
+		if activity.Source != nil {
+			var source types.LogSource // NOTE: First requires the dest field to be zero to work correctly
+			// If not present, then create
+			if err = tx.First(&source, activity.Source.ID); err != nil {
+				source = types.LogSource{
+					LogSource: *activity.Source,
+					ID:        activity.Source.ID,
+				}
+				if err = tx.Create(&source); err != nil {
+					fmt.Println(err)
+					break
+				}
+			}
+
+			// Handle optional FK
+			activityRow.SourceID = sql.NullString{
+				String: source.ID,
+				Valid:  true,
+			}
+
 		}
 
 		// Primary Key (not serial)
@@ -189,11 +193,14 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 		activityRow.ActivityLog = activity
 		// Non optional FKs: child already created
 		activityRow.UserID = d.User.ID
-		activityRow.ManualValuesSpecifiedID = manualValuesSpecified.ID
-		activityRow.ActiveZoneMinutesID = activeZoneMinutes.ID
 		// Overwritten time fields
 		activityRow.OriginalStartTime = activity.OriginalStartTime.Time
 		activityRow.StartTime = activity.StartTime.Time
+		// Fields that the API for some reason puts on a different type, but have a 1:1 relationship
+		// with the activity, and so they have been merged
+		activityRow.ManualInsertedCalories = activity.ManualValuesSpecified.Calories
+		activityRow.ManualInsertedSteps = activity.ManualValuesSpecified.Steps
+		activityRow.ManualInsertedDistance = activity.ManualValuesSpecified.Distance
 
 		if err = tx.Create(&activityRow); err != nil {
 			fmt.Println(err)
@@ -202,12 +209,9 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 
 		// Once we have the activity stored, we can save the array types returned by the API
 		for _, activityLevel := range activity.ActivityLevel {
-			// TODO: i random values per PK non van bene, NON bisogna passare un valore
-			// provare a ridefinirli come sql.NullInt64 come primo tentativo, e non passarli alla struct
 			activityLevelRow := types.LoggedActivityLevel{
 				LoggedActivityLevel: activityLevel,
 				ActivityLogID:       activityRow.LogID,
-				ID:                  1, // random. it's bigserial
 			}
 			if err = tx.Create(&activityLevelRow); err != nil {
 				fmt.Println(err)
@@ -222,21 +226,8 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 					Int64: activityRow.LogID,
 					Valid: true,
 				},
-				ID: 1, // random, bigserial
 			}
 			if err = tx.Create(&hrZoneRow); err != nil {
-				fmt.Println(err)
-				break
-			}
-		}
-
-		for _, minInHRZone := range activity.ActiveZoneMinutes.MinutesInHeartRateZones {
-			minInHRZoneRow := types.MinutesInHeartRateZone{
-				MinutesInHeartRateZone: minInHRZone,
-				ActiveZoneMinutesID:    activeZoneMinutes.ID,
-				ID:                     1, // random
-			}
-			if err = tx.Create(&minInHRZoneRow); err != nil {
 				fmt.Println(err)
 				break
 			}

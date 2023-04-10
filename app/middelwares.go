@@ -5,6 +5,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/galeone/fitbit"
@@ -35,7 +36,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 				if cookie, err = c.Cookie("authorizing"); err == nil {
 					var authorizing *types.AuthorizingUser
 					if authorizing, err = _db.AuthorizingUser(cookie.Value); err != nil {
-						c.Logger().Printf("[RequireFitbit] _db.AuthorizingUser: %s", err)
+						fmt.Printf("[RequireFitbit] _db.AuthorizingUser: %s", err)
 						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					authorizer.SetAuthorizing(authorizing)
@@ -46,11 +47,11 @@ func RequireFitbit() echo.MiddlewareFunc {
 				if cookie, err = c.Cookie("token"); err == nil {
 					var dbToken *types.AuthorizedUser
 					if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
-						c.Logger().Printf("[RequireFitbit] _db.AuthorizedUser: %s", err)
+						fmt.Printf("[RequireFitbit] _db.AuthorizedUser: %s", err)
 						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					if dbToken.UserID == "" {
-						c.Logger().Printf("Invalid token. Please login again")
+						fmt.Printf("Invalid token. Please login again")
 						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					authorizer.SetToken(dbToken)
