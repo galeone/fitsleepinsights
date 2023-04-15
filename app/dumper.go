@@ -86,7 +86,10 @@ func (d *dumper) activityCaloriesTimeseries(startDate, endDate *time.Time) (err 
 		timestep := types.ActivityCaloriesSeries{}
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
-		timestep.Value = t.Value
+		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
+			fmt.Println(err)
+			break
+		}
 
 		dest := types.ActivityCaloriesSeries{}
 		// No error = found
@@ -118,7 +121,10 @@ func (d *dumper) userActivityDailyGoal() (err error) {
 	insert.StartDate = now
 	insert.EndDate = now
 
-	return _db.Create(&insert)
+	if err = _db.Model(types.Goal{}).Where(&insert).Scan(&insert); err != nil {
+		return _db.Create(&insert)
+	}
+	return
 }
 
 func (d *dumper) userActivityLogList(after *time.Time) (err error) {
@@ -313,6 +319,60 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 	return
 }
 
+func (d *dumper) userActivityWeeklyGoal() (err error) {
+	var value *fitbit_types.UserGoal
+	if value, err = d.fb.UserActivityWeeklyGoal(); err != nil {
+		return err
+	}
+
+	now := time.Now()
+	// StartDate = monday of the current week
+	// EndDate = sunday of the same week
+	insert := types.Goal{Goal: value.Goals}
+	insert.UserID = d.User.ID
+	insert.StartDate = now.Add(-time.Duration((int(now.Weekday()) - 1) * 24 * int(time.Hour)))
+	insert.EndDate = insert.StartDate.Add(time.Duration(24 * 6 * time.Hour))
+
+	if err = _db.Model(types.Goal{}).Where(&insert).Scan(&insert); err != nil {
+		return _db.Create(&insert)
+	}
+
+	return
+}
+
+func (d *dumper) BMITimeseries(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.BMISeries
+	if value, err = d.fb.UserBMITimeSeries(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.TimeSeries {
+		timestep := types.BMISeries{}
+		timestep.UserID = d.User.ID
+		timestep.Date = t.DateTime.Time
+		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		dest := types.BMISeries{}
+		// No error = found
+		if err = tx.Model(types.BMISeries{}).Where(&timestep).Scan(&dest); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
 // Dump fetches every data available on the user profile, up to this moment.
 // This function is called:
 //   - When the user gives the permission to the app (on the INSERT on the table
@@ -326,12 +386,14 @@ func (d *dumper) Dump(after *time.Time) error {
 	// There are functions that don't have an "after" period
 	// because Fitbit allows to get only the daily data.
 
-	// fmt.Println(d.userActivityDailyGoal())
+	fmt.Println(d.userActivityDailyGoal())
+	fmt.Println(d.userActivityWeeklyGoal())
 
 	// NOTE: this is not a dump ALL activities. But only the latest 100 activities
 	// because hte Fitbit API limit (for no reason) this endpoint data.
-	fmt.Println(d.userActivityLogList(nil))
-	fmt.Println(d.activityCaloriesTimeseries(&startDate, &endDate))
+	//fmt.Println(d.userActivityLogList(nil))
+	//fmt.Println(d.activityCaloriesTimeseries(&startDate, &endDate))
+	fmt.Println(d.BMITimeseries(&startDate, &endDate))
 	return nil
 }
 
