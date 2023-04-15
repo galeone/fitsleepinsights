@@ -5,12 +5,18 @@
 package types
 
 import (
+	"time"
+
 	pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/fitbit/types"
 )
 
 type BodyWeightSeries struct {
-	types.BodyWeightSeries
+	types.TimeStep
+	DateTime types.FitbitDate `sql:"-"` // It's a Date
+	Date     time.Time
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
 	ID     int64               `igor:"primary_key"`
 	User   pgdb.AuthorizedUser `sql:"-"`
 	UserID int64
@@ -21,7 +27,11 @@ func (BodyWeightSeries) TableName() string {
 }
 
 type BMISeries struct {
-	types.BMISeries
+	types.TimeStep
+	DateTime types.FitbitDate `sql:"-"` // It's a Date
+	Date     time.Time
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
 	ID     int64               `igor:"primary_key"`
 	User   pgdb.AuthorizedUser `sql:"-"`
 	UserID int64
@@ -32,7 +42,11 @@ func (BMISeries) TableName() string {
 }
 
 type BodyFatSeries struct {
-	types.BodyFatSeries
+	types.TimeStep
+	DateTime types.FitbitDate `sql:"-"` // It's a Date
+	Date     time.Time
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
 	ID     int64               `igor:"primary_key"`
 	User   pgdb.AuthorizedUser `sql:"-"`
 	UserID int64

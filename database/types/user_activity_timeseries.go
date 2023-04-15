@@ -15,9 +15,11 @@ type ActivityCaloriesSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (ActivityCaloriesSeries) TableName() string {
@@ -28,9 +30,11 @@ type CaloriesSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (CaloriesSeries) TableName() string {
@@ -41,9 +45,11 @@ type CaloriesBMRSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (CaloriesBMRSeries) TableName() string {
@@ -54,9 +60,11 @@ type DistanceSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (DistanceSeries) TableName() string {
@@ -67,9 +75,11 @@ type ElevationSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (ElevationSeries) TableName() string {
@@ -80,9 +90,11 @@ type FloorsSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (FloorsSeries) TableName() string {
@@ -93,9 +105,11 @@ type MinutesSedentarySeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinutesSedentarySeries) TableName() string {
@@ -106,9 +120,11 @@ type MinutesLightlyActiveSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinutesLightlyActiveSeries) TableName() string {
@@ -119,9 +135,11 @@ type MinutesFairlyActiveSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinutesFairlyActiveSeries) TableName() string {
@@ -132,9 +150,11 @@ type MinutesVeryActiveSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (MinutesVeryActiveSeries) TableName() string {
@@ -145,9 +165,11 @@ type StepsSeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
 	Date     time.Time
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
+	// Overwrite Value type. In the API it's returned as a string
+	Value  float64
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
 }
 
 func (StepsSeries) TableName() string {
