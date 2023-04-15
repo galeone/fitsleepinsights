@@ -340,7 +340,7 @@ func (d *dumper) userActivityWeeklyGoal() (err error) {
 	return
 }
 
-func (d *dumper) BMITimeseries(startDate, endDate *time.Time) (err error) {
+func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.BMISeries
 	if value, err = d.fb.UserBMITimeSeries(startDate, endDate); err != nil {
 		return
@@ -355,9 +355,72 @@ func (d *dumper) BMITimeseries(startDate, endDate *time.Time) (err error) {
 			break
 		}
 
-		dest := types.BMISeries{}
 		// No error = found
-		if err = tx.Model(types.BMISeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.BMISeries{}).Where(&timestep).Scan(&timestep); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.BodyFatSeries
+	if value, err = d.fb.UserBodyFatTimeSeries(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.TimeSeries {
+		timestep := types.BodyFatSeries{}
+		timestep.UserID = d.User.ID
+		timestep.Date = t.DateTime.Time
+		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		// No error = found
+		if err = tx.Model(types.BodyFatSeries{}).Where(&timestep).Scan(&timestep); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.BodyWeightSeries
+	if value, err = d.fb.UserBodyWeightTimeSeries(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.TimeSeries {
+		timestep := types.BodyWeightSeries{}
+		timestep.UserID = d.User.ID
+		timestep.Date = t.DateTime.Time
+		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		// No error = found
+		if err = tx.Model(types.BodyWeightSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -386,14 +449,16 @@ func (d *dumper) Dump(after *time.Time) error {
 	// There are functions that don't have an "after" period
 	// because Fitbit allows to get only the daily data.
 
-	fmt.Println(d.userActivityDailyGoal())
-	fmt.Println(d.userActivityWeeklyGoal())
+	//fmt.Println(d.userActivityDailyGoal())
+	//fmt.Println(d.userActivityWeeklyGoal())
 
 	// NOTE: this is not a dump ALL activities. But only the latest 100 activities
 	// because hte Fitbit API limit (for no reason) this endpoint data.
 	//fmt.Println(d.userActivityLogList(nil))
 	//fmt.Println(d.activityCaloriesTimeseries(&startDate, &endDate))
-	fmt.Println(d.BMITimeseries(&startDate, &endDate))
+	fmt.Println(d.userBMITimeseries(&startDate, &endDate))
+	fmt.Println(d.userBodyFatTimeseries(&startDate, &endDate))
+	fmt.Println(d.userBodyWeightTimeseries(&startDate, &endDate))
 	return nil
 }
 
