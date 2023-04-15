@@ -101,9 +101,13 @@ type ActivityLog struct {
 	ManualInsertedCalories bool
 	ManualInsertedDistance bool
 	ManualInsertedSteps    bool
+	// Disable TCX Link and add instead to Nullable XML type
+	// The table has a `txc` field of type `xml`
+	TcxLink string `sql:"-"`
+	Tcx     sql.NullString
 	// Nullable types
 	HeartRateLink sql.NullString // e.g. custom activities don't have hr tracking
-	TcxLink       sql.NullString
+
 }
 
 func (ActivityLog) TableName() string {

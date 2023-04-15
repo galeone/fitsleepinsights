@@ -15,6 +15,7 @@ import (
 	fitbit_types "github.com/galeone/fitbit/types"
 	"github.com/galeone/sleepbit/database"
 	"github.com/galeone/sleepbit/database/types"
+	"github.com/galeone/tcx"
 	"github.com/labstack/echo/v4"
 )
 
@@ -75,15 +76,33 @@ func NewDumper(accessToken string) (*dumper, error) {
 
 // TODO: https://pkg.go.dev/github.com/galeone/fitbit@v1.0.0/client ALL
 
-func (d *dumper) acvitityCaloriesTimeseries(startDate, endDate *time.Time) (err error) {
-	/*
-		var value *fitbit_types.ActivityCaloriesSeries
-		if value, err = fp.UserActivityCaloriesTimeseries(startDate, endDate); err != nil {
-			return
+func (d *dumper) activityCaloriesTimeseries(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.ActivityCaloriesSeries
+	if value, err = d.fb.UserActivityCaloriesTimeseries(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.TimeSeries {
+		timestep := types.ActivityCaloriesSeries{}
+		timestep.UserID = d.User.ID
+		timestep.Date = t.DateTime.Time
+		timestep.Value = t.Value
+
+		dest := types.ActivityCaloriesSeries{}
+		// No error = found
+		if err = tx.Model(types.ActivityCaloriesSeries{}).Where(&timestep).Scan(&dest); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
 		}
-		for _, t := range value.TimeSeries {
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
 		}
-	*/
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
 	return
 }
 
@@ -146,7 +165,7 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 		for _, activity := range value.Activities {
 			activityRow := types.ActivityLog{}
 			if err = _db.First(&activityRow, activity.LogID); err == nil {
-				// fmt.Println("skipping activity ", activity.LogID, ": already present")
+				fmt.Println("skipping activity ", activity.LogID, ": already present")
 				continue
 			}
 
@@ -214,6 +233,21 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 			activityRow.ManualInsertedCalories = activity.ManualValuesSpecified.Calories
 			activityRow.ManualInsertedSteps = activity.ManualValuesSpecified.Steps
 			activityRow.ManualInsertedDistance = activity.ManualValuesSpecified.Distance
+
+			var xml *tcx.TCXDB
+			if xml, err = d.fb.UserActivityTCX(activity.LogID); err == nil {
+				if textBytes, err := tcx.ToBytes(*xml); err != nil {
+					fmt.Println(err)
+				} else {
+					activityRow.Tcx = sql.NullString{
+						String: string(textBytes),
+						Valid:  true,
+					}
+				}
+			} else {
+				fmt.Println(err)
+				// Do not break: who cares about failing fetch of TCX data (Fitbit has several problems with that)
+			}
 
 			if err = tx.Create(&activityRow); err != nil {
 				fmt.Println(err)
@@ -285,6 +319,10 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 //     triggered by the database notification)
 //   - Periodically by a go routine. In this case, the `after` variable is valid.
 func (d *dumper) Dump(after *time.Time) error {
+	// Date super-old in the past (but not too old to make the server return an error)
+	//startDate, _ := time.Parse(fitbit_types.DateLayout, "2009-01-01")
+	endDate := time.Now()
+	startDate := endDate.Add(-time.Duration(24*60) * time.Hour)
 	// There are functions that don't have an "after" period
 	// because Fitbit allows to get only the daily data.
 
@@ -293,6 +331,7 @@ func (d *dumper) Dump(after *time.Time) error {
 	// NOTE: this is not a dump ALL activities. But only the latest 100 activities
 	// because hte Fitbit API limit (for no reason) this endpoint data.
 	fmt.Println(d.userActivityLogList(nil))
+	fmt.Println(d.activityCaloriesTimeseries(&startDate, &endDate))
 	return nil
 }
 

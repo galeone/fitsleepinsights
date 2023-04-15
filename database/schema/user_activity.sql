@@ -85,7 +85,8 @@ create table if not exists activity_logs(
     speed double precision not null default 0,
     start_time timestamp not null,
     steps bigint not null default 0,
-    tcx_link text -- nullable (for manual inserted activities)
+    -- the api returns a tcx_link, that we fetch and insert here
+    tcx xml -- nullable (for manual inserted activities)
 );
 
 /*
