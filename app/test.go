@@ -24,7 +24,6 @@ func TestGET() echo.HandlerFunc {
 
 		var fb *client.Client
 		if fb, err = client.NewClient(authorizer); err != nil {
-			fmt.Println(1)
 			return
 		}
 		var logs *types.ActivityLogList

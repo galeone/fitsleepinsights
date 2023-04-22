@@ -5,26 +5,21 @@
 package types
 
 import (
+	"time"
+
 	pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/fitbit/types"
 )
 
-type HeartRateTimePointValue struct {
-	types.HeartRateTimePointValue
-	ID            int64         `igor:"primary_key"`
-	HeartRateZone HeartRateZone `sql:"-"`
-}
-
-func (HeartRateTimePointValue) TableName() string {
-	return "heart_rate_time_point_values"
-}
-
 type HeartRateActivities struct {
 	types.HeartRateActivities
-	ID                      int64               `igor:"primary_key"`
-	User                    pgdb.AuthorizedUser `sql:"-"`
-	UserID                  int64
-	HeartRateTimePointValue HeartRateTimePointValue `sql:"-"`
+	ID     int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
+	// Value changed type, who cares, we need to ignore it, it's a filed useful only when decoding json
+	Value    int64            `sql:"-"`
+	DateTime types.FitbitDate `sql:"-"` // It's a Date
+	Date     time.Time
 }
 
 func (HeartRateActivities) TableName() string {

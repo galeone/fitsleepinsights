@@ -101,12 +101,13 @@ create table if not exists heart_rate_zones(
     -- nullable activity_log_id because heart_rate_zones is also used in
     -- user_hr_timeseries that's not connected to an activity_log
     activity_log_id bigint null references activity_logs(log_id),
+    -- alter.sql adds the foreign key heart_rate_activity_id
     calories_out double precision not null default 0,
     max bigint not null default 0,
     min bigint not null default 0,
     minutes bigint not null default 0,
     name text not null,
-    "type" text null default 'DEFAULT'
+    "type" text not null default 'DEFAULT'
 );
 
 create table if not exists logged_activity_levels(

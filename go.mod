@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	cloud.google.com/go/aiplatform v1.35.0
-	github.com/galeone/fitbit v1.0.0
+	github.com/galeone/fitbit v1.0.1
 	github.com/galeone/fitbit-pgdb v1.0.1
 	github.com/galeone/igor v1.0.6
 	github.com/galeone/rts v1.0.0

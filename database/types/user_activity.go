@@ -27,8 +27,10 @@ func (Goal) TableName() string {
 
 type HeartRateZone struct {
 	types.HeartRateZone
-	ID            int64 `igor:"primary_key"`
-	ActivityLogID sql.NullInt64
+	ID                  int64 `igor:"primary_key"`
+	ActivityLogID       sql.NullInt64
+	HeartRateActivityID sql.NullInt64
+	Type                string
 }
 
 func (HeartRateZone) TableName() string {

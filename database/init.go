@@ -58,6 +58,9 @@ var (
 
 	//go:embed schema/user_temperature.sql
 	user_temperature string
+
+	//go:embed schema/alter.sql
+	alter string
 )
 
 func init() {
@@ -148,6 +151,11 @@ func init() {
 	}
 
 	if err = tx.Exec(user_temperature); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(alter); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}

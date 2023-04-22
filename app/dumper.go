@@ -568,41 +568,60 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 	return
 }
 
-// TODO: tipo di dato (db e roba) per hr timeseries
-/*
 func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.HeartRateSeries
 	if value, err = d.fb.UserHeartRateTimeseries(startDate, endDate); err != nil {
 		return
 	}
 	tx := _db.Begin()
-	for _, t := range value.TimeSeries {
-		timestep := types.FloorsSeries{}
-		timestep.UserID = d.User.ID
-		timestep.Date = t.DateTime.Time
-		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
+	for _, hrActivity := range value.ActivitiesHeart {
+		hrActivityInsert := types.HeartRateActivities{}
+		hrActivityInsert.HeartRateActivities = hrActivity
+		hrActivityInsert.UserID = d.User.ID
+		hrActivityInsert.Date = hrActivity.DateTime.Time
+
+		// No error = found
+		if err = tx.Model(types.HeartRateActivities{}).Where(&hrActivityInsert).Scan(&hrActivityInsert); err == nil {
+			fmt.Println("Skipping ", hrActivityInsert)
+			continue
+		}
+
+		if err = tx.Create(&hrActivityInsert); err != nil {
 			fmt.Println(err)
 			break
 		}
 
-		dest := types.FloorsSeries{}
-		// No error = found
-		if err = tx.Model(types.FloorsSeries{}).Where(&timestep).Scan(&dest); err == nil {
-			fmt.Println("Skipping ", t)
-			continue
+		insertHrZone := func(hrZone *fitbit_types.HeartRateZone, zoneType string) error {
+			value := types.HeartRateZone{
+				HeartRateZone: *hrZone,
+				Type:          zoneType,
+				HeartRateActivityID: sql.NullInt64{
+					Valid: true,
+					Int64: hrActivityInsert.ID,
+				},
+			}
+			return tx.Create(&value)
 		}
-		if err = tx.Create(&timestep); err != nil {
-			fmt.Println(err)
-			break
+		for _, hrZone := range hrActivity.Value.HeartRateZones {
+			if err := insertHrZone(&hrZone, "DEFAULT"); err != nil {
+				fmt.Println(err)
+				break
+			}
+		}
+		for _, customHrZone := range hrActivity.Value.CustomHeartRateZones {
+			if err := insertHrZone(&customHrZone, "CUSTOM"); err != nil {
+				fmt.Println(err)
+				break
+			}
 		}
 	}
+
 	if err = tx.Commit(); err != nil {
 		fmt.Println(err)
 	}
 
 	return
 }
-*/
 
 func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.MinutesFairlyActiveSeries
@@ -778,7 +797,9 @@ func (d *dumper) Dump(after *time.Time) error {
 	// Date super-old in the past (but not too old to make the server return an error)
 	//startDate, _ := time.Parse(fitbit_types.DateLayout, "2009-01-01")
 	endDate := time.Now()
-	startDate := endDate.Add(-time.Duration(24*60) * time.Hour)
+	//startDate := endDate.Add(-time.Duration(24*60) * time.Hour)
+	startDate := endDate.Add(-time.Duration(24*1) * time.Hour)
+
 	// There are functions that don't have an "after" period
 	// because Fitbit allows to get only the daily data.
 
@@ -787,6 +808,7 @@ func (d *dumper) Dump(after *time.Time) error {
 
 	// NOTE: this is not a dump ALL activities. But only the latest 100 activities
 	// because hte Fitbit API limit (for no reason) this endpoint data.
+
 	fmt.Println(d.userActivityLogList(nil))
 	fmt.Println(d.userActivityCaloriesTimeseries(&startDate, &endDate))
 	fmt.Println(d.userBMITimeseries(&startDate, &endDate))
@@ -801,6 +823,8 @@ func (d *dumper) Dump(after *time.Time) error {
 	fmt.Println(d.userMinutesSedentaryTimeseries(&startDate, &endDate))
 	fmt.Println(d.userMinutesVeryActiveTimeseries(&startDate, &endDate))
 	fmt.Println(d.userStepsTimeseries(&startDate, &endDate))
+
+	fmt.Println(d.userHeartRateTimeseries(&startDate, &endDate))
 	return nil
 }
 
