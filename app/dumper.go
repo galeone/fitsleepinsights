@@ -92,9 +92,8 @@ func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (
 			break
 		}
 
-		dest := types.ActivityCaloriesSeries{}
 		// No error = found
-		if err = tx.Model(types.ActivityCaloriesSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.ActivityCaloriesSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -457,9 +456,8 @@ func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err e
 			break
 		}
 
-		dest := types.CaloriesBMRSeries{}
 		// No error = found
-		if err = tx.Model(types.CaloriesBMRSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.CaloriesBMRSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -490,9 +488,8 @@ func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err erro
 			break
 		}
 
-		dest := types.CaloriesSeries{}
 		// No error = found
-		if err = tx.Model(types.CaloriesSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.CaloriesSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -523,9 +520,8 @@ func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err erro
 			break
 		}
 
-		dest := types.DistanceSeries{}
 		// No error = found
-		if err = tx.Model(types.DistanceSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.DistanceSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -556,9 +552,8 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 			break
 		}
 
-		dest := types.FloorsSeries{}
 		// No error = found
-		if err = tx.Model(types.FloorsSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.FloorsSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -581,10 +576,11 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 	}
 	tx := _db.Begin()
 	for _, hrActivity := range value.ActivitiesHeart {
-		hrActivityInsert := types.HeartRateActivities{}
-		hrActivityInsert.HeartRateActivities = hrActivity
-		hrActivityInsert.UserID = d.User.ID
-		hrActivityInsert.Date = hrActivity.DateTime.Time
+		hrActivityInsert := types.HeartRateActivities{
+			UserID:           d.User.ID,
+			Date:             hrActivity.DateTime.Time,
+			RestingHeartRate: hrActivity.Value.RestingHeartRate,
+		}
 
 		// No error = found
 		if err = tx.Model(types.HeartRateActivities{}).Where(&hrActivityInsert).Scan(&hrActivityInsert); err == nil {
@@ -644,9 +640,8 @@ func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time
 			break
 		}
 
-		dest := types.MinutesFairlyActiveSeries{}
 		// No error = found
-		if err = tx.Model(types.MinutesFairlyActiveSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.MinutesFairlyActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -677,9 +672,8 @@ func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Tim
 			break
 		}
 
-		dest := types.MinutesLightlyActiveSeries{}
 		// No error = found
-		if err = tx.Model(types.MinutesLightlyActiveSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.MinutesLightlyActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -710,9 +704,8 @@ func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (
 			break
 		}
 
-		dest := types.MinutesSedentarySeries{}
 		// No error = found
-		if err = tx.Model(types.MinutesSedentarySeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.MinutesSedentarySeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -743,9 +736,8 @@ func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) 
 			break
 		}
 
-		dest := types.MinutesVeryActiveSeries{}
 		// No error = found
-		if err = tx.Model(types.MinutesVeryActiveSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.MinutesVeryActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -776,9 +768,206 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 			break
 		}
 
-		dest := types.StepsSeries{}
 		// No error = found
-		if err = tx.Model(types.StepsSeries{}).Where(&timestep).Scan(&dest); err == nil {
+		if err = tx.Model(types.StepsSeries{}).Where(&timestep).Scan(&timestep); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.ElevationSeries
+	if value, err = d.fb.UserElevationTimeseries(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.TimeSeries {
+		timestep := types.ElevationSeries{}
+		timestep.UserID = d.User.ID
+		timestep.Date = t.DateTime.Time
+		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		// No error = found
+		if err = tx.Model(types.ElevationSeries{}).Where(&timestep).Scan(&timestep); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func (d *dumper) userCoreTemperature(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.CoreTemperature
+	if value, err = d.fb.UserCoreTemperature(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.TempCore {
+		timestep := types.CoreTemperature{
+			CoreTemperatureTimePoint: t,
+			UserID:                   d.User.ID,
+			Date:                     t.DateTime.Time,
+		}
+
+		// No error = found
+		if err = tx.Model(types.CoreTemperature{}).Where(&timestep).Scan(&timestep); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.SkinTemperature
+	if value, err = d.fb.UserSkinTemperature(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.TempSkin {
+		timestep := types.SkinTemperature{
+			SkinTemperatureTimePoint: t,
+			UserID:                   d.User.ID,
+			Date:                     t.DateTime.Time,
+			Value:                    t.Value.NightlyRelative,
+		}
+
+		// No error = found
+		if err = tx.Model(types.SkinTemperature{}).Where(&timestep).Scan(&timestep); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.CardioFitnessScore
+	if value, err = d.fb.UserCardioFitnessScore(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.CardioScore {
+		timestep := types.CardioFitnessScore{
+			CardioScoreTimePoint: t,
+			UserID:               d.User.ID,
+			Date:                 t.DateTime.Time,
+		}
+		vo2MaxRange := strings.Split(t.Value.Vo2Max, "-")
+		if len(vo2MaxRange) != 2 {
+			return fmt.Errorf("expected a vo2max range, got: %s", t.Value.Vo2Max)
+		}
+		if timestep.Vo2MaxLowerBound, err = strconv.ParseFloat(vo2MaxRange[0], 64); err != nil {
+			fmt.Println(err)
+			break
+		}
+		if timestep.Vo2MaxUpperBound, err = strconv.ParseFloat(vo2MaxRange[1], 64); err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		// No error = found
+		if err = tx.Model(types.CardioFitnessScore{}).Where(&timestep).Scan(&timestep); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func (d *dumper) userOxygenSaturation(startDate, endDate *time.Time) (err error) {
+	var values *fitbit_types.OxygenSaturations
+	if values, err = d.fb.UserOxygenSaturation(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range *values {
+		timestep := types.OxygenSaturation{
+			UserID: d.User.ID,
+			Date:   t.DateTime.Time,
+			Avg:    t.Value.Avg,
+			Max:    t.Value.Max,
+			Min:    t.Value.Min,
+		}
+
+		// No error = found
+		if err = tx.Model(types.OxygenSaturation{}).Where(&timestep).Scan(&timestep); err == nil {
+			fmt.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			fmt.Println(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func (d *dumper) userHeartRateVariability(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.HeartRateVariability
+	if value, err = d.fb.UserHeartRateVariability(startDate, endDate); err != nil {
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.Hrv {
+		timestep := types.HeartRateVariabilityTimeSeries{
+			UserID:     d.User.ID,
+			Date:       t.DateTime.Time,
+			DailyRmssd: t.Value.DailyRmssd,
+			DeepRmssd:  t.Value.DeepRmssd,
+		}
+
+		// No error = found
+		if err = tx.Model(types.HeartRateVariabilityTimeSeries{}).Where(&timestep).Scan(&timestep); err == nil {
 			fmt.Println("Skipping ", t)
 			continue
 		}
@@ -888,33 +1077,40 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	//startDate, _ := time.Parse(fitbit_types.DateLayout, "2009-01-01")
 	endDate := time.Now()
 	//startDate := endDate.Add(-time.Duration(24*60) * time.Hour)
-	startDate := endDate.Add(-time.Duration(24*1) * time.Hour)
+	startDate := endDate.Add(-time.Duration(24*10) * time.Hour)
 
 	// There are functions that don't have an "after" period
 	// because Fitbit allows to get only the daily data.
 
-	fmt.Println(d.userActivityDailyGoal())
-	fmt.Println(d.userActivityWeeklyGoal())
+	d.userActivityDailyGoal()
+	d.userActivityWeeklyGoal()
 
 	// NOTE: this is not a dump ALL activities. But only the latest 100 activities
 	// because hte Fitbit API limit (for no reason) this endpoint data.
-	fmt.Println(d.userActivityLogList(nil, dumpTCX))
-	fmt.Println(d.userActivityCaloriesTimeseries(&startDate, &endDate))
-	fmt.Println(d.userBMITimeseries(&startDate, &endDate))
-	fmt.Println(d.userBodyFatTimeseries(&startDate, &endDate))
-	fmt.Println(d.userBodyWeightTimeseries(&startDate, &endDate))
-	fmt.Println(d.userCaloriesBMRTimeseries(&startDate, &endDate))
-	fmt.Println(d.userCaloriesTimeseries(&startDate, &endDate))
-	fmt.Println(d.userDistanceTimeseries(&startDate, &endDate))
-	fmt.Println(d.userFloorsTimeseries(&startDate, &endDate))
-	fmt.Println(d.userMinutesFairlyActiveTimeseries(&startDate, &endDate))
-	fmt.Println(d.userMinutesLightlyActiveTimeseries(&startDate, &endDate))
-	fmt.Println(d.userMinutesSedentaryTimeseries(&startDate, &endDate))
-	fmt.Println(d.userMinutesVeryActiveTimeseries(&startDate, &endDate))
-	fmt.Println(d.userStepsTimeseries(&startDate, &endDate))
-	fmt.Println(d.userHeartRateTimeseries(&startDate, &endDate))
+	d.userActivityLogList(nil, dumpTCX)
+	d.userActivityCaloriesTimeseries(&startDate, &endDate)
+	d.userBMITimeseries(&startDate, &endDate)
+	d.userBodyFatTimeseries(&startDate, &endDate)
+	d.userBodyWeightTimeseries(&startDate, &endDate)
+	d.userCaloriesBMRTimeseries(&startDate, &endDate)
+	d.userCaloriesTimeseries(&startDate, &endDate)
+	d.userDistanceTimeseries(&startDate, &endDate)
+	d.userFloorsTimeseries(&startDate, &endDate)
+	d.userMinutesFairlyActiveTimeseries(&startDate, &endDate)
+	d.userMinutesLightlyActiveTimeseries(&startDate, &endDate)
+	d.userMinutesSedentaryTimeseries(&startDate, &endDate)
+	d.userMinutesVeryActiveTimeseries(&startDate, &endDate)
+	d.userStepsTimeseries(&startDate, &endDate)
+	d.userHeartRateTimeseries(&startDate, &endDate)
+	d.userSleepLogList(&startDate, &endDate)
+	d.userElevationTimeseries(&startDate, &endDate)
+	d.userSkinTemperature(&startDate, &endDate)
+	d.userCoreTemperature(&startDate, &endDate)
+	d.userCardioFitnessScore(&startDate, &endDate)
+	d.userOxygenSaturation(&startDate, &endDate)
+	d.userHeartRateVariability(&startDate, &endDate)
+	// TODO: what to do with all the possible errors?^
 
-	fmt.Println(d.userSleepLogList(&startDate, &endDate))
 	return nil
 }
 

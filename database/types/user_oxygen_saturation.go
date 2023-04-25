@@ -5,6 +5,8 @@
 package types
 
 import (
+	"time"
+
 	pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/fitbit/types"
 )
@@ -14,6 +16,14 @@ type OxygenSaturation struct {
 	ID     int64               `igor:"primary_key"`
 	User   pgdb.AuthorizedUser `sql:"-"`
 	UserID int64
+	// Value nested in the api response
+	Value string `sql:"-"`
+	Avg   float64
+	Max   float64
+	Min   float64
+	// DateTime
+	DateTime time.Time `sql:"-"` // it's a date
+	Date     time.Time
 }
 
 func (OxygenSaturation) TableName() string {

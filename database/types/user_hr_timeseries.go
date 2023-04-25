@@ -16,10 +16,12 @@ type HeartRateActivities struct {
 	ID     int64               `igor:"primary_key"`
 	User   pgdb.AuthorizedUser `sql:"-"`
 	UserID int64
-	// Value changed type, who cares, we need to ignore it, it's a filed useful only when decoding json
-	Value    int64            `sql:"-"`
-	DateTime types.FitbitDate `sql:"-"` // It's a Date
-	Date     time.Time
+	// Value is a struct containing an array and a field (resting heart rate).
+	// The array is a cardio_zone (handled separately), here we ignore value and add the resting heart rate field
+	Value            int64 `sql:"-"`
+	RestingHeartRate int64
+	DateTime         types.FitbitDate `sql:"-"` // It's a Date
+	Date             time.Time
 }
 
 func (HeartRateActivities) TableName() string {

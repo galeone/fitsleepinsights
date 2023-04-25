@@ -5,15 +5,19 @@
 package types
 
 import (
+	"time"
+
 	pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/fitbit/types"
 )
 
 type CoreTemperature struct {
-	types.CoreTemperature
-	ID     int64               `igor:"primary_key"`
-	User   pgdb.AuthorizedUser `sql:"-"`
-	UserID int64
+	types.CoreTemperatureTimePoint
+	ID       int64               `igor:"primary_key"`
+	User     pgdb.AuthorizedUser `sql:"-"`
+	UserID   int64
+	DateTime types.FitbitDate `sql:"-"` // it's a date
+	Date     time.Time
 }
 
 func (CoreTemperature) TableName() string {
@@ -21,10 +25,13 @@ func (CoreTemperature) TableName() string {
 }
 
 type SkinTemperature struct {
-	types.SkinTemperature
-	ID     int64               `igor:"primary_key"`
-	User   pgdb.AuthorizedUser `sql:"-"`
-	UserID int64
+	types.SkinTemperatureTimePoint
+	ID       int64               `igor:"primary_key"`
+	User     pgdb.AuthorizedUser `sql:"-"`
+	UserID   int64
+	DateTime types.FitbitDate `sql:"-"` // it's a date
+	Date     time.Time
+	Value    float64 // for some reason in the API this value is wrapped in a structure
 }
 
 func (SkinTemperature) TableName() string {

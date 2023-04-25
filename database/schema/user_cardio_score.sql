@@ -8,6 +8,7 @@ create table if not exists breathing_rate(
 create table if not exists cardio_fitness_score(
     id bigserial primary key not null,
     user_id bigint not null references oauth2_authorized(id),
-    date_time timestamp without time zone not null,
-    vo2_max double precision not null default 0
+    date date not null,
+    vo2max_lower_bound double precision not null default 0,
+    vo2max_upper_bound double precision not null default 0
 );

@@ -5,6 +5,8 @@
 package types
 
 import (
+	"time"
+
 	pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/fitbit/types"
 )
@@ -14,6 +16,12 @@ type HeartRateVariabilityTimeSeries struct {
 	ID     int64               `igor:"primary_key"`
 	User   pgdb.AuthorizedUser `sql:"-"`
 	UserID int64
+	// Value is a nested struct. Ignore and add fields
+	Value      float64 `sql:"-"`
+	DailyRmssd float64
+	DeepRmssd  float64
+	DateTime   time.Time `sql:"-"` // it's a date
+	Date       time.Time
 }
 
 func (HeartRateVariabilityTimeSeries) TableName() string {
