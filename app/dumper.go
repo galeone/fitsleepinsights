@@ -812,6 +812,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		}
 
 		// No error = found
+
 		if err = tx.Model(types.SleepLog{}).Where(&insert).Scan(&insert); err == nil {
 			fmt.Println("Skipping ", insert)
 			continue
@@ -825,6 +826,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 			insertStage := types.SleepStageDetail{
 				SleepStageDetail: *stage,
 				SleepLogID:       insert.LogID,
+				SleepStage:       name,
 			}
 			if err = tx.Create(&insertStage); err != nil {
 				return err
@@ -849,16 +851,25 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 			break
 		}
 
-		for _, sleepData := range sleepLog.Levels.Data {
-			levelDataInsert := types.SleepData{
-				SleepData:  sleepData,
-				SleepLogID: sleepLog.LogID,
-				DateTime:   sleepData.DateTime.Time,
-			}
-			if err = tx.Create(&levelDataInsert); err != nil {
-				return err
+		sleepData := func(data []fitbit_types.SleepData) error {
+			for _, sleepData := range data {
+				levelDataInsert := types.SleepData{
+					SleepData:  sleepData,
+					SleepLogID: sleepLog.LogID,
+					DateTime:   sleepData.DateTime.Time,
+				}
+				if err := tx.Create(&levelDataInsert); err != nil {
+					return err
+				}
 			}
 			return nil
+		}
+
+		if err = sleepData(sleepLog.Levels.Data); err != nil {
+			fmt.Println(err)
+		}
+		if err = sleepData(sleepLog.Levels.ShortData); err != nil {
+			fmt.Println(err)
 		}
 	}
 	if err = tx.Commit(); err != nil {
@@ -902,6 +913,7 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	fmt.Println(d.userMinutesVeryActiveTimeseries(&startDate, &endDate))
 	fmt.Println(d.userStepsTimeseries(&startDate, &endDate))
 	fmt.Println(d.userHeartRateTimeseries(&startDate, &endDate))
+
 	fmt.Println(d.userSleepLogList(&startDate, &endDate))
 	return nil
 }

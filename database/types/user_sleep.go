@@ -15,6 +15,7 @@ type SleepStageDetail struct {
 	types.SleepStageDetail
 	ID         int64 `igor:"primary_key"`
 	SleepLogID int64
+	SleepStage string
 }
 
 func (SleepStageDetail) TableName() string {
@@ -47,26 +48,4 @@ type SleepLog struct {
 
 func (SleepLog) TableName() string {
 	return "sleep_logs"
-}
-
-type SleepStagesSummary struct {
-	types.SleepStagesSummary
-	ID int64 `igor:"primary_key"`
-}
-
-func (SleepStagesSummary) TableName() string {
-	return "sleep_stages_summary"
-}
-
-type SleepSummary struct {
-	types.SleepSummary
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
-	Stages   SleepStagesSummary `sql:"-"`
-	StagesID int64
-}
-
-func (SleepSummary) TableName() string {
-	return "sleep_summary"
 }

@@ -22,7 +22,8 @@ create table if not exists sleep_stage_details(
     count bigint not null default 0,
     minutes bigint not null default 0,
     thirty_day_avg_minutes bigint not null default 0,
-    sleep_log_id bigint not null references sleep_logs(log_id)
+    sleep_log_id bigint not null references sleep_logs(log_id),
+    sleep_stage text not null
 );
 
 create table if not exists sleep_data(
@@ -33,19 +34,4 @@ create table if not exists sleep_data(
     seconds bigint not null default 0
 );
 
-create table if not exists sleep_stages_summary(
-    id bigserial primary key not null,
-    deep bigint not null default 0,
-    light bigint not null default 0,
-    rem bigint not null default 0,
-    wake bigint not null default 0
-);
-
-create table if not exists sleep_summary(
-    id bigserial primary key not null,
-    user_id bigint not null references oauth2_authorized(id),
-    stages_id bigint references sleep_stages_summary(id),
-    total_minutes_asleep bigint not null default 0,
-    total_sleep_records bigint not null default 0,
-    total_time_in_bed bigint not null default 0
-);
+-- sleep_stages_summary and sleep_summary tables not needed, deleted
