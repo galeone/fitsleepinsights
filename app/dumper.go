@@ -28,7 +28,8 @@ func init() {
 		accessToken := payload[0]
 		if dumper, err := NewDumper(accessToken); err == nil {
 			var all *time.Time = nil
-			if err := dumper.Dump(all); err != nil {
+			dumpTCX := false
+			if err := dumper.Dump(all, dumpTCX); err != nil {
 				fmt.Printf("dumper.Dump(all): %s", err)
 			}
 		} else {
@@ -127,7 +128,10 @@ func (d *dumper) userActivityDailyGoal() (err error) {
 	return
 }
 
-func (d *dumper) userActivityLogList(after *time.Time) (err error) {
+// The parameter dumpTCX is required because every TCX dump request is an API call.
+// Fitbit limits 250 API calls user/hour. Thus, on the first dump we have
+// 1 single API call for the activity list. But 100 API calls for the TCX.
+func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error) {
 	var sort string
 	var AfterDate fitbit_types.FitbitDateTime
 	var BeforeDate fitbit_types.FitbitDateTime
@@ -240,19 +244,21 @@ func (d *dumper) userActivityLogList(after *time.Time) (err error) {
 			activityRow.ManualInsertedSteps = activity.ManualValuesSpecified.Steps
 			activityRow.ManualInsertedDistance = activity.ManualValuesSpecified.Distance
 
-			var xml *tcx.TCXDB
-			if xml, err = d.fb.UserActivityTCX(activity.LogID); err == nil {
-				if textBytes, err := tcx.ToBytes(*xml); err != nil {
-					fmt.Println(err)
-				} else {
-					activityRow.Tcx = sql.NullString{
-						String: string(textBytes),
-						Valid:  true,
+			if dumpTCX {
+				var xml *tcx.TCXDB
+				if xml, err = d.fb.UserActivityTCX(activity.LogID); err == nil {
+					if textBytes, err := tcx.ToBytes(*xml); err != nil {
+						fmt.Println(err)
+					} else {
+						activityRow.Tcx = sql.NullString{
+							String: string(textBytes),
+							Valid:  true,
+						}
 					}
+				} else {
+					fmt.Println(err)
+					// Do not break: who cares about failing fetch of TCX data (Fitbit has several problems with that)
 				}
-			} else {
-				fmt.Println(err)
-				// Do not break: who cares about failing fetch of TCX data (Fitbit has several problems with that)
 			}
 
 			if err = tx.Create(&activityRow); err != nil {
@@ -793,9 +799,8 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 	if sleepLogs, err = d.fb.UserSleepLog(startDate, endDate); err != nil {
 		return err
 	}
-	// SleepLogs.Summary is pretty much pointless, since it varies depending on (start, end) date
 
-	// TODO: use transactions
+	tx := _db.Begin()
 	for _, sleepLog := range sleepLogs.Sleep {
 		insert := types.SleepLog{
 			SleepLog:    sleepLog,
@@ -807,11 +812,11 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		}
 
 		// No error = found
-		if err = _db.Model(types.SleepLog{}).Where(&insert).Scan(&insert); err == nil {
+		if err = tx.Model(types.SleepLog{}).Where(&insert).Scan(&insert); err == nil {
 			fmt.Println("Skipping ", insert)
 			continue
 		}
-		if err = _db.Create(&insert); err != nil {
+		if err = tx.Create(&insert); err != nil {
 			fmt.Println(err)
 			break
 		}
@@ -821,7 +826,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 				SleepStageDetail: *stage,
 				SleepLogID:       insert.LogID,
 			}
-			if err = _db.Create(&insertStage); err != nil {
+			if err = tx.Create(&insertStage); err != nil {
 				return err
 			}
 			return nil
@@ -850,12 +855,14 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 				SleepLogID: sleepLog.LogID,
 				DateTime:   sleepData.DateTime.Time,
 			}
-			if err = _db.Create(&levelDataInsert); err != nil {
+			if err = tx.Create(&levelDataInsert); err != nil {
 				return err
 			}
 			return nil
 		}
-		// TODO: recreate tables and test. Check if there's some data not saved (maybe SleepStagesSummary)
+	}
+	if err = tx.Commit(); err != nil {
+		fmt.Println(err)
 	}
 	return
 }
@@ -865,7 +872,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 //   - When the user gives the permission to the app (on the INSERT on the table
 //     triggered by the database notification)
 //   - Periodically by a go routine. In this case, the `after` variable is valid.
-func (d *dumper) Dump(after *time.Time) error {
+func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	// Date super-old in the past (but not too old to make the server return an error)
 	//startDate, _ := time.Parse(fitbit_types.DateLayout, "2009-01-01")
 	endDate := time.Now()
@@ -880,8 +887,7 @@ func (d *dumper) Dump(after *time.Time) error {
 
 	// NOTE: this is not a dump ALL activities. But only the latest 100 activities
 	// because hte Fitbit API limit (for no reason) this endpoint data.
-
-	fmt.Println(d.userActivityLogList(nil))
+	fmt.Println(d.userActivityLogList(nil, dumpTCX))
 	fmt.Println(d.userActivityCaloriesTimeseries(&startDate, &endDate))
 	fmt.Println(d.userBMITimeseries(&startDate, &endDate))
 	fmt.Println(d.userBodyFatTimeseries(&startDate, &endDate))
@@ -895,9 +901,7 @@ func (d *dumper) Dump(after *time.Time) error {
 	fmt.Println(d.userMinutesSedentaryTimeseries(&startDate, &endDate))
 	fmt.Println(d.userMinutesVeryActiveTimeseries(&startDate, &endDate))
 	fmt.Println(d.userStepsTimeseries(&startDate, &endDate))
-
 	fmt.Println(d.userHeartRateTimeseries(&startDate, &endDate))
-
 	fmt.Println(d.userSleepLogList(&startDate, &endDate))
 	return nil
 }
@@ -920,7 +924,8 @@ func Dump() echo.HandlerFunc {
 
 		if dumper, err := NewDumper(user.AccessToken); err == nil {
 			var all *time.Time = nil
-			if err := dumper.Dump(all); err != nil {
+			dumpTCX := false
+			if err := dumper.Dump(all, dumpTCX); err != nil {
 				fmt.Printf("dumper.Dump(all): %s", err)
 			}
 		} else {
