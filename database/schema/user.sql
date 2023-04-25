@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS oauth2_authorized(
     refresh_token TEXT not null,
     expires_in bigint not null default 0,
     access_token TEXT not null,
-    created_at TIMESTAMP not null DEFAULT NOW(),
+    created_at timestamp without time zone not null DEFAULT NOW(),
     UNIQUE(access_token),
     UNIQUE(user_id)
 );
@@ -35,6 +35,6 @@ CREATE TABLE IF NOT EXISTS oauth2_authorizing(
     id bigserial primary key not null,
     csrftoken TEXT not null,
     code TEXT not null,
-    created_at TIMESTAMP not null DEFAULT NOW(),
+    created_at timestamp without time zone not null DEFAULT NOW(),
     UNIQUE(csrftoken)
 );

@@ -5,13 +5,16 @@
 package types
 
 import (
+	"time"
+
 	pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/galeone/fitbit/types"
 )
 
 type SleepStageDetail struct {
 	types.SleepStageDetail
-	ID int64 `igor:"primary_key"`
+	ID         int64 `igor:"primary_key"`
+	SleepLogID int64
 }
 
 func (SleepStageDetail) TableName() string {
@@ -20,35 +23,26 @@ func (SleepStageDetail) TableName() string {
 
 type SleepData struct {
 	types.SleepData
-	ID int64 `igor:"primary_key"`
+	ID         int64 `igor:"primary_key"`
+	SleepLogID int64
+	DateTime   time.Time
 }
 
 func (SleepData) TableName() string {
 	return "sleep_data"
 }
 
-type SleepLevel struct {
-	types.SleepLevel
-	ID          int64     `igor:"primary_key"`
-	SleepData   SleepData `sql:"-"`
-	SleepDataID int64
-	ShortData   SleepData `sql:"-"`
-	ShortDataID int64
-	Summary     SleepStageDetail `sql:"-"`
-	SummaryID   int64
-}
-
-func (SleepLevel) TableName() string {
-	return "sleep_levels"
-}
-
 type SleepLog struct {
 	types.SleepLog
-	ID       int64               `igor:"primary_key"`
-	User     pgdb.AuthorizedUser `sql:"-"`
-	UserID   int64
-	Levels   SleepLevel `sql:"-"`
-	LevelsID int64
+	LogID  int64               `igor:"primary_key"`
+	User   pgdb.AuthorizedUser `sql:"-"`
+	UserID int64
+	// Levels has a 1:1 relationship with SleepLog. So instead of using a SleepLevel type (changed to int64 since ignored)
+	// we can just remove this useless connection point and use the LogID as FK for all the other data.
+	Levels      int64 `sql:"-"`
+	DateOfSleep time.Time
+	EndTime     time.Time
+	StartTime   time.Time
 }
 
 func (SleepLog) TableName() string {

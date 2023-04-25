@@ -79,11 +79,11 @@ create table if not exists activity_logs(
     manual_inserted_distance bool not null default false,
     manual_inserted_steps bool not null default false,
     original_duration bigint not null default 0,
-    original_start_time timestamp not null,
+    original_start_time timestamp without time zone not null,
     pace double precision not null default 0,
     source_id text references log_sources(id), --nullable
     speed double precision not null default 0,
-    start_time timestamp not null,
+    start_time timestamp without time zone not null,
     steps bigint not null default 0,
     -- the api returns a tcx_link, that we fetch and insert here
     tcx xml -- nullable (for manual inserted activities)

@@ -788,6 +788,78 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 	return
 }
 
+func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
+	var sleepLogs *fitbit_types.SleepLogs
+	if sleepLogs, err = d.fb.UserSleepLog(startDate, endDate); err != nil {
+		return err
+	}
+	// SleepLogs.Summary is pretty much pointless, since it varies depending on (start, end) date
+
+	// TODO: use transactions
+	for _, sleepLog := range sleepLogs.Sleep {
+		insert := types.SleepLog{
+			SleepLog:    sleepLog,
+			LogID:       sleepLog.LogID,
+			UserID:      d.User.ID,
+			DateOfSleep: sleepLog.DateOfSleep.Time,
+			StartTime:   sleepLog.StartTime.Time,
+			EndTime:     sleepLog.EndTime.Time,
+		}
+
+		// No error = found
+		if err = _db.Model(types.SleepLog{}).Where(&insert).Scan(&insert); err == nil {
+			fmt.Println("Skipping ", insert)
+			continue
+		}
+		if err = _db.Create(&insert); err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		sleepStage := func(stage *fitbit_types.SleepStageDetail, name string) error {
+			insertStage := types.SleepStageDetail{
+				SleepStageDetail: *stage,
+				SleepLogID:       insert.LogID,
+			}
+			if err = _db.Create(&insertStage); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		if err = sleepStage(&sleepLog.Levels.Summary.Deep, "DEEP"); err != nil {
+			fmt.Println(err)
+			break
+		}
+		if err = sleepStage(&sleepLog.Levels.Summary.Light, "LIGHT"); err != nil {
+			fmt.Println(err)
+			break
+		}
+		if err = sleepStage(&sleepLog.Levels.Summary.Rem, "REM"); err != nil {
+			fmt.Println(err)
+			break
+		}
+		if err = sleepStage(&sleepLog.Levels.Summary.Wake, "WAKE"); err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		for _, sleepData := range sleepLog.Levels.Data {
+			levelDataInsert := types.SleepData{
+				SleepData:  sleepData,
+				SleepLogID: sleepLog.LogID,
+				DateTime:   sleepData.DateTime.Time,
+			}
+			if err = _db.Create(&levelDataInsert); err != nil {
+				return err
+			}
+			return nil
+		}
+		// TODO: recreate tables and test. Check if there's some data not saved (maybe SleepStagesSummary)
+	}
+	return
+}
+
 // Dump fetches every data available on the user profile, up to this moment.
 // This function is called:
 //   - When the user gives the permission to the app (on the INSERT on the table
@@ -825,6 +897,8 @@ func (d *dumper) Dump(after *time.Time) error {
 	fmt.Println(d.userStepsTimeseries(&startDate, &endDate))
 
 	fmt.Println(d.userHeartRateTimeseries(&startDate, &endDate))
+
+	fmt.Println(d.userSleepLogList(&startDate, &endDate))
 	return nil
 }
 
