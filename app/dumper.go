@@ -1073,43 +1073,52 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 //     triggered by the database notification)
 //   - Periodically by a go routine. In this case, the `after` variable is valid.
 func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
-	// Date super-old in the past (but not too old to make the server return an error)
-	//startDate, _ := time.Parse(fitbit_types.DateLayout, "2009-01-01")
-	endDate := time.Now()
-	//startDate := endDate.Add(-time.Duration(24*60) * time.Hour)
-	startDate := endDate.Add(-time.Duration(24*10) * time.Hour)
+	var startDate time.Time
+	var endDate *time.Time
+	if after == nil {
+		// In this case, we want to dump "all" the past data up to now.
+		// However, Fitbit has random limitations like:
+		// - Only the latest 100 activities (100 completely arbitrary)
+		// - Core/Skin temperature: data range only among 30 days
+		// Anyway, it looks like 120 days work fine /shrug
+
+		// Dump all data until yesterday, since these are complete data.
+		// Today data is still changing.
+		yesterday := time.Now().Add(-time.Duration(24) * time.Hour)
+		endDate = &yesterday
+		startDate = endDate.Add(-time.Duration(24*120) * time.Hour)
+	} else {
+		startDate = *after
+		endDate = nil
+	}
 
 	// There are functions that don't have an "after" period
 	// because Fitbit allows to get only the daily data.
-
 	d.userActivityDailyGoal()
 	d.userActivityWeeklyGoal()
 
-	// NOTE: this is not a dump ALL activities. But only the latest 100 activities
-	// because hte Fitbit API limit (for no reason) this endpoint data.
-	d.userActivityLogList(nil, dumpTCX)
-	d.userActivityCaloriesTimeseries(&startDate, &endDate)
-	d.userBMITimeseries(&startDate, &endDate)
-	d.userBodyFatTimeseries(&startDate, &endDate)
-	d.userBodyWeightTimeseries(&startDate, &endDate)
-	d.userCaloriesBMRTimeseries(&startDate, &endDate)
-	d.userCaloriesTimeseries(&startDate, &endDate)
-	d.userDistanceTimeseries(&startDate, &endDate)
-	d.userFloorsTimeseries(&startDate, &endDate)
-	d.userMinutesFairlyActiveTimeseries(&startDate, &endDate)
-	d.userMinutesLightlyActiveTimeseries(&startDate, &endDate)
-	d.userMinutesSedentaryTimeseries(&startDate, &endDate)
-	d.userMinutesVeryActiveTimeseries(&startDate, &endDate)
-	d.userStepsTimeseries(&startDate, &endDate)
-	d.userHeartRateTimeseries(&startDate, &endDate)
-	d.userSleepLogList(&startDate, &endDate)
-	d.userElevationTimeseries(&startDate, &endDate)
-	d.userSkinTemperature(&startDate, &endDate)
-	d.userCoreTemperature(&startDate, &endDate)
-	d.userCardioFitnessScore(&startDate, &endDate)
-	d.userOxygenSaturation(&startDate, &endDate)
-	d.userHeartRateVariability(&startDate, &endDate)
-	// TODO: what to do with all the possible errors?^
+	d.userActivityLogList(after, dumpTCX)
+	d.userActivityCaloriesTimeseries(&startDate, endDate)
+	d.userBMITimeseries(&startDate, endDate)
+	d.userBodyFatTimeseries(&startDate, endDate)
+	d.userBodyWeightTimeseries(&startDate, endDate)
+	d.userCaloriesBMRTimeseries(&startDate, endDate)
+	d.userCaloriesTimeseries(&startDate, endDate)
+	d.userDistanceTimeseries(&startDate, endDate)
+	d.userFloorsTimeseries(&startDate, endDate)
+	d.userMinutesFairlyActiveTimeseries(&startDate, endDate)
+	d.userMinutesLightlyActiveTimeseries(&startDate, endDate)
+	d.userMinutesSedentaryTimeseries(&startDate, endDate)
+	d.userMinutesVeryActiveTimeseries(&startDate, endDate)
+	d.userStepsTimeseries(&startDate, endDate)
+	d.userHeartRateTimeseries(&startDate, endDate)
+	d.userSleepLogList(&startDate, endDate)
+	d.userElevationTimeseries(&startDate, endDate)
+	d.userSkinTemperature(&startDate, endDate)
+	d.userCoreTemperature(&startDate, endDate)
+	d.userCardioFitnessScore(&startDate, endDate)
+	d.userOxygenSaturation(&startDate, endDate)
+	d.userHeartRateVariability(&startDate, endDate)
 
 	return nil
 }
