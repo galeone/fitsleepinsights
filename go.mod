@@ -49,9 +49,3 @@ require (
 	google.golang.org/grpc v1.53.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
-
-replace github.com/galeone/fitbit => /home/pgaleone/go/src/github.com/galeone/fitbit
-
-replace github.com/galeone/fitbit-pgdb => /home/pgaleone/go/src/github.com/galeone/fitbit-pgdb
-
-replace github.com/galeone/igor => /home/pgaleone/go/src/github.com/galeone/igor

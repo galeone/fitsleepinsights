@@ -25,6 +25,12 @@ github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymF
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
+github.com/galeone/fitbit v1.0.3 h1:iYC3japYbCsWc6SyMz3JXTwKnCnG3y8oLgZ9uy4yQKM=
+github.com/galeone/fitbit v1.0.3/go.mod h1:osb+HFcVMMkAP/NH2+HVB2UAYP7A1kOpKYmkfbtL2fY=
+github.com/galeone/fitbit-pgdb v1.0.1 h1:dCZkup2kG3UmMr2RbMWq7SsAFRDivgvbElx9ZK02Y0U=
+github.com/galeone/fitbit-pgdb v1.0.1/go.mod h1:iz5eSQBPJUuhU7AutQWw3Iv1vdOahPxaBAOC1Z/tXDM=
+github.com/galeone/igor v1.0.6 h1:r1lE5Rd3fz7d053Lqf93uElSI4z/UdXN6z7ftEGfOZQ=
+github.com/galeone/igor v1.0.6/go.mod h1:JZGRepsKW5K95NLjuBFTdPUwTq+mzw1o9pHMRZgnqSg=
 github.com/galeone/rts v1.0.0 h1:eKtvj8CBL9cSt7mCTyTJ+LJNJW4WM/mZfZp8vl50BiE=
 github.com/galeone/rts v1.0.0/go.mod h1:S/yG1JoAT2eiT2E3Y2ZXsqbfTYbeLmkti5rh3ZYGGsE=
 github.com/galeone/tcx v1.0.0 h1:rmSSL/+qDFWH+9YjoyU5mmm2R2tJUxvwr5nS+1Oq6sY=
