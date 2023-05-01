@@ -1094,21 +1094,23 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	var startDate time.Time
 	var endDate *time.Time
-	if after == nil {
-		// In this case, we want to dump "all" the past data up to now.
-		// However, Fitbit has random limitations like:
-		// - Only the latest 100 activities (100 completely arbitrary)
-		// - Core/Skin temperature: data range only among 30 days.
-		// The latter can be workarounded with multiple requests each of 30 days max
 
-		// Dump all data until yesterday, since these are complete data.
-		// Today data is still changing.
-		yesterday := time.Now().Add(-time.Duration(24) * time.Hour)
-		endDate = &yesterday
-		startDate = endDate.Add(-time.Duration(24*120) * time.Hour)
+	// ALWAYS dump data up to yesterday, since this is complete data.
+	// Today data is changing.
+	today := time.Now().Truncate(time.Hour * 24)
+	yesterday := time.Now().Add(-time.Duration(24) * time.Hour).Truncate(time.Hour * 24)
+	endDate = &yesterday
+
+	dumpAll := after == nil
+	var days int
+	if dumpAll {
+		// In this case, we want to dump "all" the past data up to yesterday.
+		// Try to fetch 120 days (completely arbitrary).
+		days = 120
+		startDate = endDate.Add(-time.Duration(24*120) * time.Hour).Truncate(time.Hour * 24)
 	} else {
 		startDate = *after
-		endDate = nil
+		days = int(yesterday.Sub(startDate).Hours()) / 24
 	}
 
 	// There are functions that don't have an "after" period
@@ -1132,27 +1134,51 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	d.userStepsTimeseries(&startDate, endDate)
 	d.userHeartRateTimeseries(&startDate, endDate)
 	d.userElevationTimeseries(&startDate, endDate)
-	d.userCardioFitnessScore(&startDate, endDate)
-	d.userHeartRateVariability(&startDate, endDate)
 
-	if endDate != nil {
+	if days > 30 {
+		// NOTE: every loop should loop using "gcd" days
+		// from startDate to endDate to do not lose days.
+		gcd := func(a, b int) int {
+			for b != 0 {
+				t := b
+				b = a % b
+				a = t
+			}
+			return a
+		}
+
 		// Only last 30 days for Skin/Core temp & Oxygen saturation
-		endRange := startDate.Add(time.Duration(30*24) * time.Hour)
-		endDate = &endRange
-	}
-	d.userSkinTemperature(&startDate, endDate)
-	d.userCoreTemperature(&startDate, endDate)
-	d.userOxygenSaturation(&startDate, endDate)
+		ago := gcd(days, 30)
+		newEndDate := startDate.Add(time.Duration(ago*24) * time.Hour)
+		newStartDate := startDate
+		for newEndDate.Before(today) {
+			d.userSkinTemperature(&newStartDate, &newEndDate)
+			d.userCoreTemperature(&newStartDate, &newEndDate)
+			d.userOxygenSaturation(&newStartDate, &newEndDate)
+			d.userCardioFitnessScore(&newStartDate, &newEndDate)
+			d.userHeartRateVariability(&newStartDate, &newEndDate)
+			newStartDate = newEndDate
+			newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
+		}
+		// 100 days for SleepLogList.
+		ago = gcd(days, 100)
+		newEndDate = startDate.Add(time.Duration(ago*24) * time.Hour)
+		newStartDate = startDate
+		for newEndDate.Before(today) {
+			d.userSleepLogList(&newStartDate, &newEndDate)
+			newStartDate = newEndDate
+			newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
+		}
 
-	if endDate != nil {
-		// 100 days max range for SleepLogList
-		endRange := startDate.Add(time.Duration(100*24) * time.Hour)
-		endDate = &endRange
+	} else {
+		d.userSkinTemperature(&startDate, endDate)
+		d.userCoreTemperature(&startDate, endDate)
+		d.userOxygenSaturation(&startDate, endDate)
+		d.userCardioFitnessScore(&startDate, endDate)
+		d.userHeartRateVariability(&startDate, endDate)
+		// if days <= 30 -> days <= 100 (lol)
+		d.userSleepLogList(&startDate, endDate)
 	}
-	d.userSleepLogList(&startDate, endDate)
-
-	// TODO find a way instead of just dumping the last 100 and last 30, to loop from
-	// start to end date, in a "allowed range" (100 or 30) days at MOST per iteration
 
 	return nil
 }
