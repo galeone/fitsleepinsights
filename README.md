@@ -37,6 +37,12 @@ sudo -i -u postgres createuser -U postgres sleepbit
 sudo -i -u postgres createdb -U postgres sleepbit sleepbit
 ```
 
+3. Grant the create privilege (required from PostgreSQL 15+):
+
+```
+psql -U postgres -d sleepbit -c "GRANT USAGE, CREATE ON SCHEMA public TO sleepbit;"
+```
+
 Done. On startup sleepbit creates the schema if not present.
 
 

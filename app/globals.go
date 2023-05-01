@@ -18,4 +18,17 @@ var (
 	_clientSecret = os.Getenv("FITBIT_CLIENT_SECRET")
 	_redirectURL  = os.Getenv("FITBIT_REDIRECT_URL")
 	_domain       = os.Getenv("DOMAIN")
+
+	// VertexAI:
+	// prerequisite
+	// ```
+	// gcloud auth application-default login
+	// ```
+	// This creates a file (application default credentials) in a well-known location
+	// and the sdk uses this location to setup the account & project
+	//
+	// info: https://stackoverflow.com/a/52247638/2891324
+	_vaiLocation   = os.Getenv("VAI_LOCATION")
+	_vaiProjectID  = os.Getenv("VAI_PROJECT_ID")
+	_vaiEndpointID = os.Getenv("VAI_ENDPOINT_ID")
 )

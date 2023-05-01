@@ -16,6 +16,7 @@ import (
 
 	"github.com/galeone/fitbit"
 	"github.com/galeone/fitbit/types"
+	"github.com/galeone/sleepbit/database"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -46,7 +47,7 @@ func Auth() func(echo.Context) error {
 
 		c.SetCookie(&http.Cookie{
 			Name: "authorizing",
-			// Also used as primary key in db for retrieval (see middelware
+			// Also used as primary key in db for retrieval (see middleware
 			// RequireAuthorizer).
 			Value: authorizer.CSRFToken().String(),
 			// No Expires = Session cookie
@@ -96,6 +97,11 @@ func Redirect() func(echo.Context) error {
 		if err = _db.UpsertAuthorizedUser(token); err != nil {
 			return err
 		}
+		// Send a database notification over the channel.
+		// The receiver will start the routing for fetching all the data
+		if err = _db.Notify(database.NewUsersChannel, token.AccessToken); err != nil {
+			c.Logger().Error("Unable to sent new user creation notification")
+		}
 		cookie := http.Cookie{
 			Name:     "token",
 			Value:    token.AccessToken,
@@ -104,6 +110,13 @@ func Redirect() func(echo.Context) error {
 			HttpOnly: true,
 		}
 		c.SetCookie(&cookie)
+
+		// Unset the authorizing cookie
+		c.SetCookie(&http.Cookie{
+			Name:     "authorizing",
+			HttpOnly: true,
+			MaxAge:   -1,
+		})
 		return c.Redirect(http.StatusTemporaryRedirect, "/dashboard")
 	}
 }

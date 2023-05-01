@@ -5,7 +5,7 @@
 package app
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/galeone/fitbit"
@@ -18,7 +18,7 @@ import (
 // The middleware uses the cookies to identify the user and
 // understand in which phase of the oauth2 authorization flows we are
 // and set the context's fitbit variable (c.Get("fitbit")) to a valid authorizer
-// If and only if the required cookies have been previosly set.
+// If and only if the required cookies have been previously set.
 func RequireFitbit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -28,30 +28,31 @@ func RequireFitbit() echo.MiddlewareFunc {
 				// If there's the auth cookie, we could be in the
 				// authorization phase, and thus we set it.
 				// Anyway, if it's not present, it's not a problem IF
-				// and only IF  there's the "token" cookie that contains
+				// and only IF there's the "token" cookie that contains
 				// the access token.
 				// At least one of these 2 conditions should be met
 				var condition bool
 				var cookie *http.Cookie
-				cookie, err = c.Cookie("authorizing")
-				if err == nil {
+				if cookie, err = c.Cookie("authorizing"); err == nil {
 					var authorizing *types.AuthorizingUser
 					if authorizing, err = _db.AuthorizingUser(cookie.Value); err != nil {
-						return err
+						fmt.Printf("[RequireFitbit] _db.AuthorizingUser: %s", err)
+						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					authorizer.SetAuthorizing(authorizing)
 					condition = true
 				}
 
-				// Auhtorization token (after exhange)
-				cookie, err = c.Cookie("token")
-				if err == nil {
+				// Authorization token (after exchange)
+				if cookie, err = c.Cookie("token"); err == nil {
 					var dbToken *types.AuthorizedUser
 					if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
-						return err
+						fmt.Printf("[RequireFitbit] _db.AuthorizedUser: %s", err)
+						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					if dbToken.UserID == "" {
-						return errors.New("Invalid token. Please login again")
+						fmt.Printf("Invalid token. Please login again")
+						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					authorizer.SetToken(dbToken)
 					condition = true

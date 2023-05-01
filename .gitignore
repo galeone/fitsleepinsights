@@ -22,3 +22,6 @@ go.work
 
 # binary
 sleepbit
+
+.vscode/
+__debug_bin

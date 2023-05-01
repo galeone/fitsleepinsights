@@ -6,15 +6,62 @@
 package database
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 
 	"github.com/galeone/igor"
-	"github.com/galeone/fitbit/types"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 var _db *igor.Database
+
+var (
+	//go:embed schema/user.sql
+	user string
+
+	//go:embed schema/activities.sql
+	activities string
+
+	//go:embed schema/user_activity.sql
+	user_activity string
+
+	//go:embed schema/user_activity_timeseries.sql
+	user_activity_timeseries string
+
+	//go:embed schema/user_body.sql
+	user_body string
+
+	//go:embed schema/user_body_timeseries.sql
+	user_body_timeseries string
+
+	//go:embed schema/user_breathing_rate.sql
+	user_breathing_rate string
+
+	//go:embed schema/user_cardio_score.sql
+	user_cardio_score string
+
+	//go:embed schema/user_hr_timeseries.sql
+	user_hr_timeseries string
+
+	//go:embed schema/user_hr_variability.sql
+	user_hr_variability string
+
+	//go:embed schema/user_intraday.sql
+	user_intraday string
+
+	//go:embed schema/user_oxygen_saturation.sql
+	user_oxygen_saturation string
+
+	//go:embed schema/user_sleep.sql
+	user_sleep string
+
+	//go:embed schema/user_temperature.sql
+	user_temperature string
+
+	//go:embed schema/alter.sql
+	alter string
+)
 
 func init() {
 	var err error
@@ -25,32 +72,90 @@ func init() {
 	}
 
 	//logger := log.New(os.Stdout, "igor: ", log.LUTC)
-	//db.Log(logger)
+	//_db.Log(logger)
 
 	tx := _db.Begin()
 
-	var authorizedUser types.AuthorizedUser
-	if err = tx.Exec(fmt.Sprintf(
-		`CREATE TABLE IF NOT EXISTS "%s" (
-		user_id TEXT NOT NULL PRIMARY KEY,
-		token_type TEXT NOT NULL,
-		scope TEXT NOT NULL,
-		refresh_token TEXT NOT NULL,
-		expires_in INTEGER NOT NULL,
-		access_token TEXT NOT NULL,
-		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-		UNIQUE(access_token))`, authorizedUser.TableName())); err != nil {
+	// There's only one dependency between sql files: user_hr_timeseries.sql
+	// uses a table defined in user_activity.sql.
+	// All the other tables just depend on the users tables.
+
+	if err = tx.Exec(user); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
 
-	var authorizingUser types.AuthorizingUser
-	if err = tx.Exec(fmt.Sprintf(
-		`CREATE TABLE IF NOT EXISTS "%s" (
-		csrftoken TEXT NOT NULL PRIMARY KEY,
-		code TEXT NOT NULL,
-		created_at TIMESTAMP NOT NULL DEFAULT NOW()
-		)`, authorizingUser.TableName())); err != nil {
+	if err = tx.Exec(activities); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_activity); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_activity_timeseries); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_body); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_body_timeseries); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_breathing_rate); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_cardio_score); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_hr_timeseries); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_hr_variability); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_intraday); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_oxygen_saturation); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_sleep); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(user_temperature); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(alter); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
