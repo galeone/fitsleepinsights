@@ -86,7 +86,7 @@ type ActivityLog struct {
 	LogID               int64               `igor:"primary_key"`
 	User                pgdb.AuthorizedUser `sql:"-"`
 	UserID              int64
-	ActiveZoneMinutes   ActiveZoneMinutes `sql:"-"`
+	ActiveZoneMinutes   types.ActiveZoneMinutes `sql:"-"`
 	ActiveZoneMinutesID sql.NullInt64
 	Source              LogSource `sql:"-"`
 	SourceID            sql.NullString

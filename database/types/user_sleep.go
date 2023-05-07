@@ -40,7 +40,7 @@ type SleepLog struct {
 	UserID int64
 	// Levels has a 1:1 relationship with SleepLog. So instead of using a SleepLevel type (changed to int64 since ignored)
 	// we can just remove this useless connection point and use the LogID as FK for all the other data.
-	Levels      int64 `sql:"-"`
+	Levels      types.SleepLevel `sql:"-"`
 	DateOfSleep time.Time
 	EndTime     time.Time
 	StartTime   time.Time

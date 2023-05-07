@@ -75,8 +75,6 @@ func NewDumper(accessToken string) (*dumper, error) {
 	return &dumper{fb, &user}, err
 }
 
-// TODO: https://pkg.go.dev/github.com/galeone/fitbit@v1.0.0/client ALL
-
 func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.ActivityCaloriesSeries
 	if value, err = d.fb.UserActivityCaloriesTimeseries(startDate, endDate); err != nil {

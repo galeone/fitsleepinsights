@@ -5,8 +5,8 @@ go 1.20
 require (
 	cloud.google.com/go/aiplatform v1.35.0
 	github.com/galeone/fitbit v1.0.3
-	github.com/galeone/fitbit-pgdb v1.0.1
-	github.com/galeone/igor v1.0.6
+	github.com/galeone/fitbit-pgdb v1.0.2
+	github.com/galeone/igor v1.0.7
 	github.com/galeone/rts v1.0.0
 	github.com/galeone/tcx v1.0.0
 	github.com/google/uuid v1.3.0
@@ -31,7 +31,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/lib/pq v1.10.8 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/philhofer/vec v0.0.0-20140421144027-536fc796d369 // indirect
