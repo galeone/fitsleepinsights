@@ -5,6 +5,7 @@
 package types
 
 import (
+	"strconv"
 	"time"
 
 	pgdb "github.com/galeone/fitbit-pgdb"
@@ -26,6 +27,18 @@ func (BodyWeightSeries) TableName() string {
 	return "body_weight_series"
 }
 
+func (f *BodyWeightSeries) Headers() []string {
+	return []string{
+		"BodyWeight",
+	}
+}
+
+func (f *BodyWeightSeries) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Value, 'f', 2, 64),
+	}
+}
+
 type BMISeries struct {
 	types.TimeStep
 	DateTime types.FitbitDate `sql:"-"` // It's a Date
@@ -35,6 +48,18 @@ type BMISeries struct {
 	ID     int64               `igor:"primary_key"`
 	User   pgdb.AuthorizedUser `sql:"-"`
 	UserID int64
+}
+
+func (f *BMISeries) Headers() []string {
+	return []string{
+		"BMI",
+	}
+}
+
+func (f *BMISeries) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Value, 'f', 2, 64),
+	}
 }
 
 func (BMISeries) TableName() string {
@@ -50,6 +75,18 @@ type BodyFatSeries struct {
 	ID     int64               `igor:"primary_key"`
 	User   pgdb.AuthorizedUser `sql:"-"`
 	UserID int64
+}
+
+func (f *BodyFatSeries) Headers() []string {
+	return []string{
+		"BodyFat",
+	}
+}
+
+func (f *BodyFatSeries) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Value, 'f', 2, 64),
+	}
 }
 
 func (BodyFatSeries) TableName() string {

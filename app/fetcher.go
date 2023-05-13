@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/galeone/fitbit"
@@ -17,6 +20,151 @@ type fetcher struct {
 	user *fitbit_pgdb.AuthorizedUser
 }
 
+type DailyActivities []types.ActivityLog
+
+// Headers returns the headers of the CSV file.
+// For the DailyActivities type, the headers are only the column names that can
+// be aggregated using a sum (e.g. no activityID, no activityParentID, etc.)
+func (f *DailyActivities) Headers() []string {
+	// TODO: this is a coarse summary of the activities, but a lot of useful information is missing
+	return []string{
+		"NumberOfAutoDetectedActivities",
+		"NumberOfTrackerActivities",
+
+		"ActiveDurationSum",
+		"ActiveZoneMinutesSum",
+
+		"MinutesInCardioZoneSum",
+		"MinutesInFatBurnZoneSum",
+		"MinutesInPeakZoneSum",
+		"MinutesInOutOfZoneSum",
+
+		// The names are concatenated without repetitions
+		// So if there are: walk, weights, walk, weights, walk, run
+		// the result will be: walk, weights, run
+		"ActivitiesNameConcatenation",
+
+		// For these fields the sum is computed only
+		"CaloriesSum",
+		"DistanceSum",
+		"DurationSum",
+		"ElevationGainSum",
+		"StepsSum",
+
+		// For these fields the average is computed only
+		// on the activities that have a valid value for the field
+		"AveragePace",
+		"AverageSpeed",
+		"AverageHeartRate",
+	}
+}
+
+func (f *DailyActivities) Values() []string {
+	var NumberOfAutoDetectedActivities, NumberOfTrackerActivities int64
+	var ActiveDurationSum, ActiveZoneMinutesSum int64
+
+	var ActivitiesNameConcatenation string
+	var names map[string]bool = make(map[string]bool)
+
+	var MinutesInCardioZoneSum, MinutesInFatBurnZoneSum, MinutesInPeakZoneSum, MinutesInOutOfZoneSum int64
+
+	var CaloriesSum, DurationSum, ElevationGainSum, StepsSum int64
+	var DistanceSum float64
+
+	var paces, speeds, heartRates []float64
+	var AveragePace, AverageSpeed, AverageHeartRate float64
+	for _, activity := range *f {
+		// check if activity.ActivityName is a key of names
+		// if not, add it to the names map
+		if _, ok := names[activity.ActivityName]; !ok {
+			names[activity.ActivityName] = true
+			ActivitiesNameConcatenation += activity.ActivityName + " "
+		}
+		if activity.LogType == "tracker" {
+			NumberOfTrackerActivities++
+		}
+		if activity.LogType == "auto_detected" {
+			NumberOfAutoDetectedActivities++
+		}
+
+		ActiveDurationSum += activity.ActiveDuration
+		ActiveZoneMinutesSum += activity.ActiveZoneMinutes.TotalMinutes
+
+		for _, activeZoneMinute := range activity.ActiveZoneMinutes.MinutesInHeartRateZones {
+			if activeZoneMinute.Type == "CARDIO" {
+				MinutesInCardioZoneSum += activeZoneMinute.Minutes
+			}
+			if activeZoneMinute.Type == "FAT_BURN" {
+				MinutesInFatBurnZoneSum += activeZoneMinute.Minutes
+			}
+			if activeZoneMinute.Type == "PEAK" {
+				MinutesInPeakZoneSum += activeZoneMinute.Minutes
+			}
+			if activeZoneMinute.Type == "OUT_OF_ZONE" {
+				MinutesInOutOfZoneSum += activeZoneMinute.Minutes
+			}
+		}
+		CaloriesSum += activity.Calories
+		DistanceSum += activity.Distance
+		DurationSum += activity.Duration
+		ElevationGainSum += activity.ElevationGain
+		StepsSum += activity.Steps
+
+		if activity.Pace > 0 {
+			paces = append(paces, activity.Pace)
+		}
+		if activity.Speed > 0 {
+			speeds = append(speeds, activity.Speed)
+		}
+		if activity.AverageHeartRate > 0 {
+			heartRates = append(heartRates, float64(activity.AverageHeartRate))
+		}
+	}
+
+	reduceMean := func(values []float64) float64 {
+		var sum float64
+		for _, value := range values {
+			sum += value
+		}
+		return sum / float64(len(values))
+	}
+
+	if len(paces) > 0 {
+		AveragePace = reduceMean(paces)
+	}
+	if len(speeds) > 0 {
+		AverageSpeed = reduceMean(speeds)
+	}
+	if len(heartRates) > 0 {
+		AverageHeartRate = reduceMean(heartRates)
+	}
+
+	return []string{
+		fmt.Sprintf("%d", NumberOfAutoDetectedActivities),
+		fmt.Sprintf("%d", NumberOfTrackerActivities),
+
+		fmt.Sprintf("%d", ActiveDurationSum),
+		fmt.Sprintf("%d", ActiveZoneMinutesSum),
+
+		fmt.Sprintf("%d", MinutesInCardioZoneSum),
+		fmt.Sprintf("%d", MinutesInFatBurnZoneSum),
+		fmt.Sprintf("%d", MinutesInPeakZoneSum),
+		fmt.Sprintf("%d", MinutesInOutOfZoneSum),
+
+		ActivitiesNameConcatenation,
+
+		fmt.Sprintf("%d", CaloriesSum),
+		strconv.FormatFloat(DistanceSum, 'f', 2, 64),
+		fmt.Sprintf("%d", DurationSum),
+		fmt.Sprintf("%d", ElevationGainSum),
+		fmt.Sprintf("%d", StepsSum),
+
+		strconv.FormatFloat(AveragePace, 'f', 2, 64),
+		strconv.FormatFloat(AverageSpeed, 'f', 2, 64),
+		strconv.FormatFloat(AverageHeartRate, 'f', 2, 64),
+	}
+}
+
 // NewFetcher creates a new fetcher for the provided user
 func NewFetcher(user *fitbit_pgdb.AuthorizedUser) (*fetcher, error) {
 	if user == nil {
@@ -27,9 +175,6 @@ func NewFetcher(user *fitbit_pgdb.AuthorizedUser) (*fetcher, error) {
 	}
 
 	return &fetcher{user}, nil
-}
-
-func (f *fetcher) Date(date time.Time) {
 }
 
 func (f *fetcher) userActivityCaloriesTimeseries(date time.Time) (*types.ActivityCaloriesSeries, error) {
@@ -54,8 +199,8 @@ func (f *fetcher) userActivityDailyGoal(date time.Time) (*types.Goal, error) {
 	return &value, nil
 }
 
-func (f *fetcher) userActivityLogList(date time.Time) (*[]types.ActivityLog, error) {
-	activities := []types.ActivityLog{}
+func (f *fetcher) userActivityLogList(date time.Time) (*DailyActivities, error) {
+	activities := DailyActivities{}
 
 	if err := _db.Model(types.ActivityLog{}).Where(`user_id = ? AND date(start_time) = ?`, f.user.ID, date.Format(fitbit_types.DateLayout)).Scan(&activities); err != nil {
 		return nil, err
@@ -385,7 +530,7 @@ func (f *fetcher) userSleepLogList(date time.Time) (*types.SleepLog, error) {
 // is able to hold them all.
 type UserData struct {
 	Date                 time.Time
-	Activities           *[]types.ActivityLog
+	Activities           *DailyActivities
 	ActivityCalories     *types.ActivityCaloriesSeries
 	BMI                  *types.BMISeries
 	BodyFat              *types.BodyFatSeries
@@ -407,6 +552,68 @@ type UserData struct {
 	CardioFitnessScore   *types.CardioFitnessScore
 	HeartRateVariability *types.HeartRateVariabilityTimeSeries
 	SleepLog             *types.SleepLog
+}
+
+// Headers returns the headers of the CSV file
+// The order of the headers is important as it will be used to generate the CSV file
+// The order of the values must match the order of the headers
+// If a value is nil, the CSV cell will be empty
+func (u *UserData) Headers() []string {
+	ret := []string{
+		"Date",
+	}
+	ret = append(ret, u.Activities.Headers()...)
+	ret = append(ret, u.ActivityCalories.Headers()...)
+	ret = append(ret, u.BMI.Headers()...)
+	ret = append(ret, u.BodyFat.Headers()...)
+	ret = append(ret, u.BodyWeight.Headers()...)
+	ret = append(ret, u.CaloriesBMR.Headers()...)
+	ret = append(ret, u.Calories.Headers()...)
+	ret = append(ret, u.Distance.Headers()...)
+	ret = append(ret, u.Floors.Headers()...)
+	ret = append(ret, u.MinutesFairlyActive.Headers()...)
+	ret = append(ret, u.MinutesLightlyActive.Headers()...)
+	ret = append(ret, u.MinutesSedentary.Headers()...)
+	ret = append(ret, u.MinutesVeryActive.Headers()...)
+	ret = append(ret, u.Steps.Headers()...)
+	ret = append(ret, u.HeartRate.Headers()...)
+	ret = append(ret, u.Elevation.Headers()...)
+	ret = append(ret, u.SkinTemperature.Headers()...)
+	ret = append(ret, u.CoreTemperature.Headers()...)
+	ret = append(ret, u.OxygenSaturation.Headers()...)
+	ret = append(ret, u.CardioFitnessScore.Headers()...)
+	ret = append(ret, u.HeartRateVariability.Headers()...)
+	ret = append(ret, u.SleepLog.Headers()...)
+	return ret
+}
+
+func (u *UserData) Values() []string {
+	ret := []string{
+		u.Date.Format("2006-01-02"),
+	}
+	ret = append(ret, u.Activities.Values()...)
+	ret = append(ret, u.ActivityCalories.Values()...)
+	ret = append(ret, u.BMI.Values()...)
+	ret = append(ret, u.BodyFat.Values()...)
+	ret = append(ret, u.BodyWeight.Values()...)
+	ret = append(ret, u.CaloriesBMR.Values()...)
+	ret = append(ret, u.Calories.Values()...)
+	ret = append(ret, u.Distance.Values()...)
+	ret = append(ret, u.Floors.Values()...)
+	ret = append(ret, u.MinutesFairlyActive.Values()...)
+	ret = append(ret, u.MinutesLightlyActive.Values()...)
+	ret = append(ret, u.MinutesSedentary.Values()...)
+	ret = append(ret, u.MinutesVeryActive.Values()...)
+	ret = append(ret, u.Steps.Values()...)
+	ret = append(ret, u.HeartRate.Values()...)
+	ret = append(ret, u.Elevation.Values()...)
+	ret = append(ret, u.SkinTemperature.Values()...)
+	ret = append(ret, u.CoreTemperature.Values()...)
+	ret = append(ret, u.OxygenSaturation.Values()...)
+	ret = append(ret, u.CardioFitnessScore.Values()...)
+	ret = append(ret, u.HeartRateVariability.Values()...)
+	ret = append(ret, u.SleepLog.Values()...)
+	return ret
 }
 
 func (f *fetcher) Fetch(date time.Time) UserData {
@@ -441,6 +648,27 @@ func (f *fetcher) Fetch(date time.Time) UserData {
 	return userData
 }
 
+// FetchAll fetches all the user data. It uses the oldest activity date as first date
+// and yesterday as last date.
+func (f *fetcher) FetchAll() ([]*UserData, error) {
+	// Get all the dates
+	var dates []time.Time
+	yesterday := time.Now().AddDate(0, 0, -1).Truncate(time.Hour * 24)
+	if err := _db.Model(types.ActivityLog{}).Select("distinct date(start_time) as d").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Order("d desc").Scan(&dates); err != nil {
+		return nil, err
+	}
+	if len(dates) == 0 {
+		return nil, errors.New("user has zero activities")
+	}
+
+	var userDataList []*UserData
+	for _, date := range dates {
+		userData := f.Fetch(date)
+		userDataList = append(userDataList, &userData)
+	}
+	return userDataList, nil
+}
+
 func Fetch() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// secure, under middleware
@@ -463,9 +691,22 @@ func Fetch() echo.HandlerFunc {
 			fmt.Println(userData.Date)
 			fmt.Println(userData.HeartRate)
 			fmt.Println(userData.HeartRateVariability)
+
+			if all, err := fetcher.FetchAll(); err == nil {
+				if csv, err := userDataToCSV(all); err == nil {
+					// Save completecsv to file
+					file, _ := os.Create("complete.csv")
+					io.WriteString(file, csv)
+				} else {
+					fmt.Println(err)
+				}
+			} else {
+				fmt.Println(err)
+			}
 		} else {
 			fmt.Println(err.Error())
 		}
+
 		return err
 	}
 }

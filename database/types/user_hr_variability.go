@@ -5,6 +5,7 @@
 package types
 
 import (
+	"strconv"
 	"time"
 
 	pgdb "github.com/galeone/fitbit-pgdb"
@@ -22,6 +23,20 @@ type HeartRateVariabilityTimeSeries struct {
 	DeepRmssd  float64
 	DateTime   time.Time `sql:"-"` // it's a date
 	Date       time.Time
+}
+
+func (f *HeartRateVariabilityTimeSeries) Headers() []string {
+	return []string{
+		"DailyRmssd",
+		"DeepRmssd",
+	}
+}
+
+func (f *HeartRateVariabilityTimeSeries) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.DailyRmssd, 'f', 2, 64),
+		strconv.FormatFloat(f.DeepRmssd, 'f', 2, 64),
+	}
 }
 
 func (HeartRateVariabilityTimeSeries) TableName() string {

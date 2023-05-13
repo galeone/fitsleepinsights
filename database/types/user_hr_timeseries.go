@@ -5,6 +5,7 @@
 package types
 
 import (
+	"strconv"
 	"time"
 
 	pgdb "github.com/galeone/fitbit-pgdb"
@@ -26,6 +27,89 @@ type HeartRateActivities struct {
 	RestingHeartRate     int64
 	DateTime             types.FitbitDate `sql:"-"` // It's a Date
 	Date                 time.Time
+}
+
+func (f *HeartRateActivities) Headers() []string {
+	return []string{
+		"RestingHeartRate",
+
+		"OutOfRangeMinutes",
+		"OutOfRangeCalories",
+		"OutOfRangeMaxBPM",
+		"OutOfRangeMinBPM",
+
+		"FatBurnMinutes",
+		"FatBurnCalories",
+		"FatBurnMaxBPM",
+		"FatBurnMinBPM",
+
+		"CardioMinutes",
+		"CardioCalories",
+		"CardioMaxBPM",
+		"CardioMinBPM",
+
+		"PeakMinutes",
+		"PeakCalories",
+		"PeakMaxBPM",
+		"PeakMinBPM",
+	}
+}
+
+func (f *HeartRateActivities) Values() []string {
+	var outOfRangeMinutes, outOfRangeMaxBPM, outOfRangeMinBPM int64
+	var fatBurnMinutes, fatBurnMaxBPM, fatBurnMinBPM int64
+	var cardioMinutes, cardioMaxBPM, cardioMinBPM int64
+	var peakMinutes, peakMaxBPM, peakMinBPM int64
+
+	var outOfRangeCalories, fatBurnCalories, cardioCalories, peakCalories float64
+
+	for _, zone := range f.HeartRateZones {
+		switch zone.Name {
+		case "Out of Range":
+			outOfRangeMinutes = zone.Minutes
+			outOfRangeCalories = zone.CaloriesOut
+			outOfRangeMaxBPM = zone.Max
+			outOfRangeMinBPM = zone.Min
+		case "Fat Burn":
+			fatBurnMinutes = zone.Minutes
+			fatBurnCalories = zone.CaloriesOut
+			fatBurnMaxBPM = zone.Max
+			fatBurnMinBPM = zone.Min
+		case "Cardio":
+			cardioMinutes = zone.Minutes
+			cardioCalories = zone.CaloriesOut
+			cardioMaxBPM = zone.Max
+			cardioMinBPM = zone.Min
+		case "Peak":
+			peakMinutes = zone.Minutes
+			peakCalories = zone.CaloriesOut
+			peakMaxBPM = zone.Max
+			peakMinBPM = zone.Min
+		}
+	}
+
+	return []string{
+		strconv.FormatInt(f.RestingHeartRate, 10),
+		strconv.FormatInt(outOfRangeMinutes, 10),
+		strconv.FormatFloat(outOfRangeCalories, 'f', 2, 64),
+		strconv.FormatInt(outOfRangeMaxBPM, 10),
+		strconv.FormatInt(outOfRangeMinBPM, 10),
+
+		strconv.FormatInt(fatBurnMinutes, 10),
+		strconv.FormatFloat(fatBurnCalories, 'f', 2, 64),
+		strconv.FormatInt(fatBurnMaxBPM, 10),
+		strconv.FormatInt(fatBurnMinBPM, 10),
+
+		strconv.FormatInt(cardioMinutes, 10),
+		strconv.FormatFloat(cardioCalories, 'f', 2, 64),
+		strconv.FormatInt(cardioMaxBPM, 10),
+		strconv.FormatInt(cardioMinBPM, 10),
+
+		strconv.FormatInt(peakMinutes, 10),
+		strconv.FormatFloat(peakCalories, 'f', 2, 64),
+		strconv.FormatInt(peakMaxBPM, 10),
+		strconv.FormatInt(peakMinBPM, 10),
+	}
 }
 
 func (HeartRateActivities) TableName() string {

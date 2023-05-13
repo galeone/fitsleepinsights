@@ -5,6 +5,7 @@
 package types
 
 import (
+	"strconv"
 	"time"
 
 	pgdb "github.com/galeone/fitbit-pgdb"
@@ -20,6 +21,18 @@ type CoreTemperature struct {
 	Date     time.Time
 }
 
+func (f *CoreTemperature) Headers() []string {
+	return []string{
+		"CoreTemperature",
+	}
+}
+
+func (f *CoreTemperature) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Value, 'f', 2, 64),
+	}
+}
+
 func (CoreTemperature) TableName() string {
 	return "core_temperatures"
 }
@@ -32,6 +45,18 @@ type SkinTemperature struct {
 	DateTime types.FitbitDate `sql:"-"` // it's a date
 	Date     time.Time
 	Value    float64 // for some reason in the API this value is wrapped in a structure
+}
+
+func (f *SkinTemperature) Headers() []string {
+	return []string{
+		"SkinTemperature",
+	}
+}
+
+func (f *SkinTemperature) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Value, 'f', 2, 64),
+	}
 }
 
 func (SkinTemperature) TableName() string {

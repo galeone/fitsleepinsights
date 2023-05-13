@@ -36,7 +36,7 @@ func NewRouter() (*echo.Echo, error) {
 	// at this endpoint and on database insert (new user)
 	router.GET("/dump", Dump(), RequireFitbit())
 	// 4. Fun with VertexAI (INTERNAL)
-	router.GET("/vertex", TestVertexAI())
+	router.GET("/vertex", TestAutoML(), RequireFitbit())
 	// 5. Fetch all data  endpoint (INTERNAL)
 	router.GET("/fetch", Fetch(), RequireFitbit())
 	return router, nil

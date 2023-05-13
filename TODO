@@ -1,2 +1,16 @@
 storage for all the data
 nutrition & nutrition time series. I have no data for generating meaningful responses
+
+
+func (u *UserData) Values() []string {
+	ret := []string{
+		u.Date.Format("2006-01-02"),
+	}
+	ret = append(ret, u.Activities.Values()...)
+	ret = append(ret, u.ActivityCalories.Values()...)
+
+   u.Activities ecc possono essere nil, quindi esplode a runtime in questo caso.
+
+FORSE: spostare gli header da metodi sul pointer a metodi sul tipo costante, e sfruttare questo per creare liste di array di stringhe vuote della lunghezza degli header
+
+AutoML: de-comment after test and go on with: upload csv to bucket, define dataset, train, ...
