@@ -27,10 +27,8 @@ func init() {
 		}
 		accessToken := payload[0]
 		if dumper, err := NewDumper(accessToken); err == nil {
-			var all *time.Time = nil
-			dumpTCX := false
-			if err := dumper.Dump(all, dumpTCX); err != nil {
-				fmt.Printf("dumper.Dump(all): %s", err)
+			if err := dumper.DumpNewer(); err != nil {
+				fmt.Printf("dumper.DumpNewer: %s", err)
 			}
 		} else {
 			fmt.Println("here: ", err.Error())
@@ -296,6 +294,10 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 			}
 		}
 
+		// An empty url is a valid url for url.Parse!
+		if value.Pagination.Next == "" {
+			break
+		}
 		if nextURL, err := url.Parse(value.Pagination.Next); err != nil {
 			fmt.Println(err)
 			break
@@ -1116,7 +1118,7 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	d.userActivityDailyGoal()
 	d.userActivityWeeklyGoal()
 
-	d.userActivityLogList(after, dumpTCX)
+	d.userActivityLogList(&startDate, dumpTCX)
 	d.userActivityCaloriesTimeseries(&startDate, endDate)
 	d.userBMITimeseries(&startDate, endDate)
 	d.userBodyFatTimeseries(&startDate, endDate)
@@ -1181,6 +1183,20 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	return nil
 }
 
+func (d *dumper) DumpNewer() error {
+	// Fetch the latest activity logged to get a date to start from.
+	var after *time.Time
+	var last time.Time
+	// err = empty -> no data previously stored
+	if err := _db.Model(types.ActivityLog{}).Select("max(start_time)").Where(&types.ActivityLog{UserID: d.User.ID}).Scan(&last); err != nil {
+		after = nil
+	} else {
+		after = &last
+	}
+	dumpTCX := false
+	return d.Dump(after, dumpTCX)
+}
+
 func Dump() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// secure, under middleware
@@ -1198,10 +1214,8 @@ func Dump() echo.HandlerFunc {
 		}
 
 		if dumper, err := NewDumper(user.AccessToken); err == nil {
-			var all *time.Time = nil
-			dumpTCX := false
-			if err := dumper.Dump(all, dumpTCX); err != nil {
-				fmt.Printf("dumper.Dump(all): %s", err)
+			if err = dumper.DumpNewer(); err != nil {
+				return err
 			}
 		} else {
 			fmt.Println(err.Error())
