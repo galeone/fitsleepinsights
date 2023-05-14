@@ -5,6 +5,7 @@
 package types
 
 import (
+	"database/sql"
 	"strconv"
 	"time"
 
@@ -24,7 +25,7 @@ type HeartRateActivities struct {
 	Value                int64           `sql:"-"`
 	CustomHeartRateZones []HeartRateZone `sql:"-"`
 	HeartRateZones       []HeartRateZone `sql:"-"`
-	RestingHeartRate     int64
+	RestingHeartRate     sql.NullInt64
 	DateTime             types.FitbitDate `sql:"-"` // It's a Date
 	Date                 time.Time
 }
@@ -88,8 +89,13 @@ func (f *HeartRateActivities) Values() []string {
 		}
 	}
 
+	var restingHRstring string
+	if f.RestingHeartRate.Valid {
+		restingHRstring = strconv.FormatInt(f.RestingHeartRate.Int64, 10)
+	}
+
 	return []string{
-		strconv.FormatInt(f.RestingHeartRate, 10),
+		restingHRstring,
 		strconv.FormatInt(outOfRangeMinutes, 10),
 		strconv.FormatFloat(outOfRangeCalories, 'f', 2, 64),
 		strconv.FormatInt(outOfRangeMaxBPM, 10),
