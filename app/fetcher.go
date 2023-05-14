@@ -824,13 +824,6 @@ func Fetch() echo.HandlerFunc {
 		}
 
 		if fetcher, err := NewFetcher(&user); err == nil {
-			yesterday := time.Now().Add(-time.Duration(24) * time.Hour).Truncate(time.Hour * 24)
-
-			userData := fetcher.Fetch(yesterday)
-			fmt.Println(userData.Date)
-			fmt.Println(userData.HeartRate)
-			fmt.Println(userData.HeartRateVariability)
-
 			if all, err := fetcher.FetchAll(FetchAllWithSleepLog); err == nil {
 				if csv, err := userDataToCSV(all); err == nil {
 					// Save completecsv to file
