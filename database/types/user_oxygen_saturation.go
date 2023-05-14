@@ -5,6 +5,7 @@
 package types
 
 import (
+	"strconv"
 	"time"
 
 	pgdb "github.com/galeone/fitbit-pgdb"
@@ -24,6 +25,22 @@ type OxygenSaturation struct {
 	// DateTime
 	DateTime time.Time `sql:"-"` // it's a date
 	Date     time.Time
+}
+
+func (OxygenSaturation) Headers() []string {
+	return []string{
+		"AvgOxygenSaturation",
+		"MaxOxygenSaturation",
+		"MinOxygenSaturation",
+	}
+}
+
+func (f *OxygenSaturation) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Avg, 'f', 2, 64),
+		strconv.FormatFloat(f.Max, 'f', 2, 64),
+		strconv.FormatFloat(f.Min, 'f', 2, 64),
+	}
 }
 
 func (OxygenSaturation) TableName() string {

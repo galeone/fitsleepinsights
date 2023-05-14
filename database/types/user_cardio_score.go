@@ -5,6 +5,7 @@
 package types
 
 import (
+	"strconv"
 	"time"
 
 	pgdb "github.com/galeone/fitbit-pgdb"
@@ -35,6 +36,20 @@ type CardioFitnessScore struct {
 	Value            string `sql:"-"`
 	Vo2MaxLowerBound float64
 	Vo2MaxUpperBound float64
+}
+
+func (CardioFitnessScore) Headers() []string {
+	return []string{
+		"Vo2MaxLowerBound",
+		"Vo2MaxUpperBound",
+	}
+}
+
+func (f *CardioFitnessScore) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Vo2MaxLowerBound, 'f', 2, 64),
+		strconv.FormatFloat(f.Vo2MaxUpperBound, 'f', 2, 64),
+	}
 }
 
 func (CardioFitnessScore) TableName() string {

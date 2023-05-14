@@ -5,6 +5,6 @@
 CREATE TABLE IF NOT EXISTS heart_rate_activities(
     id bigserial primary key not null,
     date date not null,
-    resting_heart_rate bigint not null,
+    resting_heart_rate bigint,
     user_id bigint not null references oauth2_authorized(id)
 );
