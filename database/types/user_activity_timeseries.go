@@ -23,7 +23,7 @@ type ActivityCaloriesSeries struct {
 	UserID int64
 }
 
-func (f *ActivityCaloriesSeries) Headers() []string {
+func (ActivityCaloriesSeries) Headers() []string {
 	return []string{
 		"ActivityCalories",
 	}
@@ -50,7 +50,7 @@ type CaloriesSeries struct {
 	UserID int64
 }
 
-func (f *CaloriesSeries) Headers() []string {
+func (CaloriesSeries) Headers() []string {
 	return []string{
 		"Calories",
 	}
@@ -77,7 +77,7 @@ type CaloriesBMRSeries struct {
 	UserID int64
 }
 
-func (f *CaloriesBMRSeries) Headers() []string {
+func (CaloriesBMRSeries) Headers() []string {
 	return []string{
 		"CaloriesBMR",
 	}
@@ -104,7 +104,7 @@ type DistanceSeries struct {
 	UserID int64
 }
 
-func (f *DistanceSeries) Headers() []string {
+func (DistanceSeries) Headers() []string {
 	return []string{
 		"Distance",
 	}
@@ -131,7 +131,7 @@ type ElevationSeries struct {
 	UserID int64
 }
 
-func (f *ElevationSeries) Headers() []string {
+func (ElevationSeries) Headers() []string {
 	return []string{
 		"Elevation",
 	}
@@ -158,7 +158,7 @@ type FloorsSeries struct {
 	UserID int64
 }
 
-func (f *FloorsSeries) Headers() []string {
+func (FloorsSeries) Headers() []string {
 	return []string{
 		"ActivityCalories",
 	}
@@ -189,7 +189,7 @@ func (MinutesSedentarySeries) TableName() string {
 	return "minutes_sedentary_series"
 }
 
-func (f *MinutesSedentarySeries) Headers() []string {
+func (MinutesSedentarySeries) Headers() []string {
 	return []string{
 		"MinutesSedentary",
 	}
@@ -212,7 +212,7 @@ type MinutesLightlyActiveSeries struct {
 	UserID int64
 }
 
-func (f *MinutesLightlyActiveSeries) Headers() []string {
+func (MinutesLightlyActiveSeries) Headers() []string {
 	return []string{
 		"MinutesLightlyActive",
 	}
@@ -239,7 +239,7 @@ type MinutesFairlyActiveSeries struct {
 	UserID int64
 }
 
-func (f *MinutesFairlyActiveSeries) Headers() []string {
+func (MinutesFairlyActiveSeries) Headers() []string {
 	return []string{
 		"MinutesFairlyActive",
 	}
@@ -270,7 +270,7 @@ func (MinutesVeryActiveSeries) TableName() string {
 	return "minutes_very_active_series"
 }
 
-func (f *MinutesVeryActiveSeries) Headers() []string {
+func (MinutesVeryActiveSeries) Headers() []string {
 	return []string{
 		"MinutesVeryActive",
 	}
@@ -293,7 +293,7 @@ type StepsSeries struct {
 	UserID int64
 }
 
-func (f *StepsSeries) Headers() []string {
+func (StepsSeries) Headers() []string {
 	return []string{
 		"Steps",
 	}

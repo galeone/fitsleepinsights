@@ -27,7 +27,7 @@ func (BodyWeightSeries) TableName() string {
 	return "body_weight_series"
 }
 
-func (f *BodyWeightSeries) Headers() []string {
+func (BodyWeightSeries) Headers() []string {
 	return []string{
 		"BodyWeight",
 	}
@@ -50,7 +50,7 @@ type BMISeries struct {
 	UserID int64
 }
 
-func (f *BMISeries) Headers() []string {
+func (BMISeries) Headers() []string {
 	return []string{
 		"BMI",
 	}
@@ -77,7 +77,7 @@ type BodyFatSeries struct {
 	UserID int64
 }
 
-func (f *BodyFatSeries) Headers() []string {
+func (BodyFatSeries) Headers() []string {
 	return []string{
 		"BodyFat",
 	}

@@ -47,11 +47,10 @@ type SleepLog struct {
 	StartTime   time.Time
 }
 
-func (f *SleepLog) Headers() []string {
+func (SleepLog) Headers() []string {
 	return []string{
 		"Duration",
 		"Efficiency",
-		"EndTime",
 		"MinutesAfterWakeup",
 		"MinutesAsleep",
 		"MinutesAwake",
@@ -73,7 +72,6 @@ func (f *SleepLog) Values() []string {
 	return []string{
 		strconv.FormatInt(f.Duration, 10),
 		strconv.FormatInt(f.Efficiency, 10),
-		f.EndTime.Format(time.RFC3339),
 		strconv.FormatInt(f.MinutesAfterWakeup, 10),
 		strconv.FormatInt(f.MinutesAsleep, 10),
 		strconv.FormatInt(f.MinutesAwake, 10),

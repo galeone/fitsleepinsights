@@ -38,7 +38,7 @@ type CardioFitnessScore struct {
 	Vo2MaxUpperBound float64
 }
 
-func (f *CardioFitnessScore) Headers() []string {
+func (CardioFitnessScore) Headers() []string {
 	return []string{
 		"Vo2MaxLowerBound",
 		"Vo2MaxUpperBound",

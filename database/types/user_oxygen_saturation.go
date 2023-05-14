@@ -27,7 +27,7 @@ type OxygenSaturation struct {
 	Date     time.Time
 }
 
-func (f *OxygenSaturation) Headers() []string {
+func (OxygenSaturation) Headers() []string {
 	return []string{
 		"AvgOxygenSaturation",
 		"MaxOxygenSaturation",

@@ -21,7 +21,7 @@ type CoreTemperature struct {
 	Date     time.Time
 }
 
-func (f *CoreTemperature) Headers() []string {
+func (CoreTemperature) Headers() []string {
 	return []string{
 		"CoreTemperature",
 	}
@@ -47,7 +47,7 @@ type SkinTemperature struct {
 	Value    float64 // for some reason in the API this value is wrapped in a structure
 }
 
-func (f *SkinTemperature) Headers() []string {
+func (SkinTemperature) Headers() []string {
 	return []string{
 		"SkinTemperature",
 	}

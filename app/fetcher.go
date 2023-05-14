@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/galeone/fitbit"
@@ -25,7 +27,7 @@ type DailyActivities []types.ActivityLog
 // Headers returns the headers of the CSV file.
 // For the DailyActivities type, the headers are only the column names that can
 // be aggregated using a sum (e.g. no activityID, no activityParentID, etc.)
-func (f *DailyActivities) Headers() []string {
+func (DailyActivities) Headers() []string {
 	// TODO: this is a coarse summary of the activities, but a lot of useful information is missing
 	return []string{
 		"NumberOfAutoDetectedActivities",
@@ -138,6 +140,17 @@ func (f *DailyActivities) Values() []string {
 	if len(heartRates) > 0 {
 		AverageHeartRate = reduceMean(heartRates)
 	}
+
+	// Split ActivitiesNameConcatenation using " " as delimiter and sort it alphabetically
+	// This is done to have a consistent order of the activities
+	// e.g. walk, weights, walk, weights, walk, run
+	// becomes: run, walk, walk, walk, weights, weights
+	// and then: run, walk, weights
+	// Duplicates are already handled during the creation of ActivitiesNameConcatenation
+	ActivitiesNameConcatenation = strings.Trim(ActivitiesNameConcatenation, " ")
+	activities := strings.Split(ActivitiesNameConcatenation, " ")
+	sort.Strings(activities)
+	ActivitiesNameConcatenation = strings.Join(activities, " ")
 
 	return []string{
 		fmt.Sprintf("%d", NumberOfAutoDetectedActivities),
@@ -558,32 +571,32 @@ type UserData struct {
 // The order of the headers is important as it will be used to generate the CSV file
 // The order of the values must match the order of the headers
 // If a value is nil, the CSV cell will be empty
-func (u *UserData) Headers() []string {
+func (UserData) Headers() []string {
 	ret := []string{
 		"Date",
 	}
-	ret = append(ret, u.Activities.Headers()...)
-	ret = append(ret, u.ActivityCalories.Headers()...)
-	ret = append(ret, u.BMI.Headers()...)
-	ret = append(ret, u.BodyFat.Headers()...)
-	ret = append(ret, u.BodyWeight.Headers()...)
-	ret = append(ret, u.CaloriesBMR.Headers()...)
-	ret = append(ret, u.Calories.Headers()...)
-	ret = append(ret, u.Distance.Headers()...)
-	ret = append(ret, u.Floors.Headers()...)
-	ret = append(ret, u.MinutesFairlyActive.Headers()...)
-	ret = append(ret, u.MinutesLightlyActive.Headers()...)
-	ret = append(ret, u.MinutesSedentary.Headers()...)
-	ret = append(ret, u.MinutesVeryActive.Headers()...)
-	ret = append(ret, u.Steps.Headers()...)
-	ret = append(ret, u.HeartRate.Headers()...)
-	ret = append(ret, u.Elevation.Headers()...)
-	ret = append(ret, u.SkinTemperature.Headers()...)
-	ret = append(ret, u.CoreTemperature.Headers()...)
-	ret = append(ret, u.OxygenSaturation.Headers()...)
-	ret = append(ret, u.CardioFitnessScore.Headers()...)
-	ret = append(ret, u.HeartRateVariability.Headers()...)
-	ret = append(ret, u.SleepLog.Headers()...)
+	ret = append(ret, DailyActivities{}.Headers()...)
+	ret = append(ret, types.ActivityCaloriesSeries{}.Headers()...)
+	ret = append(ret, types.BMISeries{}.Headers()...)
+	ret = append(ret, types.BodyFatSeries{}.Headers()...)
+	ret = append(ret, types.BodyWeightSeries{}.Headers()...)
+	ret = append(ret, types.CaloriesBMRSeries{}.Headers()...)
+	ret = append(ret, types.CaloriesSeries{}.Headers()...)
+	ret = append(ret, types.DistanceSeries{}.Headers()...)
+	ret = append(ret, types.FloorsSeries{}.Headers()...)
+	ret = append(ret, types.MinutesFairlyActiveSeries{}.Headers()...)
+	ret = append(ret, types.MinutesLightlyActiveSeries{}.Headers()...)
+	ret = append(ret, types.MinutesSedentarySeries{}.Headers()...)
+	ret = append(ret, types.MinutesVeryActiveSeries{}.Headers()...)
+	ret = append(ret, types.StepsSeries{}.Headers()...)
+	ret = append(ret, types.HeartRateActivities{}.Headers()...)
+	ret = append(ret, types.ElevationSeries{}.Headers()...)
+	ret = append(ret, types.SkinTemperature{}.Headers()...)
+	ret = append(ret, types.CoreTemperature{}.Headers()...)
+	ret = append(ret, types.OxygenSaturation{}.Headers()...)
+	ret = append(ret, types.CardioFitnessScore{}.Headers()...)
+	ret = append(ret, types.HeartRateVariabilityTimeSeries{}.Headers()...)
+	ret = append(ret, types.SleepLog{}.Headers()...)
 	return ret
 }
 
@@ -591,28 +604,140 @@ func (u *UserData) Values() []string {
 	ret := []string{
 		u.Date.Format("2006-01-02"),
 	}
-	ret = append(ret, u.Activities.Values()...)
-	ret = append(ret, u.ActivityCalories.Values()...)
-	ret = append(ret, u.BMI.Values()...)
-	ret = append(ret, u.BodyFat.Values()...)
-	ret = append(ret, u.BodyWeight.Values()...)
-	ret = append(ret, u.CaloriesBMR.Values()...)
-	ret = append(ret, u.Calories.Values()...)
-	ret = append(ret, u.Distance.Values()...)
-	ret = append(ret, u.Floors.Values()...)
-	ret = append(ret, u.MinutesFairlyActive.Values()...)
-	ret = append(ret, u.MinutesLightlyActive.Values()...)
-	ret = append(ret, u.MinutesSedentary.Values()...)
-	ret = append(ret, u.MinutesVeryActive.Values()...)
-	ret = append(ret, u.Steps.Values()...)
-	ret = append(ret, u.HeartRate.Values()...)
-	ret = append(ret, u.Elevation.Values()...)
-	ret = append(ret, u.SkinTemperature.Values()...)
-	ret = append(ret, u.CoreTemperature.Values()...)
-	ret = append(ret, u.OxygenSaturation.Values()...)
-	ret = append(ret, u.CardioFitnessScore.Values()...)
-	ret = append(ret, u.HeartRateVariability.Values()...)
-	ret = append(ret, u.SleepLog.Values()...)
+
+	if u.Activities == nil {
+		ret = append(ret, make([]string, len(DailyActivities{}.Headers()))...)
+	} else {
+		ret = append(ret, u.Activities.Values()...)
+	}
+
+	if u.ActivityCalories == nil {
+		ret = append(ret, make([]string, len(types.ActivityCaloriesSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.ActivityCalories.Values()...)
+	}
+
+	if u.BMI == nil {
+		ret = append(ret, make([]string, len(types.BMISeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.BMI.Values()...)
+	}
+
+	if u.BodyFat == nil {
+		ret = append(ret, make([]string, len(types.BodyFatSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.BodyFat.Values()...)
+	}
+
+	if u.BodyWeight == nil {
+		ret = append(ret, make([]string, len(types.BodyWeightSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.BodyWeight.Values()...)
+	}
+
+	if u.CaloriesBMR == nil {
+		ret = append(ret, make([]string, len(types.CaloriesBMRSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.CaloriesBMR.Values()...)
+	}
+
+	if u.Calories == nil {
+		ret = append(ret, make([]string, len(types.CaloriesSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.Calories.Values()...)
+	}
+
+	if u.Distance == nil {
+		ret = append(ret, make([]string, len(types.DistanceSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.Distance.Values()...)
+	}
+
+	if u.Floors == nil {
+		ret = append(ret, make([]string, len(types.FloorsSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.Floors.Values()...)
+	}
+
+	if u.MinutesFairlyActive == nil {
+		ret = append(ret, make([]string, len(types.MinutesFairlyActiveSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.MinutesFairlyActive.Values()...)
+	}
+
+	if u.MinutesLightlyActive == nil {
+		ret = append(ret, make([]string, len(types.MinutesLightlyActiveSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.MinutesLightlyActive.Values()...)
+	}
+
+	if u.MinutesSedentary == nil {
+		ret = append(ret, make([]string, len(types.MinutesSedentarySeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.MinutesSedentary.Values()...)
+	}
+
+	if u.MinutesVeryActive == nil {
+		ret = append(ret, make([]string, len(types.MinutesVeryActiveSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.MinutesVeryActive.Values()...)
+	}
+
+	if u.Steps == nil {
+		ret = append(ret, make([]string, len(types.StepsSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.Steps.Values()...)
+	}
+
+	if u.HeartRate == nil {
+		ret = append(ret, make([]string, len(types.HeartRateActivities{}.Headers()))...)
+	} else {
+		ret = append(ret, u.HeartRate.Values()...)
+	}
+
+	if u.Elevation == nil {
+		ret = append(ret, make([]string, len(types.ElevationSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.Elevation.Values()...)
+	}
+
+	if u.SkinTemperature == nil {
+		ret = append(ret, make([]string, len(types.SkinTemperature{}.Headers()))...)
+	} else {
+		ret = append(ret, u.SkinTemperature.Values()...)
+
+	}
+
+	if u.CoreTemperature == nil {
+		ret = append(ret, make([]string, len(types.CoreTemperature{}.Headers()))...)
+	} else {
+		ret = append(ret, u.CoreTemperature.Values()...)
+	}
+
+	if u.OxygenSaturation == nil {
+		ret = append(ret, make([]string, len(types.OxygenSaturation{}.Headers()))...)
+	} else {
+		ret = append(ret, u.OxygenSaturation.Values()...)
+	}
+
+	if u.CardioFitnessScore == nil {
+		ret = append(ret, make([]string, len(types.CardioFitnessScore{}.Headers()))...)
+	} else {
+
+		ret = append(ret, u.CardioFitnessScore.Values()...)
+	}
+
+	if u.HeartRateVariability == nil {
+		ret = append(ret, make([]string, len(types.HeartRateVariabilityTimeSeries{}.Headers()))...)
+	} else {
+		ret = append(ret, u.HeartRateVariability.Values()...)
+	}
+
+	if u.SleepLog == nil {
+		ret = append(ret, make([]string, len(types.SleepLog{}.Headers()))...)
+	} else {
+		ret = append(ret, u.SleepLog.Values()...)
+	}
 	return ret
 }
 

@@ -25,7 +25,7 @@ type HeartRateVariabilityTimeSeries struct {
 	Date       time.Time
 }
 
-func (f *HeartRateVariabilityTimeSeries) Headers() []string {
+func (HeartRateVariabilityTimeSeries) Headers() []string {
 	return []string{
 		"DailyRmssd",
 		"DeepRmssd",

@@ -29,7 +29,7 @@ type HeartRateActivities struct {
 	Date                 time.Time
 }
 
-func (f *HeartRateActivities) Headers() []string {
+func (HeartRateActivities) Headers() []string {
 	return []string{
 		"RestingHeartRate",
 
