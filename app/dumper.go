@@ -587,9 +587,18 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 	tx := _db.Begin()
 	for _, hrActivity := range value.ActivitiesHeart {
 		hrActivityInsert := types.HeartRateActivities{
-			UserID:           d.User.ID,
-			Date:             hrActivity.DateTime.Time,
-			RestingHeartRate: hrActivity.Value.RestingHeartRate,
+			UserID: d.User.ID,
+			Date:   hrActivity.DateTime.Time,
+		}
+		if hrActivity.Value.RestingHeartRate > 0 {
+			hrActivityInsert.RestingHeartRate = sql.NullInt64{
+				Valid: true,
+				Int64: hrActivity.Value.RestingHeartRate,
+			}
+		} else {
+			hrActivityInsert.RestingHeartRate = sql.NullInt64{
+				Valid: false,
+			}
 		}
 
 		// No error = found
@@ -1105,8 +1114,8 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	var days int
 	if dumpAll {
 		// In this case, we want to dump "all" the past data up to yesterday.
-		// Try to fetch 120 days (completely arbitrary).
-		days = 120
+		// Try to fetch a completely arbitrary number of days.
+		days = 365
 		startDate = endDate.Add(-time.Duration(24*120) * time.Hour).Truncate(time.Hour * 24)
 	} else {
 		startDate = *after
