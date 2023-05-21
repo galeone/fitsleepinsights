@@ -28,7 +28,14 @@ var (
 	// and the sdk uses this location to setup the account & project
 	//
 	// info: https://stackoverflow.com/a/52247638/2891324
-	_vaiLocation   = os.Getenv("VAI_LOCATION")
-	_vaiProjectID  = os.Getenv("VAI_PROJECT_ID")
-	_vaiEndpointID = os.Getenv("VAI_ENDPOINT_ID")
+
+	// Or, we can use a service account: create a service account and download the key file
+	// then set the VAI_SERVICE_ACCOUNT_KEY environment variable to the path of the key file.
+	// The service account must have the following roles:
+	// - Vertex AI Administrator
+	// - Storage Admin
+
+	_vaiLocation          = os.Getenv("VAI_LOCATION")
+	_vaiProjectID         = os.Getenv("VAI_PROJECT_ID")
+	_vaiServiceAccountKey = os.Getenv("VAI_SERVICE_ACCOUNT_KEY")
 )
