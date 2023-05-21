@@ -160,7 +160,7 @@ type FloorsSeries struct {
 
 func (FloorsSeries) Headers() []string {
 	return []string{
-		"ActivityCalories",
+		"Floors",
 	}
 }
 
