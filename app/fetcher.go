@@ -602,7 +602,8 @@ func (UserData) Headers() []string {
 
 func (u *UserData) Values() []string {
 	ret := []string{
-		u.Date.Format("2006-01-02"),
+		// Date format required by Vertex AI
+		u.Date.Format(time.RFC3339),
 	}
 
 	if u.Activities == nil {
