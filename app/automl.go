@@ -7,6 +7,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	vai "cloud.google.com/go/aiplatform/apiv1beta1"
@@ -15,6 +16,7 @@ import (
 	fitbit_pgdb "github.com/galeone/fitbit-pgdb"
 	"github.com/labstack/echo/v4"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	storage "cloud.google.com/go/storage"
@@ -163,7 +165,7 @@ func TestAutoML() echo.HandlerFunc {
 				return err
 			}
 		}
-		fmt.Println(dataset.GetName(), dataset.GetDisplayName(), dataset.GetMetadataSchemaUri(), dataset.GetMetadata())
+		log.Println(dataset.GetName(), dataset.GetDisplayName(), dataset.GetMetadataSchemaUri(), dataset.GetMetadata())
 		datasetNameSplit := strings.Split(dataset.GetName(), "/")
 		datasetId := datasetNameSplit[len(datasetNameSplit)-1]
 
@@ -187,13 +189,15 @@ func TestAutoML() echo.HandlerFunc {
 						OutputUriPrefix: gcsDestination,
 					},
 				},
-				Split: &vaipb.ExportDataConfig_FractionSplit{
-					FractionSplit: &vaipb.ExportFractionSplit{
-						TrainingFraction:   0.8,
-						ValidationFraction: 0.1,
-						TestFraction:       0.1,
+				/*
+					Split: &vaipb.ExportDataConfig_FractionSplit{
+						FractionSplit: &vaipb.ExportFractionSplit{
+							TrainingFraction:   0.8,
+							ValidationFraction: 0.1,
+							TestFraction:       0.1,
+						},
 					},
-				},
+				*/
 			},
 		}
 
@@ -202,9 +206,15 @@ func TestAutoML() echo.HandlerFunc {
 			return err
 		}
 		if _, err = op.Wait(ctx); err != nil {
+			if s, ok := status.FromError(err); ok {
+				log.Println(s.Message())
+				for _, d := range s.Proto().Details {
+					log.Println(d)
+				}
+			}
 			return err
 		} else {
-			fmt.Println("Export data operation finished")
+			log.Println("Export data operation finished")
 		}
 
 		// 4. Train the model

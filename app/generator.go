@@ -11,6 +11,7 @@ package app
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -250,7 +251,7 @@ func GenerateTypes() echo.HandlerFunc {
 		}
 
 		if len(paths) != len(isUser) || len(paths) != len(uriArgs) {
-			fmt.Println(len(paths), len(isUser), len(uriArgs))
+			log.Println(len(paths), len(isUser), len(uriArgs))
 			panic("check the config")
 		}
 		if len(paths) == 0 {
@@ -285,7 +286,7 @@ func GenerateTypes() echo.HandlerFunc {
 			} else {
 				dest = FitbitAPI(fmt.Sprintf(path, args...))
 			}
-			fmt.Println(dest)
+			log.Println(dest)
 			if res, err = req.Get(dest); err != nil {
 				return err
 			}
@@ -306,15 +307,15 @@ func GenerateTypes() echo.HandlerFunc {
 				genericSb.WriteString(fmt.Sprintf("// %s\n", path))
 				genericSb.Write(pack)
 			}
-			fmt.Println(bodyString)
+			log.Println(bodyString)
 			time.Sleep(time.Second * 1)
 		}
 
 		if _, err = userFile.WriteString(userSb.String()); err != nil {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 		}
 		if _, err = genericFile.WriteString(genericSb.String()); err != nil {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 		}
 		return
 	}

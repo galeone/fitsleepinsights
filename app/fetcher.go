@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -831,13 +832,13 @@ func Fetch() echo.HandlerFunc {
 					file, _ := os.Create("complete.csv")
 					io.WriteString(file, csv)
 				} else {
-					fmt.Println(err)
+					log.Println(err)
 				}
 			} else {
-				fmt.Println(err)
+				log.Println(err)
 			}
 		} else {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 		}
 
 		return err

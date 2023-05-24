@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/galeone/sleepbit/app"
@@ -27,7 +28,7 @@ func main() {
 	} else {
 		port = fmt.Sprintf(":%s", port)
 	}
-	fmt.Printf("%s%s\n", os.Getenv("DOMAIN"), port)
+	log.Printf("%s%s\n", os.Getenv("DOMAIN"), port)
 	hosts[fmt.Sprintf("%s%s", os.Getenv("DOMAIN"), port)] = app
 
 	// Catch-all server & dispatch
