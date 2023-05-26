@@ -49,8 +49,8 @@ type SleepLog struct {
 
 func (SleepLog) Headers() []string {
 	return []string{
-		"Duration",
-		"Efficiency",
+		"SleepDuration",
+		"SleepEfficiency",
 		"MinutesAfterWakeup",
 		"MinutesAsleep",
 		"MinutesAwake",
