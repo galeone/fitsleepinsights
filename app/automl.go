@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	vai "cloud.google.com/go/aiplatform/apiv1beta1"
@@ -23,11 +24,6 @@ import (
 )
 
 func TestAutoML() echo.HandlerFunc {
-
-	// 3. Use automl to train the model
-	// 4. Use automl to deploy the model
-	// 5. Save the model id and endpoint id in the database
-
 	return func(c echo.Context) (err error) {
 		// 1. Fetch all user data
 		authorizer := c.Get("fitbit").(*fitbit.Authorizer)
@@ -51,7 +47,7 @@ func TestAutoML() echo.HandlerFunc {
 			return err
 		}
 
-		// 2. Prepare training data: convert them to csv, upload to the training data bucket
+		// 2. Prepare training data: convert them to csv
 		// ref: https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/prepare-data#csv
 		var csv string
 		if csv, err = userDataToCSV(allUserData); err != nil {
@@ -174,38 +170,96 @@ func TestAutoML() echo.HandlerFunc {
 
 		// 4. Export the dataset to a training pipeline
 		// ref: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#ExportDataRequest
+		// Perhaps not even export data is required with tabular datasets ?
 
-		gcsDestination := fmt.Sprintf("gs://%s/%d/", bucketName, user.ID)
-		exportDataReq := &vaipb.ExportDataRequest{
-			// ref: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#ExportDataRequest
-			// Required. The name of the Dataset resource.
-			// Format:
-			// `projects/{project}/locations/{location}/datasets/{dataset}`
-			// NOTE: the last parameter is the dataset ID and not the dataset display name!
-			Name: fmt.Sprintf("projects/%s/locations/%s/datasets/%s", _vaiProjectID, _vaiLocation, datasetId),
-			ExportConfig: &vaipb.ExportDataConfig{
-				Destination: &vaipb.ExportDataConfig_GcsDestination{
-					GcsDestination: &vaipb.GcsDestination{
-						OutputUriPrefix: gcsDestination,
-					},
-				},
-				/*
-					Split: &vaipb.ExportDataConfig_FractionSplit{
-						FractionSplit: &vaipb.ExportFractionSplit{
-							TrainingFraction:   0.8,
-							ValidationFraction: 0.1,
-							TestFraction:       0.1,
+		/*
+			gcsDestination := fmt.Sprintf("gs://%s/%d/", bucketName, user.ID)
+			exportDataReq := &vaipb.ExportDataRequest{
+				// ref: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#ExportDataRequest
+				// Required. The name of the Dataset resource.
+				// Format:
+				// `projects/{project}/locations/{location}/datasets/{dataset}`
+				// NOTE: the last parameter is the dataset ID and not the dataset display name!
+				Name: fmt.Sprintf("projects/%s/locations/%s/datasets/%s", _vaiProjectID, _vaiLocation, datasetId),
+				ExportConfig: &vaipb.ExportDataConfig{
+					Destination: &vaipb.ExportDataConfig_GcsDestination{
+						GcsDestination: &vaipb.GcsDestination{
+							OutputUriPrefix: gcsDestination,
 						},
 					},
-				*/
-			},
-		}
+					//	Split: &vaipb.ExportDataConfig_FractionSplit{
+					//		FractionSplit: &vaipb.ExportFractionSplit{
+					//			TrainingFraction:   0.8,
+					//			ValidationFraction: 0.1,
+					//			TestFraction:       0.1,
+					//		},
+					//	},
+				},
+			}
 
-		var op *vai.ExportDataOperation
-		if op, err = datasetClient.ExportData(ctx, exportDataReq); err != nil {
+			var op *vai.ExportDataOperation
+			if op, err = datasetClient.ExportData(ctx, exportDataReq); err != nil {
+				return err
+			}
+			if _, err = op.Wait(ctx); err != nil {
+				if s, ok := status.FromError(err); ok {
+					log.Println(s.Message())
+					for _, d := range s.Proto().Details {
+						log.Println(d)
+					}
+				}
+				return err
+			} else {
+				log.Println("Export data operation finished")
+			}
+		*/
+
+		// 5. Create the training pipeline: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#CreateTrainingPipelineRequest
+		// Use the java documentation as reference: // https://cloud.google.com/vertex-ai/docs/samples/aiplatform-create-training-pipeline-tabular-regression-sample
+
+		var modelDisplayName string = "sleep-efficiency-" + strconv.Itoa(int(user.ID))
+		var targetColumn string = "SleepEfficiency"
+
+		var pipelineClient *vai.PipelineClient
+		if pipelineClient, err = vai.NewPipelineClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
 			return err
 		}
-		if _, err = op.Wait(ctx); err != nil {
+
+		var trainingPipeline *vaipb.TrainingPipeline
+
+		// Create the Training Task Inputs
+		// Info gathered from the REST API: https://cloud.google.com/vertex-ai/docs/training/automl-api?hl=it#regression
+		var trainingTaskInput structpb.Struct
+		// reference: https://cloud.google.com/vertex-ai/docs/reference/rpc/google.cloud.aiplatform.v1/schema/trainingjob.definition#automltablesinputs
+		err = trainingTaskInput.UnmarshalJSON([]byte(
+			fmt.Sprintf(
+				`{
+					"targetColumn": "%s",
+        			"predictionType": "regression",
+        			"trainBudgetMilliNodeHours": "1000",
+        			"optimizationObjective": "minimize-rmse",
+        			"transformations": []
+				}`, targetColumn)))
+		if err != nil {
+			return err
+		}
+		// TODO: add transformations. The pipeline starts but it fails with the following error:
+		// "Transformations cannot be empty."
+		// use https://cloud.google.com/vertex-ai/docs/reference/rpc/google.cloud.aiplatform.v1/schema/trainingjob.definition#google.cloud.aiplatform.v1.schema.trainingjob.definition.AutoMlTablesInputs.Transformation
+
+		if trainingPipeline, err = pipelineClient.CreateTrainingPipeline(ctx, &vaipb.CreateTrainingPipelineRequest{
+			// Required. The resource name of the Location to create the TrainingPipeline
+			// in. Format: `projects/{project}/locations/{location}`
+			Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
+			TrainingPipeline: &vaipb.TrainingPipeline{
+				DisplayName:            modelDisplayName,
+				TrainingTaskDefinition: "gs://google-cloud-aiplatform/schema/trainingjob/definition/automl_tables_1.0.0.yaml",
+				InputDataConfig: &vaipb.InputDataConfig{
+					DatasetId: datasetId,
+				},
+				TrainingTaskInputs: structpb.NewStructValue(&trainingTaskInput),
+			},
+		}); err != nil {
 			if s, ok := status.FromError(err); ok {
 				log.Println(s.Message())
 				for _, d := range s.Proto().Details {
@@ -213,16 +267,24 @@ func TestAutoML() echo.HandlerFunc {
 				}
 			}
 			return err
-		} else {
-			log.Println("Export data operation finished")
 		}
 
-		// 4. Train the model
-		var modelClient *vai.ModelClient
-		if modelClient, err = vai.NewModelClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
-			return err
-		}
-		defer modelClient.Close()
+		// 6. Get the training pipeline ID and print all the ohter infos
+		pipelineID := trainingPipeline.GetName()
+		fmt.Println("Training pipeline ID:", pipelineID)
+		fmt.Println("Training pipeline display name:", trainingPipeline.GetDisplayName())
+		fmt.Println("Training pipeline input data config:", trainingPipeline.GetInputDataConfig())
+		fmt.Println("Training pipeline training task inputs:", trainingPipeline.GetTrainingTaskInputs())
+		fmt.Println("Training pipeline state:", trainingPipeline.GetState())
+		fmt.Println("Training pipeline error:", trainingPipeline.GetError())
+		fmt.Println("Training pipeline create time:", trainingPipeline.GetCreateTime())
+		fmt.Println("Training pipeline start time:", trainingPipeline.GetStartTime())
+		fmt.Println("Training pipeline end time:", trainingPipeline.GetEndTime())
+
+		// TODO: instead of using automl, choose a simple decision tree
+
+		// When creating the training pipeline the Date and ID field must be excluded from the training data
+		// ref: https://cloud.google.com/vertex-ai/docs/training/preparing-tabular
 
 		// use PredictionServiceClient and the Explain method to get the explanation of the prediction
 		return nil
