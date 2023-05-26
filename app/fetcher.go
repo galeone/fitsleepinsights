@@ -790,7 +790,8 @@ func (f *fetcher) FetchAll(strategy FetchAllStrategy) ([]*UserData, error) {
 	yesterday := time.Now().AddDate(0, 0, -1).Truncate(time.Hour * 24)
 	switch strategy {
 	case FetchAllWithSleepLog:
-		if err := _db.Model(types.SleepLog{}).Select("distinct date(date_of_sleep) as d").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Order("d desc").Scan(&dates); err != nil {
+		// Condition on efficiency > 0 to avoid fetching sleep logs that are not complete
+		if err := _db.Model(types.SleepLog{}).Select("distinct date(date_of_sleep) as d").Where(`date_of_sleep <= ? AND user_id = ? AND efficiency > 0`, yesterday, f.user.ID).Order("d desc").Scan(&dates); err != nil {
 			return nil, err
 		}
 	case FetchAllWithActivityLog:
