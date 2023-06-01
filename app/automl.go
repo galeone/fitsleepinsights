@@ -231,6 +231,17 @@ func TestAutoML() echo.HandlerFunc {
 		// Info gathered from the REST API: https://cloud.google.com/vertex-ai/docs/training/automl-api?hl=it#regression
 		var trainingTaskInput structpb.Struct
 		// reference: https://cloud.google.com/vertex-ai/docs/reference/rpc/google.cloud.aiplatform.v1/schema/trainingjob.definition#automltablesinputs
+
+		// Create the transformations for all the columns (required)
+		var transformations string
+		tot := len(csvHeaders(allUserData)) - 1
+		for i, header := range csvHeaders(allUserData) {
+			transformations += fmt.Sprintf(`{"auto": {"column_name": "%s"}}`, header)
+			if i < tot {
+				transformations += ","
+			}
+		}
+
 		err = trainingTaskInput.UnmarshalJSON([]byte(
 			fmt.Sprintf(
 				`{
@@ -238,13 +249,11 @@ func TestAutoML() echo.HandlerFunc {
         			"predictionType": "regression",
         			"trainBudgetMilliNodeHours": "1000",
         			"optimizationObjective": "minimize-rmse",
-        			"transformations": []
-				}`, targetColumn)))
+        			"transformations": [%s]
+				}`, targetColumn, transformations)))
 		if err != nil {
 			return err
 		}
-		// TODO: add transformations. The pipeline starts but it fails with the following error:
-		// "Transformations cannot be empty."
 		// use https://cloud.google.com/vertex-ai/docs/reference/rpc/google.cloud.aiplatform.v1/schema/trainingjob.definition#google.cloud.aiplatform.v1.schema.trainingjob.definition.AutoMlTablesInputs.Transformation
 
 		if trainingPipeline, err = pipelineClient.CreateTrainingPipeline(ctx, &vaipb.CreateTrainingPipelineRequest{

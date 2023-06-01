@@ -7,6 +7,17 @@ import (
 	"strconv"
 )
 
+// csvHeaders returns the headers for the CSV file
+func csvHeaders(userData []*UserData) []string {
+	if len(userData) == 0 {
+		return []string{}
+	}
+
+	headers := []string{"ID"}
+	headers = append(headers, userData[0].Headers()...)
+	return headers
+}
+
 // userDataToCSV converts the slice of UserData to a CSV string
 // Add a column ID, because vertex.ai requires it. It's not used for training
 // The label column will be decided by the user ideally. Right now we use the sleep efficiency
@@ -17,8 +28,7 @@ func userDataToCSV(userData []*UserData) (ret string, err error) {
 		return ret, errors.New("empty userData slice")
 	}
 
-	headers := []string{"ID"}
-	headers = append(headers, userData[0].Headers()...)
+	headers := csvHeaders(userData)
 
 	buffer := bytes.NewBufferString("")
 	w := csv.NewWriter(buffer)
