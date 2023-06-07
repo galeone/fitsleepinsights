@@ -15,7 +15,7 @@ import (
 	"github.com/galeone/fitbit"
 	fitbit_pgdb "github.com/galeone/fitbit-pgdb"
 	fitbit_types "github.com/galeone/fitbit/types"
-	"github.com/galeone/sleepbit/database/types"
+	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/labstack/echo/v4"
 )
 

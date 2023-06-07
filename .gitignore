@@ -21,7 +21,7 @@ go.work
 .env
 
 # binary
-sleepbit
+fitsleepinsights
 
 .vscode/
 __debug_bin

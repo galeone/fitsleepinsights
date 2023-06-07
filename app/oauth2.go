@@ -16,7 +16,7 @@ import (
 
 	"github.com/galeone/fitbit"
 	"github.com/galeone/fitbit/types"
-	"github.com/galeone/sleepbit/database"
+	"github.com/galeone/fitsleepinsights/database"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )

@@ -14,8 +14,8 @@ import (
 	fitbit_pgdb "github.com/galeone/fitbit-pgdb"
 	fitbit_client "github.com/galeone/fitbit/client"
 	fitbit_types "github.com/galeone/fitbit/types"
-	"github.com/galeone/sleepbit/database"
-	"github.com/galeone/sleepbit/database/types"
+	"github.com/galeone/fitsleepinsights/database"
+	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/galeone/tcx"
 	"github.com/labstack/echo/v4"
 )

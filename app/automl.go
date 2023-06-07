@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -45,6 +46,15 @@ func TestAutoML() echo.HandlerFunc {
 		var allUserData []*UserData
 		if allUserData, err = fetcher.FetchAll(FetchAllWithSleepLog); err != nil {
 			return err
+		}
+
+		// VertexAI autoML pipeline requires at least 1000 rows.
+		// Thus we random sample the data to get 1000 rows
+		if len(allUserData) < 1000 {
+			tot := len(allUserData) - 1
+			for i := 0; i < 1000-tot+2; i++ {
+				allUserData = append(allUserData, allUserData[rand.Intn(tot)])
+			}
 		}
 
 		// 2. Prepare training data: convert them to csv
@@ -236,7 +246,13 @@ func TestAutoML() echo.HandlerFunc {
 		var transformations string
 		tot := len(csvHeaders(allUserData)) - 1
 		for i, header := range csvHeaders(allUserData) {
-			transformations += fmt.Sprintf(`{"auto": {"column_name": "%s"}}`, header)
+			if header == targetColumn {
+				// required because with auto the pipeline fails with error message:
+				// "The values in target column SleepEfficiency have to be numeric for regression model."
+				transformations += fmt.Sprintf(`{"numeric": {"column_name": "%s"}}`, header)
+			} else {
+				transformations += fmt.Sprintf(`{"auto": {"column_name": "%s"}}`, header)
+			}
 			if i < tot {
 				transformations += ","
 			}
@@ -277,6 +293,8 @@ func TestAutoML() echo.HandlerFunc {
 			}
 			return err
 		}
+
+		// TODO: https://stackoverflow.com/questions/62039364/google-cloud-plateform-auto-ml
 
 		// 6. Get the training pipeline ID and print all the ohter infos
 		pipelineID := trainingPipeline.GetName()

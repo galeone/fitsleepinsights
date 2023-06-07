@@ -9,8 +9,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/galeone/sleepbit/app"
-	_ "github.com/galeone/sleepbit/database"
+	"github.com/galeone/fitsleepinsights/app"
+	_ "github.com/galeone/fitsleepinsights/database"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo/v4"
 )
