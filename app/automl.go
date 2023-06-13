@@ -247,9 +247,10 @@ func TestAutoML() echo.HandlerFunc {
 		tot := len(csvHeaders(allUserData)) - 1
 		for i, header := range csvHeaders(allUserData) {
 			if header == targetColumn {
-				// required because with auto the pipeline fails with error message:
-				// "The values in target column SleepEfficiency have to be numeric for regression model."
-				transformations += fmt.Sprintf(`{"numeric": {"column_name": "%s"}}`, header)
+				// skip the target column, it mustn't be included in the transformations
+				// ref:
+				// https://github.com/googleapis/python-aiplatform/blob/1fda4172baaf200414d95e7217bfef0e500cc16a/google/cloud/aiplatform/utils/column_transformations_utils.py#L67
+				continue
 			} else {
 				transformations += fmt.Sprintf(`{"auto": {"column_name": "%s"}}`, header)
 			}
