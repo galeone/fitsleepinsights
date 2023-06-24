@@ -51,7 +51,14 @@ on:
       # TODO remove after test
       - 10-per-user-workflow
 
-# All the env vars and secrets have been set inside the Github repository configuration
+# The secrets have been defined inside the Github settings
+# The env vars MUST be defined here to be accessible with env.VAR
+env:
+  GAR_LOCATION: europe-west6
+  PROJECT_ID: train-and-deploy-experiment
+  REGION: europe-west6
+  REPOSITORY: fitsleep-actions-repo
+  SERVICE: fitsleep-actions-repo
 
 jobs:
   deploy:
