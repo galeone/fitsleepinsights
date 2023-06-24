@@ -71,13 +71,19 @@ FITBIT_CLIENT_SECRET=""
 FITBIT_REDIRECT_URL=""
 
 # Use the same values used in the Database setup section
+DB_HOST=localhost
+DB_PORT=5432
 DB_USER=fitsleepinsights
 DB_PASS=fitsleepinsights
 DB_NAME=fitsleepinsights
 
+
 # Web application settings
 DOMAIN=fitsleepinsights.app
-PORT=80
+PORT=8989
 
-# TODO: add vertex ai env vars
+# Vertex AI
+VAI_LOCATION="europe-west6"
+VAI_PROJECT_ID="project id"
+VAI_SERVICE_ACCOUNT_KEY="full path"
 ```
