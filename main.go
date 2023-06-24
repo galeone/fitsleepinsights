@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	"github.com/galeone/fitsleepinsights/app"
@@ -28,20 +29,25 @@ func main() {
 	} else {
 		port = fmt.Sprintf(":%s", port)
 	}
-	log.Printf("%s%s\n", os.Getenv("DOMAIN"), port)
-	hosts[fmt.Sprintf("%s%s", os.Getenv("DOMAIN"), port)] = app
+	log.Printf("Locally, you can visit: %s%s\n", os.Getenv("DOMAIN"), port)
+
+	// Hosts without port, because reverse proxies do not forward the port
+	hosts[os.Getenv("DOMAIN")] = app
 
 	// Catch-all server & dispatch
 	e := echo.New()
 	e.Any("/*", func(c echo.Context) (err error) {
 		req := c.Request()
 		res := c.Response()
-		host := hosts[req.Host]
+		// remove eventual port from req.Host
+		// so this mapping works also locally
+		host, _, _ := net.SplitHostPort(req.Host)
 
-		if host == nil {
+		if server, ok := hosts[host]; !ok {
 			return echo.ErrNotFound
+		} else {
+			server.ServeHTTP(res, req)
 		}
-		host.ServeHTTP(res, req)
 		return
 	})
 
