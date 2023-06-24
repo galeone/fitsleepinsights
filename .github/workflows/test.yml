@@ -1,4 +1,4 @@
-name: sleepbit ci
+name: Build and Test
 
 on:
   push:
