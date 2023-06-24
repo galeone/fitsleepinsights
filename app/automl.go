@@ -234,6 +234,7 @@ func TestAutoML() echo.HandlerFunc {
 		if pipelineClient, err = vai.NewPipelineClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
 			return err
 		}
+		defer pipelineClient.Close()
 
 		var trainingPipeline *vaipb.TrainingPipeline
 
@@ -297,7 +298,7 @@ func TestAutoML() echo.HandlerFunc {
 
 		// TODO: https://stackoverflow.com/questions/62039364/google-cloud-plateform-auto-ml
 
-		// 6. Get the training pipeline ID and print all the ohter infos
+		// 6. Get the training pipeline ID and print all the other infos
 		pipelineID := trainingPipeline.GetName()
 		fmt.Println("Training pipeline ID:", pipelineID)
 		fmt.Println("Training pipeline display name:", trainingPipeline.GetDisplayName())
