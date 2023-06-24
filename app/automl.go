@@ -15,7 +15,7 @@ import (
 	vai "cloud.google.com/go/aiplatform/apiv1beta1"
 	vaipb "cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"
 	"github.com/galeone/fitbit"
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb"
+	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v2"
 	"github.com/labstack/echo/v4"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/status"

@@ -5,15 +5,19 @@
 package app
 
 import (
+	"fmt"
 	"os"
 
-	pgdb "github.com/galeone/fitbit-pgdb"
+	pgdb "github.com/galeone/fitbit-pgdb/v2"
 
 	_ "github.com/joho/godotenv/autoload"
 )
 
 var (
-	_db           = pgdb.NewPGDB()
+	_connectionString = fmt.Sprintf(
+		"host=%s user=%s password=%s port=%s dbname=%s sslmode=disable",
+		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
+	_db           = pgdb.NewPGDB(_connectionString)
 	_clientID     = os.Getenv("FITBIT_CLIENT_ID")
 	_clientSecret = os.Getenv("FITBIT_CLIENT_SECRET")
 	_redirectURL  = os.Getenv("FITBIT_REDIRECT_URL")

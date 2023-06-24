@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/galeone/fitbit"
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb"
+	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v2"
 	fitbit_types "github.com/galeone/fitbit/types"
 	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/labstack/echo/v4"

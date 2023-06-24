@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	"time"
 
-	pgdb "github.com/galeone/fitbit-pgdb"
+	pgdb "github.com/galeone/fitbit-pgdb/v2"
 	"github.com/galeone/fitbit/types"
 )
 

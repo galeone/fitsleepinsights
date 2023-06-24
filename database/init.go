@@ -7,8 +7,6 @@ package database
 
 import (
 	_ "embed"
-	"fmt"
-	"os"
 
 	"github.com/galeone/igor"
 	_ "github.com/joho/godotenv/autoload"
@@ -66,9 +64,7 @@ var (
 func init() {
 	var err error
 
-	connectionString := fmt.Sprintf("host=%s user=%s password=%s port=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_HOST"), os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
-	if _db, err = igor.Connect(connectionString); err != nil {
+	if _db, err = igor.Connect(_connectionString); err != nil {
 		panic(err.Error())
 	}
 
