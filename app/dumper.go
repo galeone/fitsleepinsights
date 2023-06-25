@@ -1123,8 +1123,9 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	var days int
 	if dumpAll {
 		// In this case, we want to dump "all" the past data up to yesterday.
-		// Try to fetch a completely arbitrary number of days.
-		days = 365
+		// Try to fetch 100 days of data. The reason? The API for the sleep data only allow us to fetch
+		// the last 100 days. So to have sleep and activities in sync, we need to fetch 100 days of data.
+		days = 100
 		startDate = endDate.Add(-time.Duration(24*days) * time.Hour).Truncate(time.Hour * 24)
 	} else {
 		startDate = *after
