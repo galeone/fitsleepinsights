@@ -42,7 +42,10 @@ func main() {
 		// remove eventual port from req.Host
 		// so this mapping works also locally
 		host, _, err := net.SplitHostPort(req.Host)
-		log.Printf("host: %s, err: %v", host, err)
+		if err != nil {
+			// no port found, use the whole host
+			host = req.Host
+		}
 
 		if server, ok := domains[host]; !ok {
 			return echo.ErrNotFound
