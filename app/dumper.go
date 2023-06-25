@@ -1116,7 +1116,6 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 
 	// ALWAYS dump data up to yesterday, since this is complete data.
 	// Today data is changing.
-	today := time.Now().Truncate(time.Hour * 24)
 	yesterday := time.Now().Add(-time.Duration(24) * time.Hour).Truncate(time.Hour * 24)
 	endDate = &yesterday
 
@@ -1168,9 +1167,10 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 
 		// Only last 30 days for Skin/Core temp & Oxygen saturation
 		ago := gcd(days, 30)
-		newEndDate := startDate.Add(time.Duration(ago*24) * time.Hour)
 		newStartDate := startDate
-		for newEndDate.Before(today) {
+		newEndDate := newStartDate.Add(time.Duration(ago*24) * time.Hour)
+		for newEndDate.Before(yesterday) {
+			log.Println("1173 newStartDate", newStartDate, "newEndDate", newEndDate)
 			d.userSkinTemperature(&newStartDate, &newEndDate)
 			d.userCoreTemperature(&newStartDate, &newEndDate)
 			d.userOxygenSaturation(&newStartDate, &newEndDate)
@@ -1181,9 +1181,10 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 		}
 		// 100 days for SleepLogList.
 		ago = gcd(days, 100)
-		newEndDate = startDate.Add(time.Duration(ago*24) * time.Hour)
 		newStartDate = startDate
-		for newEndDate.Before(today) {
+		newEndDate = newStartDate.Add(time.Duration(ago*24) * time.Hour)
+		for newEndDate.Before(yesterday) {
+			log.Println("1187 newStartDate", newStartDate, "newEndDate", newEndDate)
 			d.userSleepLogList(&newStartDate, &newEndDate)
 			newStartDate = newEndDate
 			newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
