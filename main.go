@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	hosts := map[string]*echo.Echo{}
+	domains := map[string]*echo.Echo{}
 	app, err := app.NewRouter()
 	if err != nil {
 		panic(err.Error())
@@ -32,7 +32,7 @@ func main() {
 	log.Printf("Locally, you can visit: %s%s\n", os.Getenv("DOMAIN"), port)
 
 	// Hosts without port, because reverse proxies do not forward the port
-	hosts[os.Getenv("DOMAIN")] = app
+	domains[os.Getenv("DOMAIN")] = app
 
 	// Catch-all server & dispatch
 	e := echo.New()
@@ -41,9 +41,10 @@ func main() {
 		res := c.Response()
 		// remove eventual port from req.Host
 		// so this mapping works also locally
-		host, _, _ := net.SplitHostPort(req.Host)
+		host, _, err := net.SplitHostPort(req.Host)
+		log.Printf("host: %s, err: %v", host, err)
 
-		if server, ok := hosts[host]; !ok {
+		if server, ok := domains[host]; !ok {
 			return echo.ErrNotFound
 		} else {
 			server.ServeHTTP(res, req)
