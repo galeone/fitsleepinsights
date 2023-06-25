@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -40,6 +41,14 @@ func init() {
 type dumper struct {
 	fb   *fitbit_client.Client
 	User *fitbit_pgdb.AuthorizedUser
+}
+
+func (d *dumper) logError(err error) {
+	if _, file, line, ok := runtime.Caller(1); ok {
+		log.Println("file: ", file, "line: ", line, "error: ", err)
+	} else {
+		log.Println(err)
+	}
 }
 
 // NewDumper creates a new dumper using the provided access token
@@ -77,7 +86,7 @@ func NewDumper(accessToken string) (*dumper, error) {
 func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.ActivityCaloriesSeries
 	if value, err = d.fb.UserActivityCaloriesTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -86,7 +95,7 @@ func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -96,12 +105,12 @@ func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -184,7 +193,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 				}
 
 				if err = tx.Create(&activeZoneMinutes); err != nil {
-					log.Println(err)
+					d.logError(err)
 					break
 				}
 				for _, minInHRZone := range activity.ActiveZoneMinutes.MinutesInHeartRateZones {
@@ -193,7 +202,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 						ActiveZoneMinutesID:    activeZoneMinutes.ID,
 					}
 					if err = tx.Create(&minInHRZoneRow); err != nil {
-						log.Println(err)
+						d.logError(err)
 						break
 					}
 				}
@@ -213,7 +222,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 						ID:        activity.Source.ID,
 					}
 					if err = tx.Create(&source); err != nil {
-						log.Println(err)
+						d.logError(err)
 						break
 					}
 				}
@@ -245,7 +254,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 				var xml *tcx.TCXDB
 				if xml, err = d.fb.UserActivityTCX(activity.LogID); err == nil {
 					if textBytes, err := tcx.ToBytes(*xml); err != nil {
-						log.Println(err)
+						d.logError(err)
 					} else {
 						activityRow.Tcx = sql.NullString{
 							String: string(textBytes),
@@ -253,13 +262,13 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 						}
 					}
 				} else {
-					log.Println(err)
+					d.logError(err)
 					// Do not break: who cares about failing fetch of TCX data (Fitbit has several problems with that)
 				}
 			}
 
 			if err = tx.Create(&activityRow); err != nil {
-				log.Println(err)
+				d.logError(err)
 				break
 			}
 
@@ -270,7 +279,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 					ActivityLogID:       activityRow.LogID,
 				}
 				if err = tx.Create(&activityLevelRow); err != nil {
-					log.Println(err)
+					d.logError(err)
 					break
 				}
 			}
@@ -284,13 +293,13 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 					},
 				}
 				if err = tx.Create(&hrZoneRow); err != nil {
-					log.Println(err)
+					d.logError(err)
 					break
 				}
 			}
 
 			if err = tx.Commit(); err != nil {
-				log.Println(err)
+				d.logError(err)
 				break
 			}
 		}
@@ -300,7 +309,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 			break
 		}
 		if nextURL, err := url.Parse(value.Pagination.Next); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		} else {
 			next := nextURL.Query()
@@ -329,7 +338,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 func (d *dumper) userActivityWeeklyGoal() (err error) {
 	var value *fitbit_types.UserGoal
 	if value, err = d.fb.UserActivityWeeklyGoal(); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return err
 	}
 
@@ -351,7 +360,7 @@ func (d *dumper) userActivityWeeklyGoal() (err error) {
 func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.BMISeries
 	if value, err = d.fb.UserBMITimeSeries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -360,7 +369,7 @@ func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -370,12 +379,12 @@ func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -384,7 +393,7 @@ func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.BodyFatSeries
 	if value, err = d.fb.UserBodyFatTimeSeries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -393,7 +402,7 @@ func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -403,12 +412,12 @@ func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -417,7 +426,7 @@ func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error
 func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.BodyWeightSeries
 	if value, err = d.fb.UserBodyWeightTimeSeries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -426,7 +435,7 @@ func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err er
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -436,12 +445,12 @@ func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err er
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -450,7 +459,7 @@ func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err er
 func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.CaloriesBMRSeries
 	if value, err = d.fb.UserCaloriesBMRTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -459,7 +468,7 @@ func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err e
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -469,12 +478,12 @@ func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err e
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -483,7 +492,7 @@ func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err e
 func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.CaloriesSeries
 	if value, err = d.fb.UserCaloriesTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -492,7 +501,7 @@ func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err erro
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -502,12 +511,12 @@ func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err erro
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -516,7 +525,7 @@ func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err erro
 func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.DistanceSeries
 	if value, err = d.fb.UserDistanceTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -525,7 +534,7 @@ func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err erro
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -535,12 +544,12 @@ func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err erro
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -549,7 +558,7 @@ func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err erro
 func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.FloorsSeries
 	if value, err = d.fb.UserFloorsTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -558,7 +567,7 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -568,12 +577,12 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -582,7 +591,7 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.HeartRateSeries
 	if value, err = d.fb.UserHeartRateTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -609,7 +618,7 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 		}
 
 		if err = tx.Create(&hrActivityInsert); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -626,20 +635,20 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 		}
 		for _, hrZone := range hrActivity.Value.HeartRateZones {
 			if err := insertHrZone(&hrZone, "DEFAULT"); err != nil {
-				log.Println(err)
+				d.logError(err)
 				break
 			}
 		}
 		for _, customHrZone := range hrActivity.Value.CustomHeartRateZones {
 			if err := insertHrZone(&customHrZone, "CUSTOM"); err != nil {
-				log.Println(err)
+				d.logError(err)
 				break
 			}
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -648,7 +657,7 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.MinutesFairlyActiveSeries
 	if value, err = d.fb.UserMinutesFairlyActiveTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -657,7 +666,7 @@ func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -667,12 +676,12 @@ func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -681,7 +690,7 @@ func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time
 func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.MinutesLightlyActiveSeries
 	if value, err = d.fb.UserMinutesLightlyActiveTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -690,7 +699,7 @@ func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Tim
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -700,12 +709,12 @@ func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Tim
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -714,7 +723,7 @@ func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Tim
 func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.MinutesSedentarySeries
 	if value, err = d.fb.UserMinutesSedentaryTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -723,7 +732,7 @@ func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -733,12 +742,12 @@ func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -747,7 +756,7 @@ func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (
 func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.MinutesVeryActiveSeries
 	if value, err = d.fb.UserMinutesVeryActiveTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -756,7 +765,7 @@ func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) 
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -766,12 +775,12 @@ func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) 
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -780,7 +789,7 @@ func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) 
 func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.StepsSeries
 	if value, err = d.fb.UserStepsTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -789,7 +798,7 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -799,12 +808,12 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -813,7 +822,7 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.ElevationSeries
 	if value, err = d.fb.UserElevationTimeseries(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -822,7 +831,7 @@ func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err err
 		timestep.UserID = d.User.ID
 		timestep.Date = t.DateTime.Time
 		if timestep.Value, err = strconv.ParseFloat(t.Value, 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -832,12 +841,12 @@ func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err err
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -846,7 +855,7 @@ func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err err
 func (d *dumper) userCoreTemperature(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.CoreTemperature
 	if value, err = d.fb.UserCoreTemperature(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -863,12 +872,12 @@ func (d *dumper) userCoreTemperature(startDate, endDate *time.Time) (err error) 
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -877,7 +886,7 @@ func (d *dumper) userCoreTemperature(startDate, endDate *time.Time) (err error) 
 func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.SkinTemperature
 	if value, err = d.fb.UserSkinTemperature(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -895,12 +904,12 @@ func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) 
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -909,7 +918,7 @@ func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) 
 func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.CardioFitnessScore
 	if value, err = d.fb.UserCardioFitnessScore(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -924,11 +933,11 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 			return fmt.Errorf("expected a vo2max range, got: %s", t.Value.Vo2Max)
 		}
 		if timestep.Vo2MaxLowerBound, err = strconv.ParseFloat(vo2MaxRange[0], 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 		if timestep.Vo2MaxUpperBound, err = strconv.ParseFloat(vo2MaxRange[1], 64); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -938,12 +947,12 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -952,7 +961,7 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 func (d *dumper) userOxygenSaturation(startDate, endDate *time.Time) (err error) {
 	var values *fitbit_types.OxygenSaturations
 	if values, err = d.fb.UserOxygenSaturation(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -971,12 +980,12 @@ func (d *dumper) userOxygenSaturation(startDate, endDate *time.Time) (err error)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -985,7 +994,7 @@ func (d *dumper) userOxygenSaturation(startDate, endDate *time.Time) (err error)
 func (d *dumper) userHeartRateVariability(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.HeartRateVariability
 	if value, err = d.fb.UserHeartRateVariability(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 	tx := _db.Begin()
@@ -1003,12 +1012,12 @@ func (d *dumper) userHeartRateVariability(startDate, endDate *time.Time) (err er
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 
 	return
@@ -1017,7 +1026,7 @@ func (d *dumper) userHeartRateVariability(startDate, endDate *time.Time) (err er
 func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 	var sleepLogs *fitbit_types.SleepLogs
 	if sleepLogs, err = d.fb.UserSleepLog(startDate, endDate); err != nil {
-		log.Println(err)
+		d.logError(err)
 		return
 	}
 
@@ -1039,7 +1048,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 			continue
 		}
 		if err = tx.Create(&insert); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -1053,19 +1062,19 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		}
 
 		if err = sleepStage(&sleepLog.Levels.Summary.Deep, "DEEP"); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 		if err = sleepStage(&sleepLog.Levels.Summary.Light, "LIGHT"); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 		if err = sleepStage(&sleepLog.Levels.Summary.Rem, "REM"); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 		if err = sleepStage(&sleepLog.Levels.Summary.Wake, "WAKE"); err != nil {
-			log.Println(err)
+			d.logError(err)
 			break
 		}
 
@@ -1084,14 +1093,14 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		}
 
 		if err = sleepData(sleepLog.Levels.Data); err != nil {
-			log.Println(err)
+			d.logError(err)
 		}
 		if err = sleepData(sleepLog.Levels.ShortData); err != nil {
-			log.Println(err)
+			d.logError(err)
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		log.Println(err)
+		d.logError(err)
 	}
 	return
 }
@@ -1117,7 +1126,7 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 		// In this case, we want to dump "all" the past data up to yesterday.
 		// Try to fetch a completely arbitrary number of days.
 		days = 365
-		startDate = endDate.Add(-time.Duration(24*120) * time.Hour).Truncate(time.Hour * 24)
+		startDate = endDate.Add(-time.Duration(24*days) * time.Hour).Truncate(time.Hour * 24)
 	} else {
 		startDate = *after
 		days = int(yesterday.Sub(startDate).Hours()) / 24
