@@ -1215,7 +1215,10 @@ func (d *dumper) DumpNewer() error {
 	var after *time.Time
 	var last time.Time
 	// err = empty -> no data previously stored
-	if err := _db.Model(types.ActivityLog{}).Select("max(start_time)").Where(&types.ActivityLog{UserID: d.User.ID}).Scan(&last); err != nil {
+	// using ActivityLog is wrong because it's the first data type dumped, and in case of failures
+	// this prevents to fetch all the other data with a date > last activity log.
+	// Thus, use SleepLogList that's the last thing we dump in the dump all call.
+	if err := _db.Model(types.SleepLog{}).Select("max(date_of_sleep)").Where(&types.SleepLog{UserID: d.User.ID}).Scan(&last); err != nil {
 		after = nil
 	} else {
 		after = &last
