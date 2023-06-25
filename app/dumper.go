@@ -1130,6 +1130,12 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 		startDate = *after
 		days = int(yesterday.Sub(startDate).Hours()) / 24
 	}
+	// Do not dump if startDate is after today
+	today := time.Now().Truncate(time.Hour * 24)
+	if startDate.After(today) {
+		log.Println("startDate is after today, skipping")
+		return nil
+	}
 
 	// There are functions that don't have an "after" period
 	// because Fitbit allows to get only the daily data.
@@ -1191,6 +1197,7 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 		}
 
 	} else {
+		log.Println("else: startDate", startDate, "endDate", endDate)
 		d.userSkinTemperature(&startDate, endDate)
 		d.userCoreTemperature(&startDate, endDate)
 		d.userOxygenSaturation(&startDate, endDate)
