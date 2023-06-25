@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/galeone/fitbit v1.0.3
-	github.com/galeone/fitbit-pgdb/v2 v2.0.0
-	github.com/galeone/igor v1.0.8
+	github.com/galeone/fitbit-pgdb/v2 v2.0.1
+	github.com/galeone/igor v1.0.9
 	github.com/galeone/rts v1.0.0
 	github.com/galeone/tcx v1.0.0
 	github.com/google/uuid v1.3.0
