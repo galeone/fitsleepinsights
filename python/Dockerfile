@@ -7,5 +7,5 @@ COPY train.py .
 
 RUN pip install -r requirements.txt
 
-ENTRYPOINT ["exec", "train.py"]
+ENTRYPOINT ["python", "train.py"]
 
