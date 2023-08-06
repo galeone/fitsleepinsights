@@ -3,6 +3,8 @@
 import argparse
 import os
 import sys
+from glob import glob
+from pathlib import Path
 
 import pandas as pd
 import tensorflow_decision_forests as tfdf
@@ -56,22 +58,30 @@ def main():
         return 1
 
     model = tfdf.keras.CartModel()
-    file_name = args.data_location.replace(bucket.name, "")
+    file_name = args.data_location.replace(f"gs://{bucket.name}/", "")
     blob = bucket.blob(file_name)
     with blob.open("r") as file_pointer:
         dataset = pd.read_csv(file_pointer)
+
+    dataset = dataset[pd.notnull(dataset[args.label])]
     tf_dataset = tfdf.keras.pd_dataframe_to_tf_dataset(dataset, label=args.label)
 
     model.fit(tf_dataset)
     print(model.summary())
-    local_model_path = "model.pb"
+    local_model_path = "saved_model.pb"
     model.save(local_model_path)
 
-    blob = bucket.blob(args.model_destination)
-    with open(local_model_path, "rb") as file_pointer:
-        local_model = file_pointer.readall()
-    with blob.open("wb") as file_pointer:
-        file_pointer.write(local_model)
+    model_destination_folder = args.model_destination.replace(
+        f"gs://{bucket.name}/", ""
+    )
+
+    files = glob(f"{local_model_path}/**", recursive=True)
+    print(files)
+    for file in files:
+        if Path(file).is_file():
+            blob = bucket.blob(f"{model_destination_folder}/{file}".replace("//", "/"))
+            blob.upload_from_filename(file)
+            print("uploaded: ", file)
 
     return 0
 
