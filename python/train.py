@@ -43,10 +43,8 @@ def main():
     storage_client = storage.Client(project=project_id)
 
     buckets = storage_client.list_buckets()
-    print("Buckets:")
     bucket = None
     for buck in buckets:
-        print(buck.name)
         if buck.name in args.data_location:
             bucket = buck
 
@@ -63,7 +61,54 @@ def main():
     with blob.open("r") as file_pointer:
         dataset = pd.read_csv(file_pointer)
 
+    features = dataset.columns
+    if args.label not in features:
+        print(
+            f"Label {args.label} not found among the features of {args.data_location}",
+            file=sys.stderr,
+        )
+        return 1
+
+    potential_labels = {
+        "MinutesAfterWakeup",
+        "MinutesAsleep",
+        "MinutesAwake",
+        "MinutesToFallAsleep",
+        "TimeInBed",
+        "LightSleepMinutes",
+        "LightSleepCount",
+        "DeepSleepMinutes",
+        "DeepSleepCount",
+        "RemSleepMinutes",
+        "RemSleepCount",
+        "WakeSleepMinutes",
+        "WakeSleepCount",
+        "SleepDuration",
+        # default label
+        "SleepEfficiency",
+    }
+    if args.label not in potential_labels:
+        print(
+            f"Label {args.label} not found among the potential labels: {','.join(potential_labels)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    # remove the real label from the potential labels
+    potential_labels = potential_labels - {args.label}
+
+    # Remove all the rows with an invalid label (may happen when you don't sleep)
     dataset = dataset[pd.notnull(dataset[args.label])]
+
+    # Remove all the columns with features that are too related sleep (potential labels) or wrong
+    # Date: wrong
+    # ID: wrong
+    dataset = dataset.drop("Date", axis=1)
+    dataset = dataset.drop("ID", axis=1)
+    for sleep_feature in potential_labels:
+        dataset = dataset.drop(sleep_feature, axis=1)
+
+    # Convert to TensorFlow dataset
     tf_dataset = tfdf.keras.pd_dataframe_to_tf_dataset(dataset, label=args.label)
 
     model.fit(tf_dataset)
@@ -76,12 +121,10 @@ def main():
     )
 
     files = glob(f"{local_model_path}/**", recursive=True)
-    print(files)
     for file in files:
         if Path(file).is_file():
             blob = bucket.blob(f"{model_destination_folder}/{file}".replace("//", "/"))
             blob.upload_from_filename(file)
-            print("uploaded: ", file)
 
     return 0
 
