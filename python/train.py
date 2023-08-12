@@ -27,7 +27,11 @@ def parse_args():
     parser.add_argument(
         "--model-destination",
         help="The folder on GCP where to store the trained model",
-        required=True,
+        required=False,
+        # AIP_MODEL_DIR
+        # ref: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/CustomJobSpec#FIELDS.base_output_directory
+        # When this variable is used, the model uploaded becomes a Vertex AI model
+        default=os.environ["AIP_MODEL_DIR"],
     )
     parser.add_argument("--label", help="The target variable to predict", required=True)
     return parser.parse_args()
@@ -89,7 +93,7 @@ def main():
     }
     if args.label not in potential_labels:
         print(
-            f"Label {args.label} not found among the potential labels: {','.join(potential_labels)}",
+            f"\"{args.label}\" not found among the supported labels: {','.join(potential_labels)}",
             file=sys.stderr,
         )
         return 1
