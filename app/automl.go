@@ -10,7 +10,6 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
-	"strings"
 
 	vai "cloud.google.com/go/aiplatform/apiv1beta1"
 	vaipb "cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"
@@ -18,8 +17,6 @@ import (
 	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v2"
 	"github.com/labstack/echo/v4"
 	"google.golang.org/api/option"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	storage "cloud.google.com/go/storage"
 )
@@ -104,76 +101,83 @@ func TestAutoML() echo.HandlerFunc {
 			}
 		}
 
-		// 3. Create a dataset from the training data (associate the bucket with the dataset)
-		// reference: https://github.com/googleapis/google-cloud-go/issues/6649#issuecomment-1242515615
-		var datasetClient *vai.DatasetClient
 		vaiEndpoint := fmt.Sprintf("%s-aiplatform.googleapis.com:443", _vaiLocation)
-		if datasetClient, err = vai.NewDatasetClient(
-			ctx,
-			option.WithEndpoint(vaiEndpoint),
-			option.WithCredentialsFile(_vaiServiceAccountKey)); err != nil {
-			return err
-		}
-		defer datasetClient.Close()
 
-		//datasetParent := fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation)
-		//datasetFullPath := fmt.Sprintf("%s/datasets/%s", datasetParent, userDataset)
+		/*
 
-		// Check if the dataset already exists
-		// The dataset name can't be the same as the CSV name (because the CSV name contains slashes)
-		// So we use the user id as a prefix
-		datasetName := fmt.Sprintf("%d_%s_%s", user.ID, start, end)
-		var dataset *vaipb.Dataset
-		datasetsIterator := datasetClient.ListDatasets(ctx, &vaipb.ListDatasetsRequest{
-			Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
-			Filter: fmt.Sprintf(`display_name="%s"`, datasetName),
-		})
-
-		if dataset, err = datasetsIterator.Next(); err != nil {
-			// Create the dataset
-			// ref: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#CreateDatasetRequest
-
-			// No metadata schema because it's a tabular dataset, and "tabular dataset does not support data import"
-			// ref: https://github.com/googleapis/python-aiplatform/blob/6f3b34b39824717e7a995ca1f279230b41491f15/google/cloud/aiplatform/datasets/_datasources.py#LL223C30-L223C75
-			// But we need to pass the metadata as a structpb.Value
-			// https://github.com/googleapis/python-aiplatform/blob/6f3b34b39824717e7a995ca1f279230b41491f15/google/cloud/aiplatform/datasets/_datasources.py#L48
-			// The correct format is: {"input_config": {"gcs_source": {"uri": ["gs://bucket/path/to/file.csv"]}}}
-			// Ref the code here: https://cloud.google.com/vertex-ai/docs/samples/aiplatform-create-dataset-tabular-gcs-sample
-
-			csvURI := fmt.Sprintf("gs://%s/%s", bucketName, csvOnBucket)
-			var metadata structpb.Struct
-			err = metadata.UnmarshalJSON([]byte(fmt.Sprintf(`{"input_config": {"gcs_source": {"uri": ["%s"]}}}`, csvURI)))
-			if err != nil {
+			// 3. Create a dataset from the training data (associate the bucket with the dataset)
+			// reference: https://github.com/googleapis/google-cloud-go/issues/6649#issuecomment-1242515615
+			var datasetClient *vai.DatasetClient
+			if datasetClient, err = vai.NewDatasetClient(
+				ctx,
+				option.WithEndpoint(vaiEndpoint),
+				option.WithCredentialsFile(_vaiServiceAccountKey)); err != nil {
 				return err
 			}
+			defer datasetClient.Close()
 
-			req := &vaipb.CreateDatasetRequest{
-				// Required. The resource name of the Location to create the Dataset in.
-				// Format: `projects/{project}/locations/{location}`
+			//datasetParent := fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation)
+			//datasetFullPath := fmt.Sprintf("%s/datasets/%s", datasetParent, userDataset)
+
+			// Check if the dataset already exists
+			// The dataset name can't be the same as the CSV name (because the CSV name contains slashes)
+			// So we use the user id as a prefix
+			datasetName := fmt.Sprintf("%d_%s_%s", user.ID, start, end)
+			var dataset *vaipb.Dataset
+			datasetsIterator := datasetClient.ListDatasets(ctx, &vaipb.ListDatasetsRequest{
 				Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
-				Dataset: &vaipb.Dataset{
-					DisplayName: datasetName,
-					Description: fmt.Sprintf("User %d data", user.ID),
-					// No metadata schema because it's a tabular dataset, and "tabular dataset does not support data import"
-					// ref: https://github.com/googleapis/python-aiplatform/blob/6f3b34b39824717e7a995ca1f279230b41491f15/google/cloud/aiplatform/datasets/_datasources.py#LL223C30-L223C75
-					MetadataSchemaUri: "gs://google-cloud-aiplatform/schema/dataset/metadata/tabular_1.0.0.yaml",
-					// But we need to pass the metadata as a structpb.Value
-					// https://github.com/googleapis/python-aiplatform/blob/6f3b34b39824717e7a995ca1f279230b41491f15/google/cloud/aiplatform/datasets/_datasources.py#L48
-					Metadata: structpb.NewStructValue(&metadata),
-				},
-			}
+				Filter: fmt.Sprintf(`display_name="%s"`, datasetName),
+			})
 
-			var createDatasetOp *vai.CreateDatasetOperation
-			if createDatasetOp, err = datasetClient.CreateDataset(ctx, req); err != nil {
-				return err
+			if dataset, err = datasetsIterator.Next(); err != nil {
+				// Create the dataset
+				// ref: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#CreateDatasetRequest
+
+				// No metadata schema because it's a tabular dataset, and "tabular dataset does not support data import"
+				// ref: https://github.com/googleapis/python-aiplatform/blob/6f3b34b39824717e7a995ca1f279230b41491f15/google/cloud/aiplatform/datasets/_datasources.py#LL223C30-L223C75
+				// But we need to pass the metadata as a structpb.Value
+				// https://github.com/googleapis/python-aiplatform/blob/6f3b34b39824717e7a995ca1f279230b41491f15/google/cloud/aiplatform/datasets/_datasources.py#L48
+				// The correct format is: {"input_config": {"gcs_source": {"uri": ["gs://bucket/path/to/file.csv"]}}}
+				// Ref the code here: https://cloud.google.com/vertex-ai/docs/samples/aiplatform-create-dataset-tabular-gcs-sample
+
+				csvURI := fmt.Sprintf("gs://%s/%s", bucketName, csvOnBucket)
+				var metadata structpb.Struct
+				err = metadata.UnmarshalJSON([]byte(fmt.Sprintf(`{"input_config": {"gcs_source": {"uri": ["%s"]}}}`, csvURI)))
+				if err != nil {
+					return err
+				}
+
+				req := &vaipb.CreateDatasetRequest{
+					// Required. The resource name of the Location to create the Dataset in.
+					// Format: `projects/{project}/locations/{location}`
+					Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
+					Dataset: &vaipb.Dataset{
+						DisplayName: datasetName,
+						Description: fmt.Sprintf("User %d data", user.ID),
+						// No metadata schema because it's a tabular dataset, and "tabular dataset does not support data import"
+						// ref: https://github.com/googleapis/python-aiplatform/blob/6f3b34b39824717e7a995ca1f279230b41491f15/google/cloud/aiplatform/datasets/_datasources.py#LL223C30-L223C75
+						MetadataSchemaUri: "gs://google-cloud-aiplatform/schema/dataset/metadata/tabular_1.0.0.yaml",
+						// But we need to pass the metadata as a structpb.Value
+						// https://github.com/googleapis/python-aiplatform/blob/6f3b34b39824717e7a995ca1f279230b41491f15/google/cloud/aiplatform/datasets/_datasources.py#L48
+						Metadata: structpb.NewStructValue(&metadata),
+					},
+				}
+
+				var createDatasetOp *vai.CreateDatasetOperation
+				if createDatasetOp, err = datasetClient.CreateDataset(ctx, req); err != nil {
+					return err
+				}
+				if dataset, err = createDatasetOp.Wait(ctx); err != nil {
+					return err
+				}
 			}
-			if dataset, err = createDatasetOp.Wait(ctx); err != nil {
-				return err
-			}
-		}
-		log.Println(dataset.GetName(), dataset.GetDisplayName(), dataset.GetMetadataSchemaUri(), dataset.GetMetadata())
-		datasetNameSplit := strings.Split(dataset.GetName(), "/")
-		datasetId := datasetNameSplit[len(datasetNameSplit)-1]
+			log.Println(dataset.GetName(), dataset.GetDisplayName(), dataset.GetMetadataSchemaUri(), dataset.GetMetadata())
+			datasetNameSplit := strings.Split(dataset.GetName(), "/")
+			datasetId := datasetNameSplit[len(datasetNameSplit)-1]
+
+		*/
+
+		var targetColumn string = "SleepEfficiency"
 
 		// Associate the bucket with the dataset is required only when the dataset is NOT tabular.
 		// ref: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#ImportDataRequest
@@ -227,95 +231,155 @@ func TestAutoML() echo.HandlerFunc {
 		// 5. Create the training pipeline: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#CreateTrainingPipelineRequest
 		// Use the java documentation as reference: // https://cloud.google.com/vertex-ai/docs/samples/aiplatform-create-training-pipeline-tabular-regression-sample
 
-		var modelDisplayName string = "sleep-efficiency-" + strconv.Itoa(int(user.ID))
-		var targetColumn string = "SleepEfficiency"
+		/*
 
-		var pipelineClient *vai.PipelineClient
-		if pipelineClient, err = vai.NewPipelineClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
+					var modelDisplayName string = "sleep-efficiency-" + strconv.Itoa(int(user.ID))
+					var pipelineClient *vai.PipelineClient
+					if pipelineClient, err = vai.NewPipelineClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
+						return err
+					}
+					defer pipelineClient.Close()
+
+					var trainingPipeline *vaipb.TrainingPipeline
+
+					// Create the Training Task Inputs
+					// Info gathered from the REST API: https://cloud.google.com/vertex-ai/docs/training/automl-api?hl=it#regression
+					var trainingTaskInput structpb.Struct
+					// reference: https://cloud.google.com/vertex-ai/docs/reference/rpc/google.cloud.aiplatform.v1/schema/trainingjob.definition#automltablesinputs
+
+					// Create the transformations for all the columns (required)
+					var transformations string
+					tot := len(csvHeaders(allUserData)) - 1
+					for i, header := range csvHeaders(allUserData) {
+						if header == targetColumn {
+							// skip the target column, it mustn't be included in the transformations
+							// ref:
+							// https://github.com/googleapis/python-aiplatform/blob/1fda4172baaf200414d95e7217bfef0e500cc16a/google/cloud/aiplatform/utils/column_transformations_utils.py#L67
+							continue
+						} else {
+							transformations += fmt.Sprintf(`{"auto": {"column_name": "%s"}}`, header)
+						}
+						if i < tot {
+							transformations += ","
+						}
+					}
+
+					err = trainingTaskInput.UnmarshalJSON([]byte(
+						fmt.Sprintf(
+							`{
+								"targetColumn": "%s",
+			        			"predictionType": "regression",
+			        			"trainBudgetMilliNodeHours": "1000",
+			        			"optimizationObjective": "minimize-rmse",
+			        			"transformations": [%s]
+							}`, targetColumn, transformations)))
+					if err != nil {
+						return err
+					}
+					// use https://cloud.google.com/vertex-ai/docs/reference/rpc/google.cloud.aiplatform.v1/schema/trainingjob.definition#google.cloud.aiplatform.v1.schema.trainingjob.definition.AutoMlTablesInputs.Transformation
+
+					if trainingPipeline, err = pipelineClient.CreateTrainingPipeline(ctx, &vaipb.CreateTrainingPipelineRequest{
+						// Required. The resource name of the Location to create the TrainingPipeline
+						// in. Format: `projects/{project}/locations/{location}`
+						Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
+						TrainingPipeline: &vaipb.TrainingPipeline{
+							DisplayName:            modelDisplayName,
+							TrainingTaskDefinition: "gs://google-cloud-aiplatform/schema/trainingjob/definition/automl_tables_1.0.0.yaml",
+							InputDataConfig: &vaipb.InputDataConfig{
+								DatasetId: datasetId,
+							},
+							TrainingTaskInputs: structpb.NewStructValue(&trainingTaskInput),
+						},
+					}); err != nil {
+						if s, ok := status.FromError(err); ok {
+							log.Println(s.Message())
+							for _, d := range s.Proto().Details {
+								log.Println(d)
+							}
+						}
+						return err
+					}
+
+					// TODO: https://stackoverflow.com/questions/62039364/google-cloud-plateform-auto-ml
+
+					// 6. Get the training pipeline ID and print all the other infos
+					pipelineID := trainingPipeline.GetName()
+					fmt.Println("Training pipeline ID:", pipelineID)
+					fmt.Println("Training pipeline display name:", trainingPipeline.GetDisplayName())
+					fmt.Println("Training pipeline input data config:", trainingPipeline.GetInputDataConfig())
+					fmt.Println("Training pipeline training task inputs:", trainingPipeline.GetTrainingTaskInputs())
+					fmt.Println("Training pipeline state:", trainingPipeline.GetState())
+					fmt.Println("Training pipeline error:", trainingPipeline.GetError())
+					fmt.Println("Training pipeline create time:", trainingPipeline.GetCreateTime())
+					fmt.Println("Training pipeline start time:", trainingPipeline.GetStartTime())
+					fmt.Println("Training pipeline end time:", trainingPipeline.GetEndTime())
+
+					// TODO: instead of using automl, choose a simple decision tree
+
+					// When creating the training pipeline the Date and ID field must be excluded from the training data
+					// ref: https://cloud.google.com/vertex-ai/docs/training/preparing-tabular
+
+					// use PredictionServiceClient and the Explain method to get the explanation of the prediction
+
+		*/
+
+		// Create a custom training job with a custom container
+		// ref: https://cloud.google.com/vertex-ai/docs/training/create-custom-job#create_custom_job-java
+
+		var customJobClient *vai.JobClient
+		if customJobClient, err = vai.NewJobClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
 			return err
 		}
-		defer pipelineClient.Close()
+		defer customJobClient.Close()
 
-		var trainingPipeline *vaipb.TrainingPipeline
-
-		// Create the Training Task Inputs
-		// Info gathered from the REST API: https://cloud.google.com/vertex-ai/docs/training/automl-api?hl=it#regression
-		var trainingTaskInput structpb.Struct
-		// reference: https://cloud.google.com/vertex-ai/docs/reference/rpc/google.cloud.aiplatform.v1/schema/trainingjob.definition#automltablesinputs
-
-		// Create the transformations for all the columns (required)
-		var transformations string
-		tot := len(csvHeaders(allUserData)) - 1
-		for i, header := range csvHeaders(allUserData) {
-			if header == targetColumn {
-				// skip the target column, it mustn't be included in the transformations
-				// ref:
-				// https://github.com/googleapis/python-aiplatform/blob/1fda4172baaf200414d95e7217bfef0e500cc16a/google/cloud/aiplatform/utils/column_transformations_utils.py#L67
-				continue
-			} else {
-				transformations += fmt.Sprintf(`{"auto": {"column_name": "%s"}}`, header)
-			}
-			if i < tot {
-				transformations += ","
-			}
-		}
-
-		err = trainingTaskInput.UnmarshalJSON([]byte(
-			fmt.Sprintf(
-				`{
-					"targetColumn": "%s",
-        			"predictionType": "regression",
-        			"trainBudgetMilliNodeHours": "1000",
-        			"optimizationObjective": "minimize-rmse",
-        			"transformations": [%s]
-				}`, targetColumn, transformations)))
-		if err != nil {
-			return err
-		}
-		// use https://cloud.google.com/vertex-ai/docs/reference/rpc/google.cloud.aiplatform.v1/schema/trainingjob.definition#google.cloud.aiplatform.v1.schema.trainingjob.definition.AutoMlTablesInputs.Transformation
-
-		if trainingPipeline, err = pipelineClient.CreateTrainingPipeline(ctx, &vaipb.CreateTrainingPipelineRequest{
-			// Required. The resource name of the Location to create the TrainingPipeline
-			// in. Format: `projects/{project}/locations/{location}`
+		req := &vaipb.CreateCustomJobRequest{
 			Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
-			TrainingPipeline: &vaipb.TrainingPipeline{
-				DisplayName:            modelDisplayName,
-				TrainingTaskDefinition: "gs://google-cloud-aiplatform/schema/trainingjob/definition/automl_tables_1.0.0.yaml",
-				InputDataConfig: &vaipb.InputDataConfig{
-					DatasetId: datasetId,
+			CustomJob: &vaipb.CustomJob{
+				DisplayName: "sleep-efficiency-" + strconv.Itoa(int(user.ID)),
+				JobSpec: &vaipb.CustomJobSpec{
+					WorkerPoolSpecs: []*vaipb.WorkerPoolSpec{
+						{
+							Task: &vaipb.WorkerPoolSpec_ContainerSpec{
+								ContainerSpec: &vaipb.ContainerSpec{
+									ImageUri: fmt.Sprintf("%s-docker.pkg.dev/%s/tfdf/cart:0.0.1", _vaiLocation, _vaiProjectID),
+									Args: []string{
+										"--data-location",
+										fmt.Sprintf("gs://%s/%s", bucketName, csvOnBucket),
+										"--model-destination",
+										fmt.Sprintf("gs://%s/%d/", bucketName, user.ID),
+										"--label",
+										targetColumn,
+									},
+									Env: []*vaipb.EnvVar{
+										{
+											Name:  "CLOUD_ML_PROJECT_ID",
+											Value: "train-and-deploy-experiment",
+										},
+									},
+								},
+							},
+							ReplicaCount: 1,
+							MachineSpec: &vaipb.MachineSpec{
+								MachineType:      "n1-standard-4",
+								AcceleratorCount: 0,
+							},
+							DiskSpec: &vaipb.DiskSpec{
+								BootDiskType:   "pd-ssd",
+								BootDiskSizeGb: 100,
+							},
+						},
+					},
 				},
-				TrainingTaskInputs: structpb.NewStructValue(&trainingTaskInput),
 			},
-		}); err != nil {
-			if s, ok := status.FromError(err); ok {
-				log.Println(s.Message())
-				for _, d := range s.Proto().Details {
-					log.Println(d)
-				}
-			}
+		}
+
+		var resp *vaipb.CustomJob
+		if resp, err = customJobClient.CreateCustomJob(ctx, req); err != nil {
 			return err
 		}
 
-		// TODO: https://stackoverflow.com/questions/62039364/google-cloud-plateform-auto-ml
+		log.Println(resp.GetName())
 
-		// 6. Get the training pipeline ID and print all the other infos
-		pipelineID := trainingPipeline.GetName()
-		fmt.Println("Training pipeline ID:", pipelineID)
-		fmt.Println("Training pipeline display name:", trainingPipeline.GetDisplayName())
-		fmt.Println("Training pipeline input data config:", trainingPipeline.GetInputDataConfig())
-		fmt.Println("Training pipeline training task inputs:", trainingPipeline.GetTrainingTaskInputs())
-		fmt.Println("Training pipeline state:", trainingPipeline.GetState())
-		fmt.Println("Training pipeline error:", trainingPipeline.GetError())
-		fmt.Println("Training pipeline create time:", trainingPipeline.GetCreateTime())
-		fmt.Println("Training pipeline start time:", trainingPipeline.GetStartTime())
-		fmt.Println("Training pipeline end time:", trainingPipeline.GetEndTime())
-
-		// TODO: instead of using automl, choose a simple decision tree
-
-		// When creating the training pipeline the Date and ID field must be excluded from the training data
-		// ref: https://cloud.google.com/vertex-ai/docs/training/preparing-tabular
-
-		// use PredictionServiceClient and the Explain method to get the explanation of the prediction
 		return nil
 	}
 }
