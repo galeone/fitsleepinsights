@@ -117,7 +117,7 @@ def main():
 
     model.fit(tf_dataset)
     print(model.summary())
-    local_model_path = "saved_model.pb"
+    local_model_path = "trained_model"  # NOTE: do not name it saved_model.pb or model, otherwise replaces will fail
     model.save(local_model_path)
 
     model_destination_folder = args.model_destination.replace(
@@ -127,7 +127,12 @@ def main():
     files = glob(f"{local_model_path}/**", recursive=True)
     for file in files:
         if Path(file).is_file():
-            blob = bucket.blob(f"{model_destination_folder}/{file}".replace("//", "/"))
+            # directly upload the model files (without the folder) inside model destination folder
+            dest = Path(model_destination_folder) / Path(
+                file.replace(f"{local_model_path}/", "")
+            )
+            blob = bucket.blob(dest.as_posix())
+
             blob.upload_from_filename(file)
 
     return 0
