@@ -8,8 +8,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
 	"strconv"
+	"strings"
+	"time"
 
 	vai "cloud.google.com/go/aiplatform/apiv1beta1"
 	vaipb "cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"
@@ -45,15 +46,6 @@ func TestAutoML() echo.HandlerFunc {
 			return err
 		}
 
-		// VertexAI autoML pipeline requires at least 1000 rows.
-		// Thus we random sample the data to get 1000 rows
-		if len(allUserData) < 1000 {
-			tot := len(allUserData) - 1
-			for i := 0; i < 1000-tot+2; i++ {
-				allUserData = append(allUserData, allUserData[rand.Intn(tot)])
-			}
-		}
-
 		// 2. Prepare training data: convert them to csv
 		// ref: https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/prepare-data#csv
 		var csv string
@@ -78,7 +70,10 @@ func TestAutoML() echo.HandlerFunc {
 			// GCP bucket.Attrs returns an error if the bucket does not exist
 			// In theory it should be storage.ErrBucketNotExist, but in practice it's a generic error
 			// So we try to create the bucket hoping that the error is due to the bucket not existing
-			if err = bucket.Create(ctx, _vaiProjectID, nil); err != nil {
+			if err = bucket.Create(ctx, _vaiProjectID, &storage.BucketAttrs{
+				Location: _vaiLocation, // Important to have all the resources in the same location
+				Name:     bucketName,
+			}); err != nil {
 				return err
 			}
 		}
@@ -86,8 +81,8 @@ func TestAutoML() echo.HandlerFunc {
 		// Upload an object with storage.Writer.
 		// Format date as YYYY-MM-DD
 		format := "2006-01-02"
-		start := allUserData[0].Date.Format(format)
-		end := allUserData[len(allUserData)-1].Date.Format(format)
+		start := allUserData[len(allUserData)-1].Date.Format(format)
+		end := allUserData[0].Date.Format(format)
 		// csv on bucket organized in the format: user_id/start_date_end_date.csv
 		csvOnBucket := fmt.Sprintf("%d/%s_%s.csv", user.ID, start, end)
 		obj := bucket.Object(csvOnBucket)
@@ -320,11 +315,19 @@ func TestAutoML() echo.HandlerFunc {
 					// ref: https://cloud.google.com/vertex-ai/docs/training/preparing-tabular
 
 					// use PredictionServiceClient and the Explain method to get the explanation of the prediction
-
 		*/
 
 		// Create a custom training job with a custom container
 		// ref: https://cloud.google.com/vertex-ai/docs/training/create-custom-job#create_custom_job-java
+
+		modelName := fmt.Sprintf("%s-predictor-%d", targetColumn, user.ID)
+		var modelClient *vai.ModelClient
+		if modelClient, err = vai.NewModelClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
+			return err
+		}
+		defer modelClient.Close()
+
+		imageURI := fmt.Sprintf("%s-docker.pkg.dev/%s/tfdf/cart:0.0.1", _vaiLocation, _vaiProjectID)
 
 		var customJobClient *vai.JobClient
 		if customJobClient, err = vai.NewJobClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
@@ -337,16 +340,19 @@ func TestAutoML() echo.HandlerFunc {
 			CustomJob: &vaipb.CustomJob{
 				DisplayName: "sleep-efficiency-" + strconv.Itoa(int(user.ID)),
 				JobSpec: &vaipb.CustomJobSpec{
+					BaseOutputDirectory: &vaipb.GcsDestination{
+						OutputUriPrefix: fmt.Sprintf("gs://%s/%d/", bucketName, user.ID),
+					},
 					WorkerPoolSpecs: []*vaipb.WorkerPoolSpec{
 						{
 							Task: &vaipb.WorkerPoolSpec_ContainerSpec{
 								ContainerSpec: &vaipb.ContainerSpec{
-									ImageUri: fmt.Sprintf("%s-docker.pkg.dev/%s/tfdf/cart:0.0.1", _vaiLocation, _vaiProjectID),
+									ImageUri: imageURI,
 									Args: []string{
 										"--data-location",
 										fmt.Sprintf("gs://%s/%s", bucketName, csvOnBucket),
-										"--model-destination",
-										fmt.Sprintf("gs://%s/%d/", bucketName, user.ID),
+										//"--model-destination",
+										//fmt.Sprintf("gs://%s/%d/", bucketName, user.ID),
 										"--label",
 										targetColumn,
 									},
@@ -378,7 +384,141 @@ func TestAutoML() echo.HandlerFunc {
 			return err
 		}
 
-		log.Println(resp.GetName())
+		customJobName := resp.GetName()
+
+		// Wait for the job to finish
+		for status := resp.GetState(); status != vaipb.JobState_JOB_STATE_SUCCEEDED &&
+			status != vaipb.JobState_JOB_STATE_FAILED && status != vaipb.JobState_JOB_STATE_CANCELLED; status = resp.GetState() {
+
+			if resp, err = customJobClient.GetCustomJob(ctx, &vaipb.GetCustomJobRequest{
+				Name: customJobName,
+			}); err != nil {
+				return err
+			}
+
+			log.Println(resp.GetState())
+			// sleep 1 second
+			time.Sleep(500 * time.Millisecond)
+		}
+
+		// Upload the model to the model registry
+		// ref: https://cloud.google.com/vertex-ai/docs/model-registry/import-model#custom-container
+		var uploadOp *vai.UploadModelOperation
+		if uploadOp, err = modelClient.UploadModel(ctx, &vaipb.UploadModelRequest{
+			Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
+			Model: &vaipb.Model{
+				Name:        modelName,
+				DisplayName: modelName,
+				// MetadataSchemaUri: "gs://google-cloud-aiplatform/schema/trainingjob/definition/custom_task_1.0.0.yaml",
+				ContainerSpec: &vaipb.ModelContainerSpec{
+					// use a prebuilt container, so we can create a shared pool of resources later
+					ImageUri: "europe-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.2-12:latest",
+				},
+				ArtifactUri: fmt.Sprintf("gs://%s/%d/model", bucketName, user.ID),
+			},
+		}); err != nil {
+			return err
+		}
+
+		var uploadModelResponse *vaipb.UploadModelResponse
+		if uploadModelResponse, err = uploadOp.Wait(ctx); err != nil {
+			return err
+		}
+		fmt.Println(uploadModelResponse.GetModel())
+
+		var endpointClient *vai.EndpointClient
+		if endpointClient, err = vai.NewEndpointClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
+			return err
+		}
+		defer endpointClient.Close()
+
+		var createEndpointOp *vai.CreateEndpointOperation
+		if createEndpointOp, err = endpointClient.CreateEndpoint(ctx, &vaipb.CreateEndpointRequest{
+			Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
+			Endpoint: &vaipb.Endpoint{
+				Name:        modelName,
+				DisplayName: modelName,
+			},
+		}); err != nil {
+			return err
+		}
+
+		// After creating the endpoint we can get a meaningful name
+		// like projects/1064343834149/locations/europe-west6/endpoints/6066638969137790976
+		// but it doesn't contain the display name or the name we choose, so it's unclear how to get
+		// this information back
+		var endpoint *vaipb.Endpoint
+		if endpoint, err = createEndpointOp.Wait(ctx); err != nil {
+			return err
+		}
+
+		var resourcePoolClient *vai.DeploymentResourcePoolClient
+		if resourcePoolClient, err = vai.NewDeploymentResourcePoolClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
+			return err
+		}
+		defer resourcePoolClient.Close()
+
+		deploymentResourcePoolId := "resource-pool"
+		var deploymentResourcePool *vaipb.DeploymentResourcePool = nil
+		iter := resourcePoolClient.ListDeploymentResourcePools(ctx, &vaipb.ListDeploymentResourcePoolsRequest{
+			Parent: fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
+		})
+		var item *vaipb.DeploymentResourcePool
+		for item, _ = iter.Next(); err == nil; item, err = iter.Next() {
+			fmt.Println(item.GetName())
+			if strings.Contains(item.GetName(), deploymentResourcePoolId) {
+				deploymentResourcePool = item
+				fmt.Printf("Found deployment resource pool %s\n", deploymentResourcePool.GetName())
+				break
+			}
+		}
+
+		if deploymentResourcePool == nil {
+			fmt.Println("Creating a new deployment resource pool")
+			// Create a deployment resource pool: FOR SHARED RESOURCES ONLY
+			var createDeploymentResourcePoolOp *vai.CreateDeploymentResourcePoolOperation
+			if createDeploymentResourcePoolOp, err = resourcePoolClient.CreateDeploymentResourcePool(ctx, &vaipb.CreateDeploymentResourcePoolRequest{
+				Parent:                   fmt.Sprintf("projects/%s/locations/%s", _vaiProjectID, _vaiLocation),
+				DeploymentResourcePoolId: deploymentResourcePoolId,
+				DeploymentResourcePool: &vaipb.DeploymentResourcePool{
+					DedicatedResources: &vaipb.DedicatedResources{
+						MachineSpec: &vaipb.MachineSpec{
+							MachineType:      "n1-standard-4",
+							AcceleratorCount: 0,
+						},
+						MinReplicaCount: 1,
+						MaxReplicaCount: 1,
+					},
+				},
+			}); err != nil {
+				return err
+			}
+
+			if deploymentResourcePool, err = createDeploymentResourcePoolOp.Wait(ctx); err != nil {
+				return err
+			}
+			fmt.Println(deploymentResourcePool.GetName())
+		}
+
+		// Shared doesn't work with custom containers
+		var deployModelOp *vai.DeployModelOperation
+		if deployModelOp, err = endpointClient.DeployModel(ctx, &vaipb.DeployModelRequest{
+			Endpoint: endpoint.GetName(),
+			DeployedModel: &vaipb.DeployedModel{
+				DisplayName: modelName,
+				Model:       uploadModelResponse.GetModel(),
+				//EnableContainerLogging: true, // enable logging only for custom containers
+				PredictionResources: &vaipb.DeployedModel_SharedResources{
+					SharedResources: deploymentResourcePool.GetName(),
+				},
+			},
+		}); err != nil {
+			return err
+		}
+
+		if _, err = deployModelOp.Wait(ctx); err != nil {
+			return err
+		}
 
 		return nil
 	}
