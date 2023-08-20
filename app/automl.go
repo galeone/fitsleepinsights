@@ -18,6 +18,7 @@ import (
 	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v2"
 	"github.com/labstack/echo/v4"
 	"google.golang.org/api/option"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	storage "cloud.google.com/go/storage"
 )
@@ -172,8 +173,6 @@ func TestAutoML() echo.HandlerFunc {
 
 		*/
 
-		var targetColumn string = "SleepEfficiency"
-
 		// Associate the bucket with the dataset is required only when the dataset is NOT tabular.
 		// ref: https://pkg.go.dev/cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb#ImportDataRequest
 
@@ -320,6 +319,7 @@ func TestAutoML() echo.HandlerFunc {
 		// Create a custom training job with a custom container
 		// ref: https://cloud.google.com/vertex-ai/docs/training/create-custom-job#create_custom_job-java
 
+		var targetColumn string = "SleepEfficiency"
 		modelName := fmt.Sprintf("%s-predictor-%d", targetColumn, user.ID)
 		var modelClient *vai.ModelClient
 		if modelClient, err = vai.NewModelClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
@@ -452,6 +452,8 @@ func TestAutoML() echo.HandlerFunc {
 			return err
 		}
 
+		fmt.Println("endpoint name:", endpoint.GetName())
+
 		var resourcePoolClient *vai.DeploymentResourcePoolClient
 		if resourcePoolClient, err = vai.NewDeploymentResourcePoolClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
 			return err
@@ -519,6 +521,53 @@ func TestAutoML() echo.HandlerFunc {
 		if _, err = deployModelOp.Wait(ctx); err != nil {
 			return err
 		}
+
+		// TODO: it's not clear how to get the endpoint name and the model name
+		// so maybe we should store the endpoint name and the model name in a database associated to the user
+
+		// 7. Make a prediction
+		var predictionClient *vai.PredictionClient
+		if predictionClient, err = vai.NewPredictionClient(ctx, option.WithEndpoint(vaiEndpoint)); err != nil {
+			return err
+		}
+		defer predictionClient.Close()
+		var instances []*structpb.Value
+		var toSkip []string = []string{
+			// potential labels excluded during training
+			"MinutesAfterWakeup",
+			"MinutesAsleep",
+			"MinutesAwake",
+			"MinutesToFallAsleep",
+			"TimeInBed",
+			"LightSleepMinutes",
+			"LightSleepCount",
+			"DeepSleepMinutes",
+			"DeepSleepCount",
+			"RemSleepMinutes",
+			"RemSleepCount",
+			"WakeSleepMinutes",
+			"WakeSleepCount",
+			"SleepDuration",
+			"SleepEfficiency",
+			// ID and Date are not required
+			"ID",
+			"Date",
+		}
+		if instances, err = UserDataToPredictionInstance(allUserData[:1], toSkip); err != nil {
+			return err
+		}
+
+		fmt.Println(instances[0].GetStructValue().String())
+
+		var predictResponse *vaipb.PredictResponse
+		if predictResponse, err = predictionClient.Predict(ctx, &vaipb.PredictRequest{
+			// "projects/1064343834149/locations/europe-west6/endpoints/2534690961372479488"
+			Endpoint:  endpoint.GetName(),
+			Instances: instances,
+		}); err != nil {
+			return err
+		}
+		fmt.Println(predictResponse.GetPredictions())
 
 		return nil
 	}

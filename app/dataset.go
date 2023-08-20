@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
+	"reflect"
 	"strconv"
+
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // csvHeaders returns the headers for the CSV file
@@ -41,4 +44,96 @@ func userDataToCSV(userData []*UserData) (ret string, err error) {
 	}
 
 	return buffer.String(), nil
+}
+
+// UNUSED UserDataToPredictionInstance converts a slice of UserData to a slice of structpb.Value.
+// It skips all the columns that are not used for training, that you should pass in the skipColumns parameter.
+func userDataToPredictionInstanceReflection(userData []*UserData, skipColumns []string) ([]*structpb.Value, error) {
+	if len(userData) == 0 {
+		return nil, errors.New("empty userData slice")
+	}
+
+	var instances []*structpb.Value = make([]*structpb.Value, len(userData))
+
+	idsToSkip := make(map[int]bool)
+	indirect := reflect.Indirect(reflect.ValueOf(userData[0]))
+	indirectType := indirect.Type()
+	totFields := indirectType.NumField()
+	for i := 0; i < totFields; i++ {
+		field := indirectType.Field(i).Name
+		for _, skipColumn := range skipColumns {
+			if field == skipColumn {
+				idsToSkip[i] = true
+				break
+			}
+		}
+	}
+
+	for i, u := range userData {
+		rawInstance := map[string]interface{}{}
+		for j, v := range u.Values() {
+			if _, ok := idsToSkip[j]; ok {
+				continue
+			}
+			rawInstance[indirectType.Field(j).Name] = v
+		}
+		var err error
+		instances[i], err = structpb.NewValue(rawInstance)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return instances, nil
+}
+
+// UserDataToPredictionInstance converts a slice of UserData to a slice of structpb.Value.
+// It skips all the columns that are not used for training, that you should pass in the skipColumns parameter.
+func UserDataToPredictionInstance(userData []*UserData, skipColumns []string) ([]*structpb.Value, error) {
+	if len(userData) == 0 {
+		return nil, errors.New("empty userData slice")
+	}
+
+	var instances []*structpb.Value = make([]*structpb.Value, len(userData))
+
+	idsToSkip := make(map[int]bool)
+	columns := userData[0].Headers()
+	for i, column := range columns {
+		for _, skipColumn := range skipColumns {
+			if column == skipColumn {
+				idsToSkip[i] = true
+				break
+			}
+		}
+	}
+
+	for i, u := range userData {
+		rawInstance := map[string]interface{}{}
+		for j, v := range u.Values() {
+			if _, ok := idsToSkip[j]; ok {
+				continue
+			}
+			// If the value is empty, is a missing value and we consider it as a float 0.
+			if v == "" {
+				// In theory tree-based models should be able to handle missing values, but in practice they don't.
+				// This is a limitation of the deployment of tfdf models in Vertex AI, I guess.
+				rawInstance[columns[j]] = 0.0
+				continue
+			}
+			// If the value can be converted to float, we convert it.
+			if f, err := strconv.ParseFloat(v, 64); err == nil {
+				rawInstance[columns[j]] = f
+				continue
+			}
+			// Otherwise is a string.
+			rawInstance[columns[j]] = v
+		}
+		var err error
+		instances[i], err = structpb.NewValue(rawInstance)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return instances, nil
 }
