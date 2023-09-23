@@ -26,15 +26,15 @@ import (
 
 const APIURL string = "https://api.fitbit.com/1"
 
-func UserAPI(userID, endpoint string) string {
+func userAPI(userID, endpoint string) string {
 	return fmt.Sprintf("%s/user/%s/%s", APIURL, userID, strings.TrimLeft(endpoint, "/"))
 }
 
-func UserAPIDot2(userID, endpoint string) string {
+func userAPIDot2(userID, endpoint string) string {
 	return fmt.Sprintf("%s.2/user/%s/%s", APIURL, userID, strings.TrimLeft(endpoint, "/"))
 }
 
-func FitbitAPI(endpoint string) string {
+func fitbitAPI(endpoint string) string {
 	return fmt.Sprintf("%s/%s", APIURL, strings.TrimLeft(endpoint, "/"))
 }
 
@@ -279,12 +279,12 @@ func GenerateTypes() echo.HandlerFunc {
 			var dest string
 			if userReq {
 				if strings.Contains(path, "/sleep/") {
-					dest = UserAPIDot2(*user, fmt.Sprintf(path, args...))
+					dest = userAPIDot2(*user, fmt.Sprintf(path, args...))
 				} else {
-					dest = UserAPI(*user, fmt.Sprintf(path, args...))
+					dest = userAPI(*user, fmt.Sprintf(path, args...))
 				}
 			} else {
-				dest = FitbitAPI(fmt.Sprintf(path, args...))
+				dest = fitbitAPI(fmt.Sprintf(path, args...))
 			}
 			log.Println(dest)
 			if res, err = req.Get(dest); err != nil {

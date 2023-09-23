@@ -27,17 +27,17 @@ func NewRouter() (*echo.Echo, error) {
 
 	// INTERNAL routes used for:
 
-	// 1. Generating types and testing the Authorizer
+	// Generating types and testing the Authorizer
 	router.GET("/generate", GenerateTypes(), RequireFitbit())
-	// 2. Testing the API(*Authorizer)
+	// Testing the API(*Authorizer)
 	router.GET("/test", TestGET(), RequireFitbit())
-	// 3. Dump all data endpoint (INTERNAL)
-	// TODO: create go routine for the dumper. Now it is executed only
-	// at this endpoint and on database insert (new user)
+	// Dump all data endpoint (INTERNAL)
 	router.GET("/dump", Dump(), RequireFitbit())
-	// 4. Fun with VertexAI (INTERNAL)
-	router.GET("/vertex", TestAutoML(), RequireFitbit())
-	// 5. Fetch all data  endpoint (INTERNAL)
+	// Train and deploy sleep efficiency predictor
+	router.GET("/train", TestTrainAndDeploy(), RequireFitbit())
+	// Predict sleep efficiency
+	router.GET("/predict", TestPredictSleepEfficiency(), RequireFitbit())
+	// Fetch all data endpoint (INTERNAL)
 	router.GET("/fetch", Fetch(), RequireFitbit())
 	return router, nil
 }

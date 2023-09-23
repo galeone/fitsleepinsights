@@ -42,4 +42,5 @@ var (
 	_vaiLocation          = os.Getenv("VAI_LOCATION")
 	_vaiProjectID         = os.Getenv("VAI_PROJECT_ID")
 	_vaiServiceAccountKey = os.Getenv("VAI_SERVICE_ACCOUNT_KEY")
+	_vaiEndpoint          = fmt.Sprintf("%s-aiplatform.googleapis.com:443", _vaiLocation)
 )

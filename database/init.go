@@ -57,6 +57,9 @@ var (
 
 	//go:embed schema/alter.sql
 	alter string
+
+	//go:embed schema/ml.sql
+	ml string
 )
 
 func init() {
@@ -155,6 +158,11 @@ func init() {
 	}
 
 	if err = tx.Exec(alter); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(ml); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}

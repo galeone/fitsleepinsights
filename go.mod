@@ -1,6 +1,6 @@
 module github.com/galeone/fitsleepinsights
 
-go 1.20
+go 1.21
 
 require (
 	github.com/galeone/fitbit v1.0.3
