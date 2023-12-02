@@ -293,13 +293,13 @@ func TrainAndDeployPredictor(user *fitbit_pgdb.AuthorizedUser, targetColumn stri
 	})
 }
 
-func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserData) ([]*structpb.Value, error) {
+func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserData) (uint8, error) {
 	var err error
 	ctx := context.Background()
 
 	var predictionClient *vai.PredictionClient
 	if predictionClient, err = vai.NewPredictionClient(ctx, option.WithEndpoint(_vaiEndpoint)); err != nil {
-		return nil, err
+		return 0, err
 	}
 	defer predictionClient.Close()
 	var instances []*structpb.Value
@@ -326,15 +326,15 @@ func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserDa
 	}
 
 	if instances, err = UserDataToPredictionInstance(userData, toSkip); err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	// Get the endpoint
+	// Get the predictor
 	var predictor types.Predictor
 	predictor.UserID = user.ID
 	predictor.Target = "SleepEfficiency"
 	if err = _db.Model(types.Predictor{}).Where(predictor).Scan(&predictor); err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	var predictResponse *vaipb.PredictResponse
@@ -342,7 +342,25 @@ func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserDa
 		Endpoint:  predictor.Endpoint,
 		Instances: instances,
 	}); err != nil {
-		return nil, err
+		return 0, err
 	}
-	return predictResponse.GetPredictions(), nil
+
+	predictionsBatch := predictResponse.GetPredictions()
+
+	if len(predictionsBatch) == 0 {
+		return 0, fmt.Errorf("no predictions")
+	}
+
+	// Get the argmax
+	var max float64 = 0
+	var maxIndex int = 0
+	values := predictionsBatch[0].GetListValue().GetValues()
+	for i, value := range values {
+		if value.GetNumberValue() > max {
+			max = value.GetNumberValue()
+			maxIndex = i
+		}
+	}
+
+	return uint8(maxIndex), nil
 }

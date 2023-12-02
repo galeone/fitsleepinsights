@@ -6,13 +6,13 @@ package app
 
 import (
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/galeone/fitbit"
 	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v2"
 	"github.com/labstack/echo/v4"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestTrainAndDeploy() echo.HandlerFunc {
@@ -43,6 +43,12 @@ func TestTrainAndDeploy() echo.HandlerFunc {
 	}
 }
 
+type PredictionResult struct {
+	// The prediction result
+	Prediction float32 `json:"prediction"`
+	Target     string  `json:"target"`
+}
+
 func TestPredictSleepEfficiency() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// 1. Fetch all user data
@@ -65,12 +71,13 @@ func TestPredictSleepEfficiency() echo.HandlerFunc {
 
 		todayData := fetcher.Fetch(time.Now())
 
-		var predictions []*structpb.Value
-		if predictions, err = PredictSleepEfficiency(&user, []*UserData{&todayData}); err != nil {
+		var sleepEfficiency uint8
+		if sleepEfficiency, err = PredictSleepEfficiency(&user, []*UserData{&todayData}); err != nil {
 			return err
 		}
-		log.Println(predictions)
-
-		return nil
+		return c.JSON(http.StatusOK, PredictionResult{
+			Prediction: float32(sleepEfficiency),
+			Target:     "SleepEfficiency",
+		})
 	}
 }
