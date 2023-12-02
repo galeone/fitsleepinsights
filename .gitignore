@@ -20,11 +20,12 @@ go.work
 # .env
 .env
 
-# binary
+# binaries
 fitsleepinsights
+__debug_bin*
 
 .vscode/
-__debug_bin
+
 
 # Ignore generated credentials from google-github-actions/auth
 gha-creds-*.json
