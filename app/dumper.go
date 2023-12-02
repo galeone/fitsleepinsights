@@ -101,7 +101,7 @@ func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (
 
 		// No error = found
 		if err = tx.Model(types.ActivityCaloriesSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -181,7 +181,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 		for _, activity := range value.Activities {
 			activityRow := types.ActivityLog{}
 			if err = _db.First(&activityRow, activity.LogID); err == nil {
-				log.Println("skipping activity ", activity.LogID, ": already present")
+				// log.Println("skipping activity ", activity.LogID, ": already present")
 				continue
 			}
 
@@ -375,7 +375,7 @@ func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 
 		// No error = found
 		if err = tx.Model(types.BMISeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -408,7 +408,7 @@ func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error
 
 		// No error = found
 		if err = tx.Model(types.BodyFatSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -441,7 +441,7 @@ func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err er
 
 		// No error = found
 		if err = tx.Model(types.BodyWeightSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -474,7 +474,7 @@ func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err e
 
 		// No error = found
 		if err = tx.Model(types.CaloriesBMRSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -507,7 +507,7 @@ func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err erro
 
 		// No error = found
 		if err = tx.Model(types.CaloriesSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -540,7 +540,7 @@ func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err erro
 
 		// No error = found
 		if err = tx.Model(types.DistanceSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -573,7 +573,7 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 
 		// No error = found
 		if err = tx.Model(types.FloorsSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -613,7 +613,7 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 
 		// No error = found
 		if err = tx.Model(types.HeartRateActivities{}).Where(&hrActivityInsert).Scan(&hrActivityInsert); err == nil {
-			log.Println("Skipping ", hrActivityInsert)
+			// log.Println("Skipping ", hrActivityInsert)
 			continue
 		}
 
@@ -672,7 +672,7 @@ func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time
 
 		// No error = found
 		if err = tx.Model(types.MinutesFairlyActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -705,7 +705,7 @@ func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Tim
 
 		// No error = found
 		if err = tx.Model(types.MinutesLightlyActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -738,7 +738,7 @@ func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (
 
 		// No error = found
 		if err = tx.Model(types.MinutesSedentarySeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -771,7 +771,7 @@ func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) 
 
 		// No error = found
 		if err = tx.Model(types.MinutesVeryActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -804,7 +804,7 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 
 		// No error = found
 		if err = tx.Model(types.StepsSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -837,7 +837,7 @@ func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err err
 
 		// No error = found
 		if err = tx.Model(types.ElevationSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -868,7 +868,7 @@ func (d *dumper) userCoreTemperature(startDate, endDate *time.Time) (err error) 
 
 		// No error = found
 		if err = tx.Model(types.CoreTemperature{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -900,7 +900,7 @@ func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) 
 
 		// No error = found
 		if err = tx.Model(types.SkinTemperature{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -943,7 +943,7 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 
 		// No error = found
 		if err = tx.Model(types.CardioFitnessScore{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -976,7 +976,7 @@ func (d *dumper) userOxygenSaturation(startDate, endDate *time.Time) (err error)
 
 		// No error = found
 		if err = tx.Model(types.OxygenSaturation{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -1008,7 +1008,7 @@ func (d *dumper) userHeartRateVariability(startDate, endDate *time.Time) (err er
 
 		// No error = found
 		if err = tx.Model(types.HeartRateVariabilityTimeSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			log.Println("Skipping ", t)
+			// log.Println("Skipping ", t)
 			continue
 		}
 		if err = tx.Create(&timestep); err != nil {
@@ -1044,7 +1044,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		// No error = found
 
 		if err = tx.Model(types.SleepLog{}).Where(&insert).Scan(&insert); err == nil {
-			log.Println("Skipping ", insert)
+			// log.Println("Skipping ", insert)
 			continue
 		}
 		if err = tx.Create(&insert); err != nil {
@@ -1134,7 +1134,7 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	// Do not dump if startDate is after today
 	today := time.Now().Truncate(time.Hour * 24)
 	if startDate.After(today) {
-		log.Println("startDate is after today, skipping")
+		// log.Println("startDate is after today, skipping")
 		return nil
 	}
 
@@ -1177,7 +1177,6 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 		newStartDate := startDate
 		newEndDate := newStartDate.Add(time.Duration(ago*24) * time.Hour)
 		for newEndDate.Before(yesterday) {
-			log.Println("1173 newStartDate", newStartDate, "newEndDate", newEndDate)
 			d.userSkinTemperature(&newStartDate, &newEndDate)
 			d.userCoreTemperature(&newStartDate, &newEndDate)
 			d.userOxygenSaturation(&newStartDate, &newEndDate)
@@ -1191,14 +1190,12 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 		newStartDate = startDate
 		newEndDate = newStartDate.Add(time.Duration(ago*24) * time.Hour)
 		for newEndDate.Before(yesterday) {
-			log.Println("1187 newStartDate", newStartDate, "newEndDate", newEndDate)
 			d.userSleepLogList(&newStartDate, &newEndDate)
 			newStartDate = newEndDate
 			newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
 		}
 
 	} else {
-		log.Println("else: startDate", startDate, "endDate", endDate)
 		d.userSkinTemperature(&startDate, endDate)
 		d.userCoreTemperature(&startDate, endDate)
 		d.userOxygenSaturation(&startDate, endDate)
