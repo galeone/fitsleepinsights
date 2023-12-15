@@ -1,5 +1,2 @@
 storage for all the data
 nutrition & nutrition time series. I have no data for generating meaningful responses
-AutoML: il csv è forse sminchiato, serve una colonna ID ma sopratutto il target non può mai essere nullo (e nei dati c'è una riga con efficiency vuota, quindi va tolto)
-
-al dump è capitato un errore "2023/06/01 21:13:43 here:  pq: could not determine data type of parameter $1"
