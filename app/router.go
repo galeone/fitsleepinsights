@@ -9,6 +9,11 @@
 package app
 
 import (
+	"strings"
+	"time"
+
+	"github.com/foolin/goview"
+	"github.com/foolin/goview/supports/echoview-v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -22,8 +27,20 @@ func NewRouter() (*echo.Echo, error) {
 	router.Use(middleware.Recover())
 	router.Logger.SetLevel(log.DEBUG)
 
+	// use echoview(goview) as simplified renderer
+	viewConf := goview.DefaultConfig
+	viewConf.Funcs["year"] = time.Now().UTC().Year
+	viewConf.Funcs["contains"] = strings.Contains
+	viewConf.Funcs["hasPrefix"] = strings.HasPrefix
+	viewConf.Funcs["hasSuffix"] = strings.HasSuffix
+
+	router.Renderer = echoview.New(viewConf)
+
 	router.GET("/auth", Auth())
 	router.GET("/redirect", Redirect(), RequireFitbit())
+	router.GET("/dashboard", Dashboard(), RequireFitbit())
+
+	router.Static("/static", "static")
 
 	// INTERNAL routes used for:
 
