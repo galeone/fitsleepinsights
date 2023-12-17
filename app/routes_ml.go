@@ -45,8 +45,16 @@ func TestTrainAndDeploy() echo.HandlerFunc {
 
 type PredictionResult struct {
 	// The prediction result
-	Prediction float32 `json:"prediction"`
-	Target     string  `json:"target"`
+	Prediction []float32 `json:"prediction"`
+	Target     string    `json:"target"`
+}
+
+func toFloat32(input []uint8) []float32 {
+	output := make([]float32, len(input))
+	for i, v := range input {
+		output[i] = float32(v)
+	}
+	return output
 }
 
 func TestPredictSleepEfficiency() echo.HandlerFunc {
@@ -71,12 +79,12 @@ func TestPredictSleepEfficiency() echo.HandlerFunc {
 
 		todayData := fetcher.Fetch(time.Now())
 
-		var sleepEfficiency uint8
+		var sleepEfficiency []uint8
 		if sleepEfficiency, err = PredictSleepEfficiency(&user, []*UserData{&todayData}); err != nil {
 			return err
 		}
 		return c.JSON(http.StatusOK, PredictionResult{
-			Prediction: float32(sleepEfficiency),
+			Prediction: toFloat32(sleepEfficiency),
 			Target:     "SleepEfficiency",
 		})
 	}

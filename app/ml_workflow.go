@@ -293,13 +293,13 @@ func TrainAndDeployPredictor(user *fitbit_pgdb.AuthorizedUser, targetColumn stri
 	})
 }
 
-func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserData) (uint8, error) {
+func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserData) ([]uint8, error) {
 	var err error
 	ctx := context.Background()
 
 	var predictionClient *vai.PredictionClient
 	if predictionClient, err = vai.NewPredictionClient(ctx, option.WithEndpoint(_vaiEndpoint)); err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer predictionClient.Close()
 	var instances []*structpb.Value
@@ -326,7 +326,7 @@ func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserDa
 	}
 
 	if instances, err = UserDataToPredictionInstance(userData, toSkip); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	// Get the predictor
@@ -334,7 +334,7 @@ func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserDa
 	predictor.UserID = user.ID
 	predictor.Target = "SleepEfficiency"
 	if err = _db.Model(types.Predictor{}).Where(predictor).Scan(&predictor); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	var predictResponse *vaipb.PredictResponse
@@ -342,25 +342,27 @@ func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserDa
 		Endpoint:  predictor.Endpoint,
 		Instances: instances,
 	}); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	predictionsBatch := predictResponse.GetPredictions()
 
 	if len(predictionsBatch) == 0 {
-		return 0, fmt.Errorf("no predictions")
+		return nil, fmt.Errorf("no predictions")
 	}
 
-	// Get the argmax
-	var max float64 = 0
-	var maxIndex int = 0
-	values := predictionsBatch[0].GetListValue().GetValues()
-	for i, value := range values {
-		if value.GetNumberValue() > max {
-			max = value.GetNumberValue()
-			maxIndex = i
+	// Get the argmax for every element of the batch
+	maxIndexes := make([]uint8, len(predictionsBatch))
+	for i := range predictionsBatch {
+		values := predictionsBatch[i].GetListValue().GetValues()
+		var max float64 = 0
+		for j, value := range values {
+			if value.GetNumberValue() > max {
+				max = value.GetNumberValue()
+				maxIndexes[i] = uint8(j)
+			}
 		}
 	}
 
-	return uint8(maxIndex), nil
+	return maxIndexes, nil
 }

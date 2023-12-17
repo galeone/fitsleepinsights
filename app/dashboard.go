@@ -1,7 +1,7 @@
 package app
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"slices"
 	"time"
@@ -12,6 +12,49 @@ import (
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/labstack/echo/v4"
 )
+
+func sleepEfficiencyChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.Line {
+	var dates []string
+	var sleepEfficiency []opts.LineData
+	for _, dayData := range all {
+		// format date to YYYY-MM-DD
+		dates = append(dates, dayData.Date.Format(time.DateOnly))
+		sleepEfficiency = append(sleepEfficiency, opts.LineData{Value: dayData.SleepLog.Efficiency})
+	}
+	chart := charts.NewLine()
+
+	chart.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{
+			Title: "Sleep Efficiency",
+		}),
+		charts.WithInitializationOpts(opts.Initialization{
+			Theme: "dark",
+		}),
+		charts.WithTooltipOpts(opts.Tooltip{
+			Trigger: "axis",
+			Show:    true,
+		}),
+	)
+	chart.SetXAxis(dates)
+
+	chart.AddSeries("Actual", sleepEfficiency, charts.WithLineChartOpts(opts.LineChart{
+		Smooth: true,
+	}))
+
+	predictions, err := PredictSleepEfficiency(user, all)
+	if err != nil {
+		log.Println(err)
+	} else {
+		var predictedSleepEfficiency []opts.LineData
+		for _, prediction := range predictions {
+			predictedSleepEfficiency = append(predictedSleepEfficiency, opts.LineData{Value: prediction})
+		}
+		chart.AddSeries("Predicted", predictedSleepEfficiency, charts.WithLineChartOpts(opts.LineChart{
+			Smooth: true,
+		}))
+	}
+	return chart
+}
 
 func Dashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
@@ -40,37 +83,8 @@ func Dashboard() echo.HandlerFunc {
 
 		slices.Reverse(all)
 
-		// 2. Create the dashboard
-		// 2.1. Create the sleep efficiency chart
-
-		var dates []time.Time
-		var sleepEfficiency []opts.LineData
-		for _, dayData := range all {
-			dates = append(dates, dayData.Date)
-			sleepEfficiency = append(sleepEfficiency, opts.LineData{Value: dayData.SleepLog.Efficiency})
-		}
-		fmt.Println(dates[0])
-		fmt.Println(len(dates))
-		fmt.Println(dates[len(dates)-1])
-
-		chart := charts.NewLine()
+		chart := sleepEfficiencyChart(&user, all)
 		chart.Renderer = newChartRenderer(chart, chart.Validate)
-
-		chart.SetGlobalOptions(
-			charts.WithTitleOpts(opts.Title{
-				Title:    "Sleep Efficiency",
-				Subtitle: "Day by day",
-			}),
-			charts.WithInitializationOpts(opts.Initialization{
-				Theme: "dark",
-			}),
-		)
-		chart.SetXAxis(dates)
-
-		chart.AddSeries("Actual", sleepEfficiency, charts.WithLineChartOpts(opts.LineChart{
-			Smooth: true,
-		}))
-		// TODO add predicted
 
 		// render without .html = use the master layout
 		return c.Render(http.StatusOK, "dashboard", echo.Map{

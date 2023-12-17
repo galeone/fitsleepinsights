@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -117,7 +118,14 @@ func UserDataToPredictionInstance(userData []*UserData, skipColumns []string) ([
 			if v == "" {
 				// In theory tree-based models should be able to handle missing values, but in practice they don't.
 				// This is a limitation of the deployment of tfdf models in Vertex AI, I guess.
-				rawInstance[columns[j]] = 0.0
+
+				// Column "ActivitiesNameConcatenation" is a string column, so we can't set it to 0.
+				// We set it to an empty string.
+				if columns[j] == "ActivitiesNameConcatenation" {
+					rawInstance[columns[j]] = ""
+				} else {
+					rawInstance[columns[j]] = 0.0
+				}
 				continue
 			}
 			// If the value can be converted to float, we convert it.
@@ -135,5 +143,6 @@ func UserDataToPredictionInstance(userData []*UserData, skipColumns []string) ([
 		}
 	}
 
+	fmt.Println(instances)
 	return instances, nil
 }
