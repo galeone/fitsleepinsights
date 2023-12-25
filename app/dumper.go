@@ -31,9 +31,7 @@ func init() {
 		}
 		accessToken := payload[0]
 		if dumper, err := NewDumper(accessToken); err == nil {
-			if err := dumper.DumpNewer(false); err != nil {
-				log.Printf("dumper.DumpNewer: %s", err)
-			}
+			dumper.DumpNewer(false)
 		} else {
 			log.Println("here: ", err.Error(), "at received: ", accessToken)
 		}
