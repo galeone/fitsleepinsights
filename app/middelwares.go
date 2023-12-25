@@ -8,8 +8,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/galeone/fitbit"
-	"github.com/galeone/fitbit/types"
+	"github.com/galeone/fitbit/v2"
+	"github.com/galeone/fitbit/v2/types"
 	"github.com/labstack/echo/v4"
 )
 

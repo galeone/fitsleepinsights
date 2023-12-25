@@ -6,8 +6,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/galeone/fitbit"
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v2"
+	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
+	"github.com/galeone/fitbit/v2"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/labstack/echo/v4"

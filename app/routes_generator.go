@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/galeone/fitbit"
+	"github.com/galeone/fitbit/v2"
 	"github.com/galeone/rts"
 	"github.com/labstack/echo/v4"
 

@@ -4,8 +4,7 @@ go 1.21
 
 require (
 	github.com/foolin/goview v0.3.0
-	github.com/galeone/fitbit v1.0.3
-	github.com/galeone/fitbit-pgdb/v2 v2.0.2
+	github.com/galeone/fitbit/v2 v2.0.0
 	github.com/galeone/igor v1.0.10
 	github.com/galeone/rts v1.0.0
 	github.com/galeone/tcx v1.0.0
@@ -40,6 +39,7 @@ require (
 	cloud.google.com/go/longrunning v0.5.4 // indirect
 	cloud.google.com/go/storage v1.36.0
 	github.com/ChimeraCoder/gojson v1.1.0 // indirect
+	github.com/galeone/fitbit-pgdb/v3 v3.0.0-20231225172135-70d2b49f66d7
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

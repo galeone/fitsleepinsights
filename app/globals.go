@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	pgdb "github.com/galeone/fitbit-pgdb/v2"
+	pgdb "github.com/galeone/fitbit-pgdb/v3"
 
 	_ "github.com/joho/godotenv/autoload"
 )

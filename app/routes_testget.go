@@ -8,9 +8,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/galeone/fitbit"
-	"github.com/galeone/fitbit/client"
-	"github.com/galeone/fitbit/types"
+	"github.com/galeone/fitbit/v2"
+	"github.com/galeone/fitbit/v2/client"
+	"github.com/galeone/fitbit/v2/types"
 	"github.com/galeone/tcx"
 	"github.com/labstack/echo/v4"
 )

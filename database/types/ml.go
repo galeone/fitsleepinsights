@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	pgdb "github.com/galeone/fitbit-pgdb/v2"
+	pgdb "github.com/galeone/fitbit-pgdb/v3"
 )
 
 // Predictor is a struct containing the information about the predictors

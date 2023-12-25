@@ -14,8 +14,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/galeone/fitbit"
-	"github.com/galeone/fitbit/types"
+	"github.com/galeone/fitbit/v2"
+	"github.com/galeone/fitbit/v2/types"
 	"github.com/galeone/fitsleepinsights/database"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -54,7 +54,7 @@ func Auth() func(echo.Context) error {
 			HttpOnly: true,
 		})
 
-		if err = _db.InsertAuhorizingUser(&authorizing); err != nil {
+		if err = _db.InsertAuthorizingUser(&authorizing); err != nil {
 			return err
 		}
 

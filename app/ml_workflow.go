@@ -13,7 +13,7 @@ import (
 
 	vai "cloud.google.com/go/aiplatform/apiv1beta1"
 	vaipb "cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v2"
+	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
 	"github.com/galeone/fitsleepinsights/database/types"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/structpb"

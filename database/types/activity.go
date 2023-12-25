@@ -5,7 +5,7 @@
 package types
 
 import (
-	"github.com/galeone/fitbit/types"
+	"github.com/galeone/fitbit/v2/types"
 )
 
 type Category struct {
