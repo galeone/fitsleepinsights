@@ -48,7 +48,8 @@ on:
   push:
     branches:
       - $default-branch
-
+      # TODO remove after test
+      - 10-per-user-workflow
 # The secrets have been defined inside the Github settings
 # The env vars MUST be defined here to be accessible with env.VAR
 env:
