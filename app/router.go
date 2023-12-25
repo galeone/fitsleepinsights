@@ -37,7 +37,7 @@ func NewRouter() (*echo.Echo, error) {
 	router.Renderer = echoview.New(viewConf)
 
 	router.GET("/auth", Auth())
-	router.GET("/redirect", Redirect(), RequireFitbit())
+	router.GET("/redirect", Redirect())
 	router.GET("/dashboard", Dashboard(), RequireFitbit())
 
 	router.Static("/static", "static")
