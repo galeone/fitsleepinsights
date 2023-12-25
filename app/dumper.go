@@ -30,7 +30,7 @@ func init() {
 		}
 		accessToken := payload[0]
 		if dumper, err := NewDumper(accessToken); err == nil {
-			if err := dumper.DumpNewer(); err != nil {
+			if err := dumper.DumpNewer(false); err != nil {
 				log.Printf("dumper.DumpNewer: %s", err)
 			}
 		} else {
@@ -1107,12 +1107,12 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 	return
 }
 
-// Dump fetches every data available on the user profile, up to this moment.
+// DumpNewer fetches every data available on the user profile, up to this moment.
 // This function is called:
 //   - When the user gives the permission to the app (on the INSERT on the table
 //     triggered by the database notification)
 //   - Periodically by a go routine. In this case, the `after` variable is valid.
-func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
+func (d *dumper) DumpNewer(dumpTCX bool) error {
 	var startDate time.Time
 	var endDate *time.Time
 
@@ -1121,110 +1121,181 @@ func (d *dumper) Dump(after *time.Time, dumpTCX bool) error {
 	yesterday := time.Now().Add(-time.Duration(24) * time.Hour).Truncate(time.Hour * 24)
 	endDate = &yesterday
 
-	dumpAll := after == nil
-	var days int
-	if dumpAll {
-		// In this case, we want to dump "all" the past data up to yesterday.
-		// Try to fetch 100 days of data. The reason? The API for the sleep data only allow us to fetch
-		// the last 100 days. So to have sleep and activities in sync, we need to fetch 100 days of data.
-		days = 100
-		startDate = endDate.Add(-time.Duration(24*days) * time.Hour).Truncate(time.Hour * 24)
-	} else {
-		startDate = *after
-		days = int(yesterday.Sub(startDate).Hours()) / 24
+	// We want to dump "all" the past data up to yesterday.
+	// Try to fetch 100 days of data. The reason? The API for the sleep data only allow us to fetch
+	// the last 100 days. So to have sleep and activities in sync, we need to fetch 100 days of data.
+	const days int = 100
+	defaultStartDate := func() time.Time {
+		return endDate.Add(-time.Duration(24*days) * time.Hour).Truncate(time.Hour * 24)
 	}
-	// Do not dump if startDate is after today
-	today := time.Now().Truncate(time.Hour * 24)
-	if startDate.After(today) {
-		// log.Println("startDate is after today, skipping")
-		return nil
-	}
+
+	startDate = defaultStartDate()
 
 	// There are functions that don't have an "after" period
 	// because Fitbit allows to get only the daily data.
 	d.userActivityDailyGoal()
 	d.userActivityWeeklyGoal()
 
+	var last time.Time
+	var err error
+
+	// Before dumping, we want to know the last date of the data we have. In this way, we set the startData to the last date dumped.
+
+	if err = _db.Model(types.ActivityLog{}).Select("max(start_time)").Where(&types.ActivityLog{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userActivityLogList(&startDate, dumpTCX)
+
+	if err = _db.Model(types.ActivityCaloriesSeries{}).Select("max(date)").Where(&types.ActivityCaloriesSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userActivityCaloriesTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.BMISeries{}).Select("max(date)").Where(&types.BMISeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userBMITimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.BodyFatSeries{}).Select("max(date)").Where(&types.BodyFatSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userBodyFatTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.BodyWeightSeries{}).Select("max(date)").Where(&types.BodyWeightSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userBodyWeightTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.CaloriesBMRSeries{}).Select("max(date)").Where(&types.CaloriesBMRSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userCaloriesBMRTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.CaloriesSeries{}).Select("max(date)").Where(&types.CaloriesSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userCaloriesTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.DistanceSeries{}).Select("max(date)").Where(&types.DistanceSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userDistanceTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.FloorsSeries{}).Select("max(date)").Where(&types.FloorsSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userFloorsTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.MinutesFairlyActiveSeries{}).Select("max(date)").Where(&types.MinutesFairlyActiveSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userMinutesFairlyActiveTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.MinutesLightlyActiveSeries{}).Select("max(date)").Where(&types.MinutesLightlyActiveSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userMinutesLightlyActiveTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.MinutesSedentarySeries{}).Select("max(date)").Where(&types.MinutesSedentarySeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userMinutesSedentaryTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.MinutesVeryActiveSeries{}).Select("max(date)").Where(&types.MinutesVeryActiveSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userMinutesVeryActiveTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.StepsSeries{}).Select("max(date)").Where(&types.StepsSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userStepsTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.HeartRateActivities{}).Select("max(date)").Where(&types.HeartRateActivities{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userHeartRateTimeseries(&startDate, endDate)
+
+	if err = _db.Model(types.ElevationSeries{}).Select("max(date)").Where(&types.ElevationSeries{UserID: d.User.ID}).Scan(&last); err == nil {
+		startDate = last
+	} else {
+		startDate = defaultStartDate()
+	}
 	d.userElevationTimeseries(&startDate, endDate)
 
-	if days > 30 {
-		// NOTE: every loop should loop using "gcd" days
-		// from startDate to endDate to do not lose days.
-		gcd := func(a, b int) int {
-			for b != 0 {
-				t := b
-				b = a % b
-				a = t
-			}
-			return a
-		}
+	// From here on, we need to fetch data in a different way because the Fitbit API has a limit on the number of days we can fetch
+	// for certain endpoints (the one used below).
 
-		// Only last 30 days for Skin/Core temp & Oxygen saturation
-		ago := gcd(days, 30)
-		newStartDate := startDate
-		newEndDate := newStartDate.Add(time.Duration(ago*24) * time.Hour)
-		for newEndDate.Before(yesterday) {
-			d.userSkinTemperature(&newStartDate, &newEndDate)
-			d.userCoreTemperature(&newStartDate, &newEndDate)
-			d.userOxygenSaturation(&newStartDate, &newEndDate)
-			d.userCardioFitnessScore(&newStartDate, &newEndDate)
-			d.userHeartRateVariability(&newStartDate, &newEndDate)
-			newStartDate = newEndDate
-			newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
+	// NOTE: every loop should loop using "gcd" days
+	// from startDate to endDate to do not lose days.
+	gcd := func(a, b int) int {
+		for b != 0 {
+			t := b
+			b = a % b
+			a = t
 		}
-		// 100 days for SleepLogList.
-		ago = gcd(days, 100)
-		newStartDate = startDate
-		newEndDate = newStartDate.Add(time.Duration(ago*24) * time.Hour)
-		for newEndDate.Before(yesterday) {
-			d.userSleepLogList(&newStartDate, &newEndDate)
-			newStartDate = newEndDate
-			newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
-		}
+		return a
+	}
 
+	// Only last 30 days for Skin/Core temp & Oxygen saturation
+	ago := gcd(days, 30)
+	newStartDate := startDate
+	newEndDate := newStartDate.Add(time.Duration(ago*24) * time.Hour)
+	for newEndDate.Before(yesterday) {
+		d.userSkinTemperature(&newStartDate, &newEndDate)
+		d.userCoreTemperature(&newStartDate, &newEndDate)
+		d.userOxygenSaturation(&newStartDate, &newEndDate)
+		d.userCardioFitnessScore(&newStartDate, &newEndDate)
+		d.userHeartRateVariability(&newStartDate, &newEndDate)
+		newStartDate = newEndDate
+		newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
+	}
+
+	// 100 days for SleepLogList.
+	ago = gcd(days, 100)
+	if err = _db.Model(types.SleepLog{}).Select("max(date_of_sleep)").Where(&types.SleepLog{UserID: d.User.ID}).Scan(&last); err == nil {
+		newStartDate = last
 	} else {
-		d.userSkinTemperature(&startDate, endDate)
-		d.userCoreTemperature(&startDate, endDate)
-		d.userOxygenSaturation(&startDate, endDate)
-		d.userCardioFitnessScore(&startDate, endDate)
-		d.userHeartRateVariability(&startDate, endDate)
-		// if days <= 30 -> days <= 100 (lol)
-		d.userSleepLogList(&startDate, endDate)
+		newStartDate = defaultStartDate()
+	}
+	newEndDate = newStartDate.Add(time.Duration(ago*24) * time.Hour)
+	for newEndDate.Before(yesterday) {
+		d.userSleepLogList(&newStartDate, &newEndDate)
+		newStartDate = newEndDate
+		newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
 	}
 
 	return nil
-}
-
-func (d *dumper) DumpNewer() error {
-	// Fetch the latest activity logged to get a date to start from.
-	var after *time.Time
-	var last time.Time
-	// err = empty -> no data previously stored
-	// using ActivityLog is wrong because it's the first data type dumped, and in case of failures
-	// this prevents to fetch all the other data with a date > last activity log.
-	// Thus, use SleepLogList that's the last thing we dump in the dump all call.
-	if err := _db.Model(types.SleepLog{}).Select("max(date_of_sleep)").Where(&types.SleepLog{UserID: d.User.ID}).Scan(&last); err != nil {
-		after = nil
-	} else {
-		after = &last
-	}
-	dumpTCX := false
-	return d.Dump(after, dumpTCX)
 }
 
 func Dump() echo.HandlerFunc {
@@ -1244,7 +1315,7 @@ func Dump() echo.HandlerFunc {
 		}
 
 		if dumper, err := NewDumper(user.AccessToken); err == nil {
-			if err = dumper.DumpNewer(); err != nil {
+			if err = dumper.DumpNewer(false); err != nil {
 				return err
 			}
 		} else {
