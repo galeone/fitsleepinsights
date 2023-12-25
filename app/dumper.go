@@ -1031,6 +1031,11 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		return
 	}
 
+	if len(sleepLogs.Sleep) == 0 {
+		d.logError(fmt.Errorf("no sleep logs found: %s %s", startDate.String(), endDate.String()))
+		return
+	}
+
 	tx := _db.Begin()
 	for _, sleepLog := range sleepLogs.Sleep {
 		insert := types.SleepLog{
