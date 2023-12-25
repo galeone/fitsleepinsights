@@ -48,8 +48,6 @@ on:
   push:
     branches:
       - $default-branch
-      # TODO remove after test
-      - 10-per-user-workflow
 
 # The secrets have been defined inside the Github settings
 # The env vars MUST be defined here to be accessible with env.VAR
@@ -70,11 +68,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Google Auth
         id: auth
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           token_format: 'access_token'
           workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
@@ -85,7 +83,7 @@ jobs:
       # Authenticate Docker to Google Cloud Artifact Registry
       - name: Docker Auth
         id: docker-auth
-        uses: 'docker/login-action@v1'
+        uses: 'docker/login-action@v3'
         with:
           username: 'oauth2accesstoken'
           password: '${{ steps.auth.outputs.access_token }}'
@@ -100,7 +98,7 @@ jobs:
 
       - name: Deploy to Cloud Run
         id: deploy
-        uses: google-github-actions/deploy-cloudrun@v1
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ env.SERVICE }}
           region: ${{ env.CLOUD_RUN_REGION }}
