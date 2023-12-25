@@ -48,10 +48,23 @@ func RequireFitbit() echo.MiddlewareFunc {
 					var dbToken *types.AuthorizedUser
 					if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
 						log.Printf("[RequireFitbit] _db.AuthorizedUser: %s", err)
+						// If here, we have a token cookie, but it's not valid
+						// so erase it and redirect to the auth page
+						c.SetCookie(&http.Cookie{
+							Name:   "token",
+							MaxAge: -1,
+						})
+
 						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					if dbToken.UserID == "" {
 						log.Printf("Invalid token. Please login again")
+						// If here, we have a token cookie, but it's not valid
+						// so erase it and redirect to the auth page
+						c.SetCookie(&http.Cookie{
+							Name:   "token",
+							MaxAge: -1,
+						})
 						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					authorizer.SetToken(dbToken)
