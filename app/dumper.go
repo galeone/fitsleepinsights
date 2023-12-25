@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"runtime"
@@ -1112,7 +1113,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 //   - When the user gives the permission to the app (on the INSERT on the table
 //     triggered by the database notification)
 //   - Periodically by a go routine. In this case, the `after` variable is valid.
-func (d *dumper) DumpNewer(dumpTCX bool) error {
+func (d *dumper) DumpNewer(dumpTCX bool) {
 	var startDate time.Time
 	var endDate *time.Time
 
@@ -1294,8 +1295,6 @@ func (d *dumper) DumpNewer(dumpTCX bool) error {
 		newStartDate = newEndDate
 		newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
 	}
-
-	return nil
 }
 
 func Dump() echo.HandlerFunc {
@@ -1315,12 +1314,11 @@ func Dump() echo.HandlerFunc {
 		}
 
 		if dumper, err := NewDumper(user.AccessToken); err == nil {
-			if err = dumper.DumpNewer(false); err != nil {
-				return err
-			}
+			dumper.DumpNewer(false)
 		} else {
 			log.Println(err.Error())
+			return err
 		}
-		return err
+		return c.JSON(http.StatusOK, "ok")
 	}
 }

@@ -30,6 +30,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 				// is used in all the routes that require the fitbit API.
 				// And we check that if authorizing is set, than we should do the auth + redirect flow
 				// for some reason (maybe the user has deleted the cookies).
+
 				authorizer := fitbit.NewAuthorizer(_db, _clientID, _clientSecret, _redirectURL)
 				var cookie *http.Cookie
 				if cookie, err = c.Cookie("authorizing"); err == nil {
