@@ -57,7 +57,7 @@ env:
   PROJECT_ID: train-and-deploy-experiment
   CLOUD_RUN_REGION: europe-west1 # must be 1 to support google domain
   REPOSITORY: fitsleep-actions-repo
-  SERVICE: fitsleep-actions-repo
+  SERVICE: fitsleep-actions-cloudrun-service
 
 jobs:
   deploy:
