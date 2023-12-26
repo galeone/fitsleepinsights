@@ -1295,10 +1295,15 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 	if newEndDate.After(yesterday) {
 		newEndDate = yesterday
 	}
-	for newEndDate.Before(yesterday) || newEndDate.Equal(yesterday) {
+	isLastDate := newEndDate.Equal(yesterday)
+	for newEndDate.Before(yesterday) || isLastDate {
 		d.userSleepLogList(&newStartDate, &newEndDate)
 		newStartDate = newEndDate
 		newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
+		if !isLastDate && newEndDate.After(yesterday) {
+			newEndDate = yesterday
+			isLastDate = true
+		}
 	}
 }
 
