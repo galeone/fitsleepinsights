@@ -1036,8 +1036,8 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		return
 	}
 
-	tx := _db.Begin()
 	for _, sleepLog := range sleepLogs.Sleep {
+		tx := _db.Begin()
 		insert := types.SleepLog{
 			SleepLog:    sleepLog,
 			LogID:       sleepLog.LogID,
@@ -1104,9 +1104,9 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		if err = sleepData(sleepLog.Levels.ShortData); err != nil {
 			d.logError(err)
 		}
-	}
-	if err = tx.Commit(); err != nil {
-		d.logError(err)
+		if err = tx.Commit(); err != nil {
+			d.logError(err)
+		}
 	}
 	return
 }
