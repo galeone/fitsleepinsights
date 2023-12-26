@@ -36,10 +36,12 @@ func userDataToCSV(userData []*UserData) (ret string, err error) {
 
 	buffer := bytes.NewBufferString("")
 	w := csv.NewWriter(buffer)
-	w.Write(headers)
+	if err = w.Write(headers); err != nil {
+		return ret, err
+	}
 
 	for id, u := range userData {
-		if err := w.Write(append([]string{strconv.FormatInt(int64(id), 10)}, u.Values()...)); err != nil {
+		if err = w.Write(append([]string{strconv.FormatInt(int64(id), 10)}, u.Values()...)); err != nil {
 			return ret, err
 		}
 	}
