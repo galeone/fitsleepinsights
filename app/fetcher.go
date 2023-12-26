@@ -829,7 +829,7 @@ func Fetch() echo.HandlerFunc {
 		if fetcher, err := NewFetcher(&user); err == nil {
 			if all, err := fetcher.FetchAll(FetchAllWithSleepLog); err == nil {
 				if csv, err := userDataToCSV(all); err == nil {
-					// Save completecsv to file
+					// Save complete csv to file
 					file, _ := os.Create("complete.csv")
 					io.WriteString(file, csv)
 				} else {
