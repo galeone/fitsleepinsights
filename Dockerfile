@@ -7,8 +7,9 @@ RUN CGO_ENABLED=0 go build -o /go/bin/fitsleepingishts
 FROM gcr.io/distroless/static-debian12
 COPY --from=builder /go/bin/fitsleepingishts /
 
-# Copy also the views next to the binary
+# Copy the website views and other stuff next to the binary
 COPY --from=builder /go/src/fitsleepingishts/views/ /views/
+COPY --from=builder /go/src/fitsleepingishts/static/ /static/
 
 # Add useful stuff or stepping into the container and debug
 COPY --from=busybox:1.36.1-uclibc /bin/sh /bin/sh
