@@ -1294,7 +1294,7 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 	}
 	newEndDate = newStartDate.Add(time.Duration(ago*24) * time.Hour)
 	log.Println("SleepLogList", newStartDate, newEndDate)
-	for newEndDate.Before(yesterday) {
+	for newEndDate.Before(yesterday) || newEndDate.Equal(yesterday) {
 		log.Println("SleepLogList inside for", newStartDate, newEndDate)
 		d.userSleepLogList(&newStartDate, &newEndDate)
 		newStartDate = newEndDate
