@@ -8,11 +8,11 @@ import (
 	"log"
 	"strings"
 
-	chartrender "github.com/go-echarts/go-echarts/v2/render"
+	chartRender "github.com/go-echarts/go-echarts/v2/render"
 )
 
 const baseTpl = `
-<div class="item" id="{{ .ChartID }}" style="width:{{ .Initialization.Width }};height:{{ .Initialization.Height }};"></div>
+<div class="item" id="{{ .ChartID }}" style="min-width:{{ .Initialization.Width }};min-height:{{ .Initialization.Height }}; width: 100%; height:100%"></div>
 {{- range .JSAssets.Values }}
 	{{ if not (hasSuffix . "echarts.min.js") }}
 	   <script src="{{ . }}"></script>
@@ -20,9 +20,9 @@ const baseTpl = `
 {{- end }}
 <script>
     "use strict";
-    let goecharts_{{ .ChartID | safeJS }} = echarts.init(document.getElementById('{{ .ChartID | safeJS }}'), "{{ .Theme }}");
+    let echarts_{{ .ChartID | safeJS }} = echarts.init(document.getElementById('{{ .ChartID | safeJS }}'), "{{ .Theme }}");
     let option_{{ .ChartID | safeJS }} = {{ .JSON }};
-    goecharts_{{ .ChartID | safeJS }}.setOption(option_{{ .ChartID | safeJS }});
+    echarts_{{ .ChartID | safeJS }}.setOption(option_{{ .ChartID | safeJS }});
     {{- range .JSFunctions.Fns }}
     {{ . | safeJS }}
     {{- end }}
@@ -31,7 +31,7 @@ const baseTpl = `
 
 func renderChart(c interface{}) template.HTML {
 	var buf bytes.Buffer
-	r := c.(chartrender.Renderer)
+	r := c.(chartRender.Renderer)
 	err := r.Render(&buf)
 	if err != nil {
 		log.Printf("Failed to render chart: %s", err)
@@ -46,7 +46,7 @@ type chartRenderer struct {
 	before []func()
 }
 
-func newChartRenderer(c interface{}, before ...func()) chartrender.Renderer {
+func newChartRenderer(c interface{}, before ...func()) chartRender.Renderer {
 	return &chartRenderer{c: c, before: before}
 }
 
