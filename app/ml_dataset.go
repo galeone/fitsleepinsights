@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
-	"fmt"
 	"reflect"
 	"strconv"
 
@@ -145,6 +144,5 @@ func UserDataToPredictionInstance(userData []*UserData, skipColumns []string) ([
 		}
 	}
 
-	fmt.Println(instances)
 	return instances, nil
 }
