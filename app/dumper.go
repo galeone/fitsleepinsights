@@ -1125,11 +1125,11 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 	endDate = &yesterday
 
 	// We want to dump "all" the past data up to yesterday.
-	// Try to fetch 100 days of data. The reason? The API for the sleep data only allow us to fetch
-	// the last 100 days. So to have sleep and activities in sync, we need to fetch 100 days of data.
-	const days int = 100
+	// Try to fetch 100 maxDays of data. The reason? The API for the sleep data only allow us to fetch
+	// the last 100 maxDays. So to have sleep and activities in sync, we need to fetch 100 maxDays of data.
+	const maxDays int = 100
 	defaultStartDate := func() time.Time {
-		return endDate.Add(-time.Duration(24*days) * time.Hour).Truncate(time.Hour * 24)
+		return endDate.Add(-time.Duration(24*maxDays) * time.Hour).Truncate(time.Hour * 24)
 	}
 
 	startDate = defaultStartDate()
@@ -1271,10 +1271,14 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 	}
 
 	// Only last 30 days for Skin/Core temp & Oxygen saturation
-	ago := gcd(days, 30)
+	ago := gcd(maxDays, 30)
 	newStartDate := startDate
 	newEndDate := newStartDate.Add(time.Duration(ago*24) * time.Hour)
-	for newEndDate.Before(yesterday) {
+	if newEndDate.After(yesterday) {
+		newEndDate = yesterday
+	}
+	isYesterday := newEndDate.Equal(yesterday)
+	for newEndDate.Before(yesterday) || isYesterday {
 		d.userSkinTemperature(&newStartDate, &newEndDate)
 		d.userCoreTemperature(&newStartDate, &newEndDate)
 		d.userOxygenSaturation(&newStartDate, &newEndDate)
@@ -1282,27 +1286,43 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 		d.userHeartRateVariability(&newStartDate, &newEndDate)
 		newStartDate = newEndDate
 		newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
+
+		if isYesterday {
+			break
+		}
+
+		if newEndDate.After(yesterday) {
+			newEndDate = yesterday
+			isYesterday = true
+		}
 	}
 
 	// 100 days for SleepLogList.
-	ago = gcd(days, 100)
+	ago = gcd(maxDays, 100)
 	if err = _db.Model(types.SleepLog{}).Select("max(date_of_sleep)").Where(&types.SleepLog{UserID: d.User.ID}).Scan(&last); err == nil {
 		newStartDate = last
 	} else {
 		newStartDate = defaultStartDate()
 	}
+
 	newEndDate = newStartDate.Add(time.Duration(ago*24) * time.Hour)
 	if newEndDate.After(yesterday) {
 		newEndDate = yesterday
 	}
-	isLastDate := newEndDate.Equal(yesterday)
-	for newEndDate.Before(yesterday) || isLastDate {
+	isYesterday = newEndDate.Equal(yesterday)
+	for newEndDate.Before(yesterday) || isYesterday {
 		d.userSleepLogList(&newStartDate, &newEndDate)
+
 		newStartDate = newEndDate
 		newEndDate = newEndDate.Add(time.Duration(ago*24) * time.Hour)
-		if !isLastDate && newEndDate.After(yesterday) {
+
+		if isYesterday {
+			break
+		}
+
+		if newEndDate.After(yesterday) {
 			newEndDate = yesterday
-			isLastDate = true
+			isYesterday = true
 		}
 	}
 }
