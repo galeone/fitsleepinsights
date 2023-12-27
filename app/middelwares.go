@@ -5,7 +5,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -56,7 +55,7 @@ func RequireFitbit() echo.MiddlewareFunc {
 					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 				}
 				if dbToken.UserID == "" {
-					fmt.Println(err)
+					log.Println(err)
 					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 				}
 				authorizer.SetToken(dbToken)
