@@ -794,7 +794,6 @@ func (f *fetcher) Fetch(strategy FetchStrategy) ([]*UserData, error) {
 	yesterday := time.Now().AddDate(0, 0, -1).Truncate(time.Hour * 24)
 	switch strategy {
 	case FetchAllWithSleepLog:
-		// Condition on efficiency > 0 to avoid fetching sleep logs that are not complete
 		if err := _db.Model(types.SleepLog{}).Select("min(date(date_of_sleep))").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestLogDate); err != nil {
 			return nil, err
 		}
