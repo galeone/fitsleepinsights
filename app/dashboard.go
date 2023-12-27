@@ -1,9 +1,11 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"slices"
+	"sort"
 	"time"
 
 	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
@@ -17,6 +19,9 @@ func sleepEfficiencyChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *ch
 	var dates []string
 	var sleepEfficiency []opts.LineData
 	for _, dayData := range all {
+		if dayData == nil || dayData.SleepLog == nil {
+			continue
+		}
 		// format date to YYYY-MM-DD
 		dates = append(dates, dayData.Date.Format(time.DateOnly))
 		sleepEfficiency = append(sleepEfficiency, opts.LineData{Value: dayData.SleepLog.Efficiency})
@@ -56,6 +61,96 @@ func sleepEfficiencyChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *ch
 	return chart
 }
 
+func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.HeatMap {
+
+	var dailyStepsPerYear map[int][]opts.HeatMapData = make(map[int][]opts.HeatMapData)
+	var maxSteps int = 0
+	for _, dayData := range all {
+		if dayData == nil || dayData.Steps == nil {
+			continue
+		}
+		step := int(dayData.Steps.Value)
+		if step > maxSteps {
+			maxSteps = step
+		}
+		// format date to YYYY-MM-DD
+		value := [2]interface{}{dayData.Date.Format(time.DateOnly), step}
+		year := dayData.Date.Year()
+		dailyStepsPerYear[year] = append(dailyStepsPerYear[year], opts.HeatMapData{Value: value, Name: dayData.Date.Format(time.DateOnly)})
+	}
+
+	years := make([]int, 0, len(dailyStepsPerYear))
+	for k := range dailyStepsPerYear {
+		years = append(years, k)
+	}
+	sort.Ints(years)
+
+	const verticalOffset int = 120
+
+	chart := charts.NewHeatMap()
+	chart.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{
+			Title: "Daily Steps Count",
+			Top:   "30",
+			Left:  "center",
+		}),
+		charts.WithInitializationOpts(opts.Initialization{
+			Theme:  "dark",
+			Height: fmt.Sprintf("%dpx", 120+len(years)*verticalOffset),
+			//Width:  fmt.Sprintf("%dpx", 15*52+60),
+		}),
+		charts.WithTooltipOpts(opts.Tooltip{
+			Trigger: "item",
+			Show:    true,
+		}),
+		charts.WithVisualMapOpts(
+			opts.VisualMap{
+				Type:   "piecewise",
+				Min:    0,
+				Max:    float32(maxSteps),
+				Show:   true,
+				Orient: "horizontal",
+				Left:   "center",
+				Top:    "65",
+				TextStyle: &opts.TextStyle{
+					Color: "white",
+				},
+			}),
+		charts.WithLegendOpts(opts.Legend{
+			Show: false,
+		}),
+	)
+
+	for id, year := range years {
+		chart.AddSeries("Daily Steps", dailyStepsPerYear[year], charts.WithCoordinateSystem("calendar"))
+		chart.AddCalendar(&opts.Calendar{
+			Orient:   "horizontal",
+			Silent:   false,
+			Range:    []float32{float32(year)},
+			Top:      fmt.Sprintf("%d", 120+id*verticalOffset),
+			Left:     "60",
+			Right:    "30",
+			CellSize: "15",
+			ItemStyle: &opts.ItemStyle{
+				BorderWidth: 0.5,
+			},
+			YearLabel: &opts.CalendarLabel{
+				Show: true,
+			},
+			DayLabel: &opts.CalendarLabel{
+				Show:  true,
+				Color: "white",
+			},
+			MonthLabel: &opts.CalendarLabel{
+				Show:  true,
+				Color: "white",
+			},
+		})
+	}
+
+	return chart
+}
+
 func Dashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// secure, under middleware
@@ -83,13 +178,17 @@ func Dashboard() echo.HandlerFunc {
 
 		slices.Reverse(all)
 
-		chart := sleepEfficiencyChart(&user, all)
-		chart.Renderer = newChartRenderer(chart, chart.Validate)
+		sleepEfficiencyChart := sleepEfficiencyChart(&user, all)
+		sleepEfficiencyChart.Renderer = newChartRenderer(sleepEfficiencyChart, sleepEfficiencyChart.Validate)
+
+		dailyStepChart := dailyStepCount(&user, all)
+		dailyStepChart.Renderer = newChartRenderer(dailyStepChart, dailyStepChart.Validate)
 
 		// render without .html = use the master layout
-		return c.Render(http.StatusOK, "dashboard", echo.Map{
+		return c.Render(http.StatusOK, "dashboard/dashboard", echo.Map{
 			"title":                "Dashboard - FitSleepInsights",
-			"sleepEfficiencyChart": renderChart(chart),
+			"sleepEfficiencyChart": renderChart(sleepEfficiencyChart),
+			"dailyStepsCountChart": renderChart(dailyStepChart),
 		})
 	}
 }
