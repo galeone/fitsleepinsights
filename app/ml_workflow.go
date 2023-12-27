@@ -28,7 +28,7 @@ func TrainAndDeployPredictor(user *fitbit_pgdb.AuthorizedUser, targetColumn stri
 		return err
 	}
 	var allUserData []*UserData
-	if allUserData, err = fetcher.FetchAll(FetchAllWithSleepLog); err != nil {
+	if allUserData, err = fetcher.Fetch(FetchAllWithSleepLog); err != nil {
 		return err
 	}
 

@@ -743,7 +743,7 @@ func (u *UserData) Values() []string {
 	return ret
 }
 
-func (f *fetcher) Fetch(date time.Time) UserData {
+func (f *fetcher) FetchByDate(date time.Time) UserData {
 	userData := UserData{
 		Date: date,
 	}
@@ -775,38 +775,56 @@ func (f *fetcher) Fetch(date time.Time) UserData {
 	return userData
 }
 
-type FetchAllStrategy int
+type FetchStrategy int
 
 const (
-	FetchAllWithSleepLog FetchAllStrategy = iota
+	FetchAllWithSleepLog FetchStrategy = iota
 	FetchAllWithActivityLog
+	FetchAll
 )
 
-// FetchAll fetches all the user data. It uses the oldest sleep log date as first date
-// and yesterday as last date.
-func (f *fetcher) FetchAll(strategy FetchAllStrategy) ([]*UserData, error) {
-	// Get all the dates
-	var dates []time.Time
+// Fetch fetches all the user data.
+// If strategy is FetchAllWithSleepLog it uses the oldest sleep log date as first date.
+// If strategy is FetchAllWithActivityLog it uses the oldest activity log date as first date.
+// If strategy is Fetch it uses the oldest date between the oldest sleep log date and the oldest activity log date.
+// In any case, the last date is yesterday.
+func (f *fetcher) Fetch(strategy FetchStrategy) ([]*UserData, error) {
+	// Get the oldestLogDate
+	var oldestLogDate time.Time
 	yesterday := time.Now().AddDate(0, 0, -1).Truncate(time.Hour * 24)
 	switch strategy {
 	case FetchAllWithSleepLog:
 		// Condition on efficiency > 0 to avoid fetching sleep logs that are not complete
-		if err := _db.Model(types.SleepLog{}).Select("distinct date(date_of_sleep) as d").Where(`date_of_sleep <= ? AND user_id = ? AND efficiency > 0`, yesterday, f.user.ID).Order("d desc").Scan(&dates); err != nil {
+		if err := _db.Model(types.SleepLog{}).Select("min(date(date_of_sleep))").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestLogDate); err != nil {
 			return nil, err
 		}
 	case FetchAllWithActivityLog:
-		if err := _db.Model(types.ActivityLog{}).Select("distinct date(start_time) as d").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Order("d desc").Scan(&dates); err != nil {
+		if err := _db.Model(types.ActivityLog{}).Select("min(date(start_time))").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestLogDate); err != nil {
 			return nil, err
 		}
-	}
-	if len(dates) == 0 {
-		return nil, errors.New("user has zero activities")
+	case FetchAll:
+		var oldestSleepDate time.Time
+		var oldestActivityDate time.Time
+		if err := _db.Model(types.SleepLog{}).Select("min(date(date_of_sleep))").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestSleepDate); err != nil {
+			return nil, err
+		}
+		if err := _db.Model(types.ActivityLog{}).Select("min(date(start_time))").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestActivityDate); err != nil {
+			return nil, err
+		}
+		if oldestSleepDate.Before(oldestActivityDate) {
+			oldestLogDate = oldestSleepDate
+		} else {
+			oldestLogDate = oldestActivityDate
+		}
+
 	}
 
 	var userDataList []*UserData
-	for _, date := range dates {
-		userData := f.Fetch(date)
+	currentDate := oldestLogDate
+	for currentDate.Before(yesterday) || currentDate.Equal(yesterday) {
+		userData := f.FetchByDate(currentDate)
 		userDataList = append(userDataList, &userData)
+		currentDate = currentDate.AddDate(0, 0, 1)
 	}
 	return userDataList, nil
 }
@@ -827,7 +845,7 @@ func Fetch() echo.HandlerFunc {
 		}
 
 		if fetcher, err := NewFetcher(&user); err == nil {
-			if all, err := fetcher.FetchAll(FetchAllWithSleepLog); err == nil {
+			if all, err := fetcher.Fetch(FetchAllWithSleepLog); err == nil {
 				if csv, err := userDataToCSV(all); err == nil {
 					// Save complete csv to file
 					file, _ := os.Create("complete.csv")

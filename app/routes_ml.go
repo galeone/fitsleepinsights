@@ -77,7 +77,7 @@ func TestPredictSleepEfficiency() echo.HandlerFunc {
 			return err
 		}
 
-		todayData := fetcher.Fetch(time.Now())
+		todayData := fetcher.FetchByDate(time.Now())
 
 		var sleepEfficiency []uint8
 		if sleepEfficiency, err = PredictSleepEfficiency(&user, []*UserData{&todayData}); err != nil {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"slices"
 	"sort"
 	"time"
 
@@ -171,18 +170,16 @@ func Dashboard() echo.HandlerFunc {
 			return err
 		}
 
-		var all []*UserData
-		if all, err = fetcher.FetchAll(FetchAllWithSleepLog); err != nil {
+		var allData []*UserData
+		if allData, err = fetcher.Fetch(FetchAll); err != nil {
 			return err
 		}
 
-		slices.Reverse(all)
-
-		sleepEfficiencyChart := sleepEfficiencyChart(&user, all)
-		sleepEfficiencyChart.Renderer = newChartRenderer(sleepEfficiencyChart, sleepEfficiencyChart.Validate)
-
-		dailyStepChart := dailyStepCount(&user, all)
+		dailyStepChart := dailyStepCount(&user, allData)
 		dailyStepChart.Renderer = newChartRenderer(dailyStepChart, dailyStepChart.Validate)
+
+		sleepEfficiencyChart := sleepEfficiencyChart(&user, allData)
+		sleepEfficiencyChart.Renderer = newChartRenderer(sleepEfficiencyChart, sleepEfficiencyChart.Validate)
 
 		// render without .html = use the master layout
 		return c.Render(http.StatusOK, "dashboard/dashboard", echo.Map{
