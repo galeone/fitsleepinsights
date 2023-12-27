@@ -1361,6 +1361,7 @@ input[type=color]::-webkit-color-swatch{
     display: flex;
     flex-flow: row wrap;
     float:left;
+    margin-bottom: 0.75em;
     margin-left:0.75em
 }
 .toggle-content {
