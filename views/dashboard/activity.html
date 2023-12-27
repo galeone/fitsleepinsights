@@ -1,0 +1,15 @@
+<div>
+    <a href="#activity" class="toggle text-xl">
+        {{include "dashboard/arrow"}} Activity
+    </a>
+</div>
+<div id="activity" class="toggle-content is-visible">
+    <div id="daily-steps">
+        <div class="container chart">
+            {{.dailyStepsCountChart}}
+        </div>
+        <div class="container">
+            spiegazione
+        </div>
+    </div>
+</div>

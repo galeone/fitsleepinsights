@@ -1,0 +1,11 @@
+{{define "head"}}
+<script src="https://go-echarts.github.io/go-echarts-assets/assets/echarts.min.js"></script>
+<script src="/static/js/dark.js"></script>
+{{end}}
+
+{{define "content"}}
+<div>
+    {{include "dashboard/sleep"}}
+    {{include "dashboard/activity"}}
+</div>
+{{end}}
