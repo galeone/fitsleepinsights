@@ -126,8 +126,7 @@ legend{
     padding:0
 }
 menu,ol,ul{
-    list-style:none;
-    margin:0;
+    margin-left:1em;
     padding:0
 }
 dialog{
@@ -1357,11 +1356,8 @@ input[type=color]::-webkit-color-swatch{
     width:95%;
     margin:auto
 }
-.container {
-    display: flex;
-    flex-flow: row wrap;
-    float:left;
-    margin-bottom: 0.75em;
+.box {
+    display: inline-block;
     margin-left:0.75em
 }
 .toggle-content {

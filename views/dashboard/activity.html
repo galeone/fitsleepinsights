@@ -4,12 +4,12 @@
     </a>
 </div>
 <div id="activity" class="toggle-content is-visible">
-    <div id="daily-steps">
-        <div class="container chart">
+    <div id="daily-steps" class="flex flex-wrap">
+        <div class="box chart">
             {{.dailyStepsCountChart}}
         </div>
-        <div class="container">
-            spiegazione
+        <div class="box">
+            {{md2html .dailyStepsCountDescription}}
         </div>
     </div>
 </div>

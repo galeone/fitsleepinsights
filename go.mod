@@ -3,12 +3,14 @@ module github.com/galeone/fitsleepinsights
 go 1.21
 
 require (
+	cloud.google.com/go/vertexai v0.6.0
 	github.com/foolin/goview v0.3.0
 	github.com/galeone/fitbit/v2 v2.0.0
 	github.com/galeone/igor v1.0.10
 	github.com/galeone/rts v1.0.0
 	github.com/galeone/tcx v1.0.0
 	github.com/go-echarts/go-echarts/v2 v2.3.2
+	github.com/gomarkdown/markdown v0.0.0-20231222211730-1d6d20845b47
 	github.com/google/uuid v1.5.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.11.4

@@ -9,11 +9,15 @@
 package app
 
 import (
+	"html/template"
 	"strings"
 	"time"
 
 	"github.com/foolin/goview"
 	"github.com/foolin/goview/supports/echoview-v4"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -33,6 +37,22 @@ func NewRouter() (*echo.Echo, error) {
 	viewConf.Funcs["contains"] = strings.Contains
 	viewConf.Funcs["hasPrefix"] = strings.HasPrefix
 	viewConf.Funcs["hasSuffix"] = strings.HasSuffix
+	viewConf.Funcs["nl2br"] = func(text string) template.HTML {
+		return template.HTML(strings.Replace(template.HTMLEscapeString(text), "\n", "<br>", -1))
+	}
+	viewConf.Funcs["md2html"] = func(md string) template.HTML {
+		// create markdown parser with extensions
+		extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
+		p := parser.NewWithExtensions(extensions)
+		doc := p.Parse([]byte(md))
+
+		// create HTML renderer with extensions
+		htmlFlags := html.CommonFlags | html.HrefTargetBlank
+		opts := html.RendererOptions{Flags: htmlFlags}
+		renderer := html.NewRenderer(opts)
+
+		return template.HTML(markdown.Render(doc, renderer))
+	}
 
 	router.Renderer = echoview.New(viewConf)
 

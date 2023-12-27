@@ -3,12 +3,12 @@
 </a>
 </div>
 <div id="sleep" class="toggle-content is-visible">
-    <div id="sleep-efficiency">
-        <div class="container chart">
+    <div id="sleep-efficiency" class="flex flex-wrap">
+        <div class="box chart">
         {{.sleepEfficiencyChart}}
         </div>
-        <div class="container">
-            spiegazione
+        <div class="box">
+        {{md2html .sleepEfficiencyDescription}}
         </div>
     </div>
 </div>

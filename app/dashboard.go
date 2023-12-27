@@ -1,17 +1,21 @@
 package app
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"sort"
 	"time"
 
+	"cloud.google.com/go/vertexai/genai"
 	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
 	"github.com/galeone/fitbit/v2"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/labstack/echo/v4"
+	"google.golang.org/api/option"
 )
 
 func sleepEfficiencyChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.Line {
@@ -150,6 +154,57 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.H
 	return chart
 }
 
+func describeChartContent(chart *charts.BaseConfiguration, chartType string, additionalPrompts ...string) (string, error) {
+	var description string = "This is the data used to generate the chart titled " + chart.Title.Title + "\n"
+	description += "The data is in the format of a series of points.\n"
+	description += "The data is in the healthcare domain.\n"
+	description += "The data is in the format of a " + chartType + ".\n"
+
+	description += "Here's the data in JSON format.\n"
+	for _, series := range chart.MultiSeries {
+		seriesInfo := map[string]interface{}{
+			"name": series.Name,
+			"data": series.Data,
+		}
+		if jsonData, err := json.Marshal(seriesInfo); err != nil {
+			return "", err
+		} else {
+			description += fmt.Sprintf("%s\n", jsonData)
+		}
+	}
+
+	for _, additionalPrompt := range additionalPrompts {
+		description += additionalPrompt + "\n"
+	}
+
+	description += "Generate the chart description.\n"
+	description += "Add to the description hints and insights about the data.\n"
+	description += "The description must be in Markdown.\n"
+	description += "The user that generated the data is reading your description. Talk directly to the user.\n"
+
+	ctx := context.Background()
+	// Access your API key as an environment variable (see "Set up your API key" above)
+	var client *genai.Client
+	var err error
+	const region = "us-central1"
+	if client, err = genai.NewClient(ctx, _vaiProjectID, region, option.WithCredentialsFile(_vaiServiceAccountKey)); err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	// For text-only input, use the gemini-pro model
+	model := client.GenerativeModel("gemini-pro")
+	var resp *genai.GenerateContentResponse
+	if resp, err = model.GenerateContent(ctx, genai.Text(description)); err != nil {
+		return "", err
+	}
+	if len(resp.Candidates) == 0 {
+		return "", fmt.Errorf("no candidates returned")
+	}
+
+	return fmt.Sprint(resp.Candidates[0].Content.Parts[0]), nil
+}
+
 func Dashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// secure, under middleware
@@ -177,15 +232,27 @@ func Dashboard() echo.HandlerFunc {
 
 		dailyStepChart := dailyStepCount(&user, allData)
 		dailyStepChart.Renderer = newChartRenderer(dailyStepChart, dailyStepChart.Validate)
+		var dailyStepsCountDescription string
+		if dailyStepsCountDescription, err = describeChartContent(&dailyStepChart.BaseConfiguration, "calendar heatmap"); err != nil {
+			dailyStepsCountDescription = "Failed to generate description: " + err.Error()
+		}
 
 		sleepEfficiencyChart := sleepEfficiencyChart(&user, allData)
 		sleepEfficiencyChart.Renderer = newChartRenderer(sleepEfficiencyChart, sleepEfficiencyChart.Validate)
+		var sleepEfficiencyDescription string
+		if sleepEfficiencyDescription, err = describeChartContent(&sleepEfficiencyChart.BaseConfiguration, "line chart", "Sleep Efficiency is a value in [0,100] computed as the ratio between the time spent in bed and the time effectively spent asleep"); err != nil {
+			sleepEfficiencyDescription = "Failed to generate description: " + err.Error()
+		}
 
 		// render without .html = use the master layout
 		return c.Render(http.StatusOK, "dashboard/dashboard", echo.Map{
-			"title":                "Dashboard - FitSleepInsights",
-			"sleepEfficiencyChart": renderChart(sleepEfficiencyChart),
-			"dailyStepsCountChart": renderChart(dailyStepChart),
+			"title": "Dashboard - FitSleepInsights",
+
+			"sleepEfficiencyChart":       renderChart(sleepEfficiencyChart),
+			"sleepEfficiencyDescription": sleepEfficiencyDescription,
+
+			"dailyStepsCountChart":       renderChart(dailyStepChart),
+			"dailyStepsCountDescription": dailyStepsCountDescription,
 		})
 	}
 }
