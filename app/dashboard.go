@@ -41,6 +41,9 @@ func sleepEfficiencyChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *ch
 			Trigger: "axis",
 			Show:    true,
 		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type: "inside",
+		}),
 	)
 	chart.SetXAxis(dates)
 
@@ -100,7 +103,7 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.H
 		}),
 		charts.WithInitializationOpts(opts.Initialization{
 			Theme:  "dark",
-			Height: fmt.Sprintf("%dpx", 120+len(years)*verticalOffset),
+			Height: fmt.Sprintf("%dpx", verticalOffset+len(years)*(verticalOffset+30)),
 			//Width:  fmt.Sprintf("%dpx", 15*52+60),
 		}),
 		charts.WithTooltipOpts(opts.Tooltip{
@@ -131,7 +134,7 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.H
 			Orient:   "horizontal",
 			Silent:   false,
 			Range:    []float32{float32(year)},
-			Top:      fmt.Sprintf("%d", 120+id*verticalOffset),
+			Top:      fmt.Sprintf("%d", verticalOffset+id*(verticalOffset+30)),
 			Left:     "60",
 			Right:    "30",
 			CellSize: "15",
