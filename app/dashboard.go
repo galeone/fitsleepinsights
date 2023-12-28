@@ -129,7 +129,11 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.H
 	)
 
 	for id, year := range years {
-		chart.AddSeries("Daily Steps", dailyStepsPerYear[year], charts.WithCoordinateSystem("calendar"))
+		chart.AddSeries("Daily Steps", dailyStepsPerYear[year],
+			charts.WithCoordinateSystem("calendar"),
+			charts.WithCalendarIndex(id),
+		)
+
 		chart.AddCalendar(&opts.Calendar{
 			Orient:   "horizontal",
 			Silent:   false,

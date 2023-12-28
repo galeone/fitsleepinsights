@@ -70,4 +70,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/go-echarts/go-echarts/v2 => github.com/galeone/go-echarts/v2 v2.0.0-20231227134135-55fc07b859f1
+replace github.com/go-echarts/go-echarts/v2 => github.com/galeone/go-echarts/v2 v2.0.0-20231228115703-15a4c4aad6b3
