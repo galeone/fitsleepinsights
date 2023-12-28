@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sort"
 	"time"
@@ -49,18 +48,20 @@ func sleepEfficiencyChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *ch
 		Smooth: true,
 	}))
 
-	predictions, err := PredictSleepEfficiency(user, all)
-	if err != nil {
-		log.Println(err)
-	} else {
-		var predictedSleepEfficiency []opts.LineData
-		for _, prediction := range predictions {
-			predictedSleepEfficiency = append(predictedSleepEfficiency, opts.LineData{Value: prediction})
+	/*
+		predictions, err := PredictSleepEfficiency(user, all)
+		if err != nil {
+			log.Println(err)
+		} else {
+			var predictedSleepEfficiency []opts.LineData
+			for _, prediction := range predictions {
+				predictedSleepEfficiency = append(predictedSleepEfficiency, opts.LineData{Value: prediction})
+			}
+			chart.AddSeries("Predicted", predictedSleepEfficiency, charts.WithLineChartOpts(opts.LineChart{
+				Smooth: true,
+			}))
 		}
-		chart.AddSeries("Predicted", predictedSleepEfficiency, charts.WithLineChartOpts(opts.LineChart{
-			Smooth: true,
-		}))
-	}
+	*/
 	return chart
 }
 

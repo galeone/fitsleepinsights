@@ -1356,10 +1356,6 @@ input[type=color]::-webkit-color-swatch{
     width:95%;
     margin:auto
 }
-.box {
-    display: inline-block;
-    margin-left:0.75em
-}
 .toggle-content {
 	display: none;
 	height: 0;
@@ -1377,6 +1373,15 @@ input[type=color]::-webkit-color-swatch{
     transform-origin:center;
 }
 
-.chart{
-    border: 1px solid rgba(204, 204, 220, 0.12);
+.box-wrapper{
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.box {
+    display: inline-block;
+    flex: 0px;
+    margin: 2px;
 }

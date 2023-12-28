@@ -12,7 +12,7 @@ import (
 )
 
 const baseTpl = `
-<div class="item" id="{{ .ChartID }}" style="min-width:{{ .Initialization.Width }};min-height:{{ .Initialization.Height }}; width: 100%; height:100%"></div>
+<div class="item" id="{{ .ChartID }}" style="width:{{ .Initialization.Width }};height:{{ .Initialization.Height }};border:1px solid rgba(204, 204, 220, 0.12)"></div>
 {{- range .JSAssets.Values }}
 	{{ if not (hasSuffix . "echarts.min.js") }}
 	   <script src="{{ . }}"></script>
