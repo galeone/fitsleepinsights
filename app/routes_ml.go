@@ -80,7 +80,7 @@ func TestPredictSleepEfficiency() echo.HandlerFunc {
 		todayData := fetcher.FetchByDate(time.Now())
 
 		var sleepEfficiency []uint8
-		if sleepEfficiency, err = PredictSleepEfficiency(&user, []*UserData{&todayData}); err != nil {
+		if sleepEfficiency, err = PredictSleepEfficiency(&user, []*UserData{todayData}); err != nil {
 			return err
 		}
 		return c.JSON(http.StatusOK, PredictionResult{

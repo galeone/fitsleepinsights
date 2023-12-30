@@ -10,6 +10,7 @@ package app
 
 import (
 	"html/template"
+	"net/http"
 	"strings"
 	"time"
 
@@ -29,6 +30,12 @@ func NewRouter() (*echo.Echo, error) {
 	router := echo.New()
 	router.Use(middleware.Logger())
 	router.Use(middleware.Recover())
+	router.Pre(middleware.RemoveTrailingSlashWithConfig(
+		middleware.TrailingSlashConfig{
+			RedirectCode: http.StatusMovedPermanently,
+		},
+	))
+
 	router.Logger.SetLevel(log.DEBUG)
 
 	// use echoview(goview) as simplified renderer
@@ -58,7 +65,13 @@ func NewRouter() (*echo.Echo, error) {
 
 	router.GET("/auth", Auth())
 	router.GET("/redirect", Redirect())
-	router.GET("/dashboard", Dashboard(), RequireFitbit())
+	router.GET("/dashboard", WeeklyDashboard(), RequireFitbit())
+	router.GET("/dashboard/week", WeeklyDashboard(), RequireFitbit())
+	router.GET("/dashboard/month", MonthlyDashboard(), RequireFitbit())
+	router.GET("/dashboard/year", YearlyDashboard(), RequireFitbit())
+	router.GET("/dashboard/:year/:month/:day", WeeklyDashboard(), RequireFitbit())
+	router.GET("/dashboard/:year/:month", MonthlyDashboard(), RequireFitbit())
+	router.GET("/dashboard/:year", YearlyDashboard(), RequireFitbit())
 
 	router.Static("/static", "static")
 

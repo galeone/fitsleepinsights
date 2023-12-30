@@ -743,7 +743,7 @@ func (u *UserData) Values() []string {
 	return ret
 }
 
-func (f *fetcher) FetchByDate(date time.Time) UserData {
+func (f *fetcher) FetchByDate(date time.Time) *UserData {
 	userData := UserData{
 		Date: date,
 	}
@@ -772,6 +772,19 @@ func (f *fetcher) FetchByDate(date time.Time) UserData {
 	userData.CardioFitnessScore, _ = f.userCardioFitnessScore(date)
 	userData.HeartRateVariability, _ = f.userHeartRateVariability(date)
 	userData.SleepLog, _ = f.userSleepLogList(date)
+	return &userData
+}
+
+// FetchByRange fetches all the user data between startDate and endDate.
+func (f *fetcher) FetchByRange(startDate, endDate time.Time) []*UserData {
+	// TODO refactor the fetcher private methods to accept a range instead of a single date
+	// and use that methods here
+	var userData []*UserData
+	currentDate := startDate
+	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
+		userData = append(userData, f.FetchByDate(currentDate))
+		currentDate = currentDate.AddDate(0, 0, 1)
+	}
 	return userData
 }
 
@@ -818,14 +831,7 @@ func (f *fetcher) Fetch(strategy FetchStrategy) ([]*UserData, error) {
 
 	}
 
-	var userDataList []*UserData
-	currentDate := oldestLogDate
-	for currentDate.Before(yesterday) || currentDate.Equal(yesterday) {
-		userData := f.FetchByDate(currentDate)
-		userDataList = append(userDataList, &userData)
-		currentDate = currentDate.AddDate(0, 0, 1)
-	}
-	return userDataList, nil
+	return f.FetchByRange(oldestLogDate, yesterday), nil
 }
 
 func Fetch() echo.HandlerFunc {
