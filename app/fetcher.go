@@ -743,6 +743,7 @@ func (u *UserData) Values() []string {
 	return ret
 }
 
+// FetchByDate fetches all the user data for the provided date.
 func (f *fetcher) FetchByDate(date time.Time) *UserData {
 	userData := UserData{
 		Date: date,
@@ -786,6 +787,21 @@ func (f *fetcher) FetchByRange(startDate, endDate time.Time) []*UserData {
 		currentDate = currentDate.AddDate(0, 0, 1)
 	}
 	return userData
+}
+
+type UserActivityTypes struct {
+	ID   int64
+	Name string
+}
+
+// UserActivityTypes fetches all the user activities types.
+// e.g. Weights, Walk, Run, etc.
+func (f *fetcher) UserActivityTypes() ([]UserActivityTypes, error) {
+	var activities []UserActivityTypes
+	if err := _db.Model(types.ActivityLog{}).Select("distinct(activity_type_id) as id, activity_name as name").Where(`user_id = ?`, f.user.ID).Scan(&activities); err != nil {
+		return nil, err
+	}
+	return activities, nil
 }
 
 type FetchStrategy int

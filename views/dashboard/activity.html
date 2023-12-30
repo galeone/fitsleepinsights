@@ -12,4 +12,16 @@
             {{md2html .dailyStepsCountDescription}}
         </div>
     </div>
+
+    {{$activityDescriptions := .activityDescriptions}}
+    {{ range $activityName, $activityChart := .activityCalendars }}
+        <div id="activity-{{$activityName}}" class="box-wrapper">
+            <div class="box">
+                {{$activityChart}}
+            </div>
+            <div class="box">
+                
+            </div>
+        </div>
+    {{ end }}
 </div>
