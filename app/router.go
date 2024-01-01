@@ -74,6 +74,7 @@ func NewRouter() (*echo.Echo, error) {
 		c.SetCookie(&http.Cookie{
 			Name:   "token",
 			MaxAge: -1,
+			Path:   "/",
 		})
 		return c.Redirect(http.StatusFound, "/")
 	}, RequireFitbit())

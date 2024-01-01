@@ -54,6 +54,16 @@ func init() {
 
 	})
 	// _db.Log(log.New(os.Stdout, "db: ", log.LUTC))
+
+	// If the database is already populated, we don't need the access token and we can directly populate the
+	// global variable _allActivityCatalog with the data from the database.
+	if len(_allActivityCatalog) == 0 {
+		var err error
+		f := fetcher{}
+		if _allActivityCatalog, err = f.AllActivityCatalog(); err != nil {
+			log.Println(err)
+		}
+	}
 }
 
 type dumper struct {
@@ -175,6 +185,7 @@ func (d *dumper) AllActivityCatalog() (err error) {
 		}
 		for _, subCategory := range category.SubCategories {
 			subCategoryRow := types.SubCategory{
+				ID:          subCategory.ID,
 				SubCategory: subCategory,
 				Category:    categoryRow.ID,
 			}
@@ -184,6 +195,7 @@ func (d *dumper) AllActivityCatalog() (err error) {
 			}
 			for _, activity := range subCategory.Activities {
 				activityDescription := types.ActivityDescription{
+					ID:                  activity.ID,
 					ActivityDescription: activity,
 					Subcategory:         subCategoryRow.ID,
 					Category:            categoryRow.ID,
@@ -194,6 +206,7 @@ func (d *dumper) AllActivityCatalog() (err error) {
 				}
 				for _, activityLevel := range activity.ActivityLevels {
 					activityLevelRow := types.ActivityLevel{
+						ID:                  activityLevel.ID,
 						ActivityLevel:       activityLevel,
 						ActivityDescription: activityDescription.ID,
 					}

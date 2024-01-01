@@ -53,6 +53,7 @@ func Auth() func(echo.Context) error {
 			Value: authorizer.CSRFToken().String(),
 			// No Expires = Session cookie
 			HttpOnly: true,
+			Path:     "/",
 		})
 
 		// Every time we are in /auth, we want to remove the token cookie
@@ -60,6 +61,7 @@ func Auth() func(echo.Context) error {
 			c.SetCookie(&http.Cookie{
 				Name:   "token",
 				MaxAge: -1,
+				Path:   "/",
 			})
 		}
 
@@ -134,6 +136,7 @@ func Redirect() func(echo.Context) error {
 			Name:     "authorizing",
 			HttpOnly: true,
 			MaxAge:   -1,
+			Path:     "/",
 		})
 		return c.Redirect(http.StatusTemporaryRedirect, "/dashboard")
 	}

@@ -6,14 +6,14 @@ create table if not exists categories(
 );
 
 create table if not exists subcategories(
-    id bigserial primary key not null,
+    id bigint primary key not null,
     name text not null,
     category bigint references categories(id),
     unique(name)
 );
 
 create table if not exists activities_descriptions(
-    id bigserial primary key not null,
+    id bigint primary key not null,
     access_level text not null,
     has_speed bool not null default false,
     mets double precision not null default 0,
@@ -23,7 +23,7 @@ create table if not exists activities_descriptions(
 );
 
 create table if not exists activity_levels(
-    id bigserial primary key not null,
+    id bigint primary key not null,
     max_speed_mph double precision not null default 0,
     min_speed_mph double precision not null default 0,
     mets double precision not null default 0,

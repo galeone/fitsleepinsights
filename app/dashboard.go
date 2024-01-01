@@ -111,7 +111,7 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 			}
 		}
 		if len(activityList) > 0 {
-			chart := activityCalendar(user, activityType.Name, &activityList, calendarType)
+			chart := activityCalendar(user, &activityType, &activityList, calendarType)
 			chart.Renderer = newChartRenderer(chart, chart.Validate)
 			activityCalendars[activityType.Name] = renderChart(chart)
 			var activityCalendarDescription string
@@ -167,6 +167,23 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 
 		"activityCalendars":            activityCalendars,
 		"activityCalendarsDescription": activityCalendarsDescriptions,
+
+		"isLoggedIn": true,
+
+		"isWeekly":  calendarType == WeeklyCalendar,
+		"isMonthly": calendarType == MonthlyCalendar,
+		"isYearly":  calendarType == YearlyCalendar,
+
+		"nextWeek":  endDate.AddDate(0, 0, 1).Format(time.DateOnly),
+		"prevWeek":  startDate.AddDate(0, 0, -1).Format(time.DateOnly),
+		"nextMonth": endDate.AddDate(0, 1, 0).Format("2006-01"),
+		"prevMonth": startDate.AddDate(0, -1, 0).Format("2006-01"),
+		"nextYear":  endDate.AddDate(1, 0, 0).Format("2006"),
+		"prevYear":  startDate.AddDate(-1, 0, 0).Format("2006"),
+
+		"currentWeek":  startDate.Format(time.DateOnly),
+		"currentMonth": startDate.Format("2006-01"),
+		"currentYear":  startDate.Format("2006"),
 	})
 }
 

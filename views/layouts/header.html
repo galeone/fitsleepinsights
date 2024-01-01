@@ -1,6 +1,6 @@
 <header class="top-0 left-0 w-full z-10 bg-transparent" style="color: rgb(255, 255, 255);" dir="ltr">
 <div class="px-4 py-4 flex items-center justify-between relative lg:px-6">
-    <a href="https://website.ddevi.com/api/website/657c8edbc708c9f1b0a547e8/render?cacheBuster=1702662279644&amp;version=indexPage">
+    <a href="/">
         <h3 class="bg-transparent font-bold text-xl lg:text-2xl xl:text-3xl">FitSleepInsights</h3>
     </a>
     <nav class="absolute right-5 top-3 px-2 py-1 flex justify-center items-center rounded-md bg-black bg-opacity-30 md:bg-transparent md:relative md:px-0 md:py-0 md:right-0 md:top-0">
@@ -10,9 +10,12 @@
             </svg>
         </button>
         <ul class="list-none hidden flex-col items-center gap-y-1 gap-x-2 group md:flex md:flex-row md:gap-x-4 md:gap-y-0 md:items-center md:justify-center" style="list-style:none" data-menutogglemenu="header1">
-            <li><a href="https://website.ddevi.com/api/website/657c8edbc708c9f1b0a547e8/render?cacheBuster=1702662279644&amp;version=indexPage#feature2" target="_self" rel="noopener noreferrer" class="font-medium rounded-md text-lg lg:text-xl">Services we offer</a></li>
-            <li><a href="https://website.ddevi.com/api/website/657c8edbc708c9f1b0a547e8/render?cacheBuster=1702662279644&amp;version=indexPage#pricing1" target="_self" rel="noopener noreferrer" class="font-medium rounded-md text-lg lg:text-xl">Pricing</a></li>
-            <li><a href="https://website.ddevi.com/api/website/657c8edbc708c9f1b0a547e8/render?cacheBuster=1702662279644&amp;version=indexPage#cta1" target="_self" rel="noopener noreferrer" class="font-medium rounded-md text-lg lg:text-xl">Contact</a></li>
+            <li><a href="pricing1" target="_self" rel="noopener noreferrer" class="font-medium rounded-md text-lg lg:text-xl">Pricing</a></li>
+            {{ if .isLoggedIn }}
+                <li><a href="/logout" target="_self" rel="noopener noreferrer" class="font-medium rounded-md text-lg lg:text-xl">Log out</a></li>
+            {{ else }}
+                <li><a href="/login" target="_self" rel="noopener noreferrer" class="font-medium rounded-md text-lg lg:text-xl">Log in</a></li>
+            {{ end}}
         </ul>
     </nav>
 </div>

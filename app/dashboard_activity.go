@@ -22,6 +22,16 @@ const (
 	marginRight    int = 30
 )
 
+type CalendarType int
+
+const (
+	WeeklyCalendar CalendarType = iota
+	MonthlyCalendar
+	YearlyCalendar
+)
+
+const msToMin float64 = 1.0 / (1000.0 * 60.0)
+
 func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.HeatMap {
 	var dailyStepsPerYear map[int][]opts.HeatMapData = make(map[int][]opts.HeatMapData)
 	var maxSteps int = 0
@@ -115,24 +125,39 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.H
 	return chart
 }
 
-type CalendarType int
-
-const (
-	WeeklyCalendar CalendarType = iota
-	MonthlyCalendar
-	YearlyCalendar
-)
-
-func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityName string, activities *DailyActivities, calendarType CalendarType) *charts.HeatMap {
+func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivityTypes, activities *DailyActivities, calendarType CalendarType) *charts.HeatMap {
 	var maxIndicator float64
 	var measurementUnit string
 	var defaultActivityIndicator string
 	var activityValuePerYear map[int][]opts.HeatMapData = make(map[int][]opts.HeatMapData)
 	var coveredMonthsPerYear map[int]map[int]bool = make(map[int]map[int]bool)
 
-	const msToMin float64 = 1.0 / (1000.0 * 60.0)
+	// Depending on the activityType passed we have different default indicators
+	// and other values to compute the stats. In the global variable _allActivityCatalog
+	// we have the complete list of activities, so we can use it to get the correct values
+	// TODO: handle
+	for _, activity := range _allActivityCatalog {
+		// All the activities IDs refer to the activity_description IDS
 
-	switch activityName {
+		for _, description := range activity.Activities {
+			if description.ID == activityType.ID {
+				activityType.Name = activity.Name
+				break
+			}
+		}
+
+		for _, subcategory := range activity.SubCategories {
+			for _, activityDescription := range subcategory.Activities {
+				if activityDescription.ID == activityType.ID {
+					activityType.Name = activity.Name
+					break
+				}
+			}
+		}
+
+	}
+
+	switch activityType.Name {
 	case "Sport", "Weights":
 		defaultActivityIndicator = "ActiveDuration"
 		measurementUnit = "minutes"
@@ -191,7 +216,7 @@ func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityName string, act
 	chart := charts.NewHeatMap()
 	chart.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title: fmt.Sprintf("Daily %s %s [%s]", activityName, defaultActivityIndicator, measurementUnit),
+			Title: fmt.Sprintf("Daily %s %s [%s]", activityType.Name, defaultActivityIndicator, measurementUnit),
 			Top:   "30",
 			Left:  "center",
 		}),
