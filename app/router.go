@@ -63,9 +63,24 @@ func NewRouter() (*echo.Echo, error) {
 
 	router.Renderer = echoview.New(viewConf)
 
+	// OAuth2 routes
 	router.GET("/auth", Auth())
 	router.GET("/redirect", Redirect())
-	router.GET("/dashboard", WeeklyDashboard(), RequireFitbit())
+
+	// Login route is auth
+	// Logout is the cookie removal
+	router.GET("/login", Auth())
+	router.GET("/logout", func(c echo.Context) error {
+		c.SetCookie(&http.Cookie{
+			Name:   "token",
+			MaxAge: -1,
+		})
+		return c.Redirect(http.StatusFound, "/")
+	}, RequireFitbit())
+
+	// The default dashboard is the monthly dashboard
+	router.GET("/dashboard", MonthlyDashboard(), RequireFitbit())
+	// The weekly dashboard remains, but it's ugly
 	router.GET("/dashboard/week", WeeklyDashboard(), RequireFitbit())
 	router.GET("/dashboard/month", MonthlyDashboard(), RequireFitbit())
 	router.GET("/dashboard/year", YearlyDashboard(), RequireFitbit())

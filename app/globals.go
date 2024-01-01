@@ -9,6 +9,7 @@ import (
 	"os"
 
 	pgdb "github.com/galeone/fitbit-pgdb/v3"
+	"github.com/galeone/fitsleepinsights/database/types"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -43,4 +44,9 @@ var (
 	_vaiProjectID         = os.Getenv("VAI_PROJECT_ID")
 	_vaiServiceAccountKey = os.Getenv("VAI_SERVICE_ACCOUNT_KEY")
 	_vaiEndpoint          = fmt.Sprintf("%s-aiplatform.googleapis.com:443", _vaiLocation)
+
+	// Fitbit:
+	// At startup, we recommend your application retrieve the complete list of activities, cache the results and display the results in the application’s UI later.
+	// https://dev.fitbit.com/build/reference/web-api/activity/get-all-activity-types/
+	_allActivityCatalog []types.Category = nil
 )

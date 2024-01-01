@@ -31,9 +31,27 @@ func init() {
 		accessToken := payload[0]
 		if dumper, err := NewDumper(accessToken); err == nil {
 			dumper.DumpNewer(false)
+			// initialize _allActivityCatalog here, because we need the access token
+			// even if this is a global variable shared by all the users
+			if len(_allActivityCatalog) == 0 {
+				f := fetcher{}
+				if _allActivityCatalog, err = f.AllActivityCatalog(); err != nil {
+					log.Println(err)
+					// if here, we likely haven´t dumped the catalog yet
+					if err = dumper.AllActivityCatalog(); err != nil {
+						log.Println(err)
+					} else {
+						_allActivityCatalog, err = f.AllActivityCatalog()
+						if err != nil {
+							log.Println("This is a problem: ", err)
+						}
+					}
+				}
+			}
 		} else {
 			log.Println("here: ", err.Error(), "at received: ", accessToken)
 		}
+
 	})
 	// _db.Log(log.New(os.Stdout, "db: ", log.LUTC))
 }
@@ -83,6 +101,11 @@ func NewDumper(accessToken string) (*dumper, error) {
 	return &dumper{fb, &user}, err
 }
 
+// Fitbit returns the fitbit client
+func (d *dumper) Fitbit() *fitbit_client.Client {
+	return d.fb
+}
+
 func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.ActivityCaloriesSeries
 	if value, err = d.fb.UserActivityCaloriesTimeseries(startDate, endDate); err != nil {
@@ -130,6 +153,60 @@ func (d *dumper) userActivityDailyGoal() (err error) {
 
 	if err = _db.Model(types.Goal{}).Where(&insert).Scan(&insert); err != nil {
 		return _db.Create(&insert)
+	}
+	return
+}
+
+// AllActivityCatalog dumps all the activity types inside the database, if not present.
+// This is a global list, not user specific.
+func (d *dumper) AllActivityCatalog() (err error) {
+	var catalog *fitbit_types.ActivityCatalog
+	if catalog, err = d.fb.AllActivityTypes(); err != nil {
+		return err
+	}
+	tx := _db.Begin()
+	for _, category := range catalog.Categories {
+		categoryRow := types.Category{
+			Category: category,
+		}
+		if err = tx.Create(&categoryRow); err != nil {
+			d.logError(err)
+			break
+		}
+		for _, subCategory := range category.SubCategories {
+			subCategoryRow := types.SubCategory{
+				SubCategory: subCategory,
+				Category:    categoryRow.ID,
+			}
+			if err = tx.Create(&subCategoryRow); err != nil {
+				d.logError(err)
+				break
+			}
+			for _, activity := range subCategory.Activities {
+				activityDescription := types.ActivityDescription{
+					ActivityDescription: activity,
+					Subcategory:         subCategoryRow.ID,
+					Category:            categoryRow.ID,
+				}
+				if err = tx.Create(&activityDescription); err != nil {
+					d.logError(err)
+					break
+				}
+				for _, activityLevel := range activity.ActivityLevels {
+					activityLevelRow := types.ActivityLevel{
+						ActivityLevel:       activityLevel,
+						ActivityDescription: activityDescription.ID,
+					}
+					if err = tx.Create(&activityLevelRow); err != nil {
+						d.logError(err)
+						break
+					}
+				}
+			}
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		d.logError(err)
 	}
 	return
 }

@@ -5,7 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/vertexai v0.6.0
 	github.com/foolin/goview v0.3.0
-	github.com/galeone/fitbit/v2 v2.0.0
+	github.com/galeone/fitbit/v2 v2.0.1
 	github.com/galeone/igor v1.0.10
 	github.com/galeone/rts v1.0.0
 	github.com/galeone/tcx v1.0.0
@@ -70,4 +70,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace github.com/go-echarts/go-echarts/v2 => github.com/galeone/go-echarts/v2 v2.0.0-20231228115703-15a4c4aad6b3
+replace github.com/go-echarts/go-echarts/v2 => github.com/galeone/go-echarts/v2 v2.0.0-20231230171319-4f4d07e5a202

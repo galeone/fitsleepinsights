@@ -804,6 +804,35 @@ func (f *fetcher) UserActivityTypes() ([]UserActivityTypes, error) {
 	return activities, nil
 }
 
+// AllActivityCatalog fetches all the activities types.
+// This is a global value, not user specific.
+func (f fetcher) AllActivityCatalog() ([]types.Category, error) {
+	var categories []types.Category
+	if err := _db.Model(types.Category{}).Scan(&categories); err != nil {
+		return nil, err
+	}
+
+	for id, category := range categories {
+		var activities []types.ActivityDescription
+		// We can ignore the errors because there could be categories without activities
+		_ = _db.Model(types.ActivityDescription{}).Where(&types.ActivityDescription{Category: category.ID}).Scan(&activities)
+		categories[id].Activities = activities
+
+		var subCategories []types.SubCategory
+		_ = _db.Model(types.SubCategory{}).Where(&types.SubCategory{Category: category.ID}).Scan(&subCategories)
+
+		for subID, subCategory := range subCategories {
+			var activities []types.ActivityDescription
+			_ = _db.Model(types.ActivityDescription{}).Where(&types.ActivityDescription{Subcategory: subCategory.ID}).Scan(&activities)
+			subCategories[subID].Activities = activities
+		}
+
+		categories[id].SubCategories = subCategories
+	}
+
+	return categories, nil
+}
+
 type FetchStrategy int
 
 const (

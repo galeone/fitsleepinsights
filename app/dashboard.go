@@ -45,7 +45,6 @@ func describeChartContent(chart *charts.BaseConfiguration, chartType string, add
 	description += "The user that generated the data is reading your description. Talk directly to the user.\n"
 
 	ctx := context.Background()
-	// Access your API key as an environment variable (see "Set up your API key" above)
 	var client *genai.Client
 	var err error
 	const region = "us-central1"
@@ -84,7 +83,7 @@ func getUser(c echo.Context) (*fitbit_pgdb.AuthorizedUser, error) {
 	return &user, err
 }
 
-func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endDate time.Time) (err error) {
+func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endDate time.Time, calendarType CalendarType) (err error) {
 	var fetcher *fetcher
 	if fetcher, err = NewFetcher(user); err != nil {
 		return err
@@ -98,6 +97,7 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 
 	activityCalendars := make(map[string]template.HTML)
 	activityCalendarsDescriptions := make(map[string]string)
+
 	for _, activityType := range activitiesTypes {
 		activityList := DailyActivities{}
 		for _, dayData := range allData {
@@ -111,7 +111,7 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 			}
 		}
 		if len(activityList) > 0 {
-			chart := activityCalendar(user, &activityList)
+			chart := activityCalendar(user, activityType.Name, &activityList, calendarType)
 			chart.Renderer = newChartRenderer(chart, chart.Validate)
 			activityCalendars[activityType.Name] = renderChart(chart)
 			var activityCalendarDescription string
@@ -198,7 +198,7 @@ func WeeklyDashboard() echo.HandlerFunc {
 
 		startDate := GetStartDayOfWeek(dayOfTheWeek)
 		endDate = startDate.AddDate(0, 0, 7)
-		return dashboard(c, user, startDate, endDate)
+		return dashboard(c, user, startDate, endDate, WeeklyCalendar)
 	}
 }
 
@@ -208,17 +208,16 @@ func MonthlyDashboard() echo.HandlerFunc {
 		if user, err = getUser(c); err != nil {
 			return err
 		}
-
+		var startDate, endDate time.Time
 		if c.Param("year") != "" && c.Param("month") != "" {
-			var startDate, endDate time.Time
 			if startDate, err = time.Parse("2006-01", fmt.Sprintf("%s-%s", c.Param("year"), c.Param("month"))); err != nil {
 				return err
 			}
-			endDate = startDate.AddDate(0, 1, -1)
-			return dashboard(c, user, startDate, endDate)
+		} else {
+			startDate = time.Now().AddDate(0, -1, 0)
 		}
-
-		return dashboard(c, user, time.Now().AddDate(0, -1, +1), time.Now())
+		endDate = startDate.AddDate(0, 1, -1)
+		return dashboard(c, user, startDate, endDate, MonthlyCalendar)
 	}
 }
 
@@ -229,15 +228,15 @@ func YearlyDashboard() echo.HandlerFunc {
 			return err
 		}
 
+		var startDate, endDate time.Time
 		if c.Param("year") != "" {
-			var startDate, endDate time.Time
 			if startDate, err = time.Parse("2006", c.Param("year")); err != nil {
 				return err
 			}
-			endDate = startDate.AddDate(1, 0, -1)
-			return dashboard(c, user, startDate, endDate)
+		} else {
+			startDate = time.Now().AddDate(-1, 0, 0)
 		}
-
-		return dashboard(c, user, time.Now().AddDate(-1, 0, +1), time.Now())
+		endDate = startDate.AddDate(1, 0, -1)
+		return dashboard(c, user, startDate, endDate, YearlyCalendar)
 	}
 }
