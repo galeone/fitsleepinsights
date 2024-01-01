@@ -10,7 +10,9 @@ import (
 
 type Category struct {
 	types.Category
-	ID int64 `igor:"primary_key"`
+	ID            int64                 `igor:"primary_key"`
+	Activities    []ActivityDescription `sql:"-"`
+	SubCategories []SubCategory         `sql:"-"`
 }
 
 func (Category) TableName() string {
@@ -19,9 +21,11 @@ func (Category) TableName() string {
 
 type SubCategory struct {
 	types.SubCategory
-	ID         int64    `igor:"primary_key"`
-	Category   Category `sql:"-"`
-	CategoryID int64
+	ID int64 `igor:"primary_key"`
+	// Overwrite the Category and SubCategory fields
+	// with the foreign keys (unfortunately the name is without the _id suffix
+	Category   int64
+	Activities []ActivityDescription `sql:"-"`
 }
 
 func (SubCategory) TableName() string {
@@ -30,11 +34,13 @@ func (SubCategory) TableName() string {
 
 type ActivityDescription struct {
 	types.ActivityDescription
-	ID            int64       `igor:"primary_key"`
-	SubCategory   SubCategory `sql:"-"`
-	SubCategoryID int64
-	Category      Category `sql:"-"`
-	CategoryID    int64
+	ID int64 `igor:"primary_key"`
+
+	// Overwrite the Category and SubCategory fields
+	// with the foreign keys (unfortunately the name is without the _id suffix)
+	Subcategory    int64
+	Category       int64
+	ActivityLevels []ActivityLevel `sql:"-"`
 }
 
 func (ActivityDescription) TableName() string {
@@ -43,9 +49,10 @@ func (ActivityDescription) TableName() string {
 
 type ActivityLevel struct {
 	types.ActivityLevel
-	ID                    int64               `igor:"primary_key"`
-	ActivityDescription   ActivityDescription `sql:"-"`
-	ActivityDescriptionID int64
+	ID int64 `igor:"primary_key"`
+	// Overwrite the ActivityDescription field
+	// with the foreign keys (unfortunately the name is without the _id suffix
+	ActivityDescription int64
 }
 
 func (ActivityLevel) TableName() string {
