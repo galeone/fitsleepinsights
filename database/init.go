@@ -78,13 +78,6 @@ func init() {
 
 	tx := db.Begin()
 
-	// TEMPORARY: drop tables categories, subcategories, activities_descriptions, activity_levels
-	sql := "DROP TABLE IF EXISTS categories, subcategories, activities_descriptions, activity_levels CASCADE"
-	if err = tx.Exec(sql); err != nil {
-		_ = tx.Rollback()
-		panic(err.Error())
-	}
-
 	// There's only one dependency between sql files: user_hr_timeseries.sql
 	// uses a table defined in user_activity.sql.
 	// All the other tables just depend on the users tables.
