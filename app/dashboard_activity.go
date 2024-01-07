@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
@@ -16,10 +17,14 @@ func nextMultipleOfTen(n int) int {
 }
 
 const (
-	verticalOffset int = 120
-	cellSize       int = 15
-	marginLeft     int = 60
-	marginRight    int = 30
+	verticalOffset   int = 120
+	cellSize         int = 15
+	marginLeft       int = 60
+	marginRight      int = 30
+	minCalendarWidth int = cellSize * 6 * 3
+	maxCalendarWidth int = cellSize * 52
+
+	msToMin float64 = 1.0 / (1000.0 * 60.0)
 )
 
 type CalendarType int
@@ -30,11 +35,103 @@ const (
 	YearlyCalendar
 )
 
-const msToMin float64 = 1.0 / (1000.0 * 60.0)
+// globalChartSettings returns the global settings for the calendar charts
+// these are the settings that all the calendars should have in common
+func globalChartSettings(calendarType CalendarType, numYears int) charts.GlobalOpts {
+	var contentWidth int
+	switch calendarType {
+	case WeeklyCalendar, MonthlyCalendar:
+		contentWidth = minCalendarWidth
+	case YearlyCalendar:
+		contentWidth = maxCalendarWidth
+	}
+	return charts.WithInitializationOpts(opts.Initialization{
+		Theme:  "dark",
+		Height: fmt.Sprintf("%dpx", verticalOffset+numYears*(verticalOffset+30)),
+		Width:  fmt.Sprintf("%dpx", contentWidth+marginLeft+marginRight),
+	})
+}
 
-func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.HeatMap {
+func globalCalendarSettings(calendarType CalendarType, id, year int, coveredMonthsPerYear map[int]map[int]bool, firstActivityDate time.Time) *opts.Calendar {
+	var calendarRange []string = make([]string, 0, 2)
+	var orient string = "horizontal"
+
+	// Depending on the number of months covered by the data, we define a different range
+	// in order to create a calendar without too many empty cells
+	months := make([]int, 0, len(coveredMonthsPerYear[year]))
+	for k := range coveredMonthsPerYear[year] {
+		months = append(months, k)
+	}
+	sort.Ints(months)
+
+	if calendarType == MonthlyCalendar {
+		calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[0]))
+		if months[0] == 12 {
+			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year+1, 1))
+		} else {
+			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[0]+1))
+		}
+	} else if calendarType == YearlyCalendar {
+		calendarRange = append(calendarRange, fmt.Sprintf("%d", year))
+	} else if calendarType == WeeklyCalendar {
+		// Weekly calendar: get an activity date, extract the first day of the week and use it as the starting point
+		weekStartDay := GetStartDayOfWeek(firstActivityDate)
+		calendarRange = append(calendarRange, weekStartDay.Format(time.DateOnly))
+		calendarRange = append(calendarRange, weekStartDay.AddDate(0, 0, 7).Format(time.DateOnly))
+	}
+
+	return &opts.Calendar{
+		Orient: orient,
+		Silent: false,
+		Range:  calendarRange,
+		Top:    fmt.Sprintf("%d", verticalOffset+id*(verticalOffset+30)),
+		Left:   "center", //fmt.Sprintf("%d", marginLeft),
+		// Right:    "30", keeping this commented allows us to have cell of the same sizes
+		CellSize: fmt.Sprintf("%d", cellSize),
+		ItemStyle: &opts.ItemStyle{
+			BorderWidth: 0.5,
+		},
+		YearLabel: &opts.CalendarLabel{
+			Show: true,
+		},
+		DayLabel: &opts.CalendarLabel{
+			Show:  true,
+			Color: "white",
+		},
+		MonthLabel: &opts.CalendarLabel{
+			Show:  true,
+			Color: "white",
+		},
+	}
+}
+
+func globalVisualMapSettings(maxValue int) opts.VisualMap {
+	return opts.VisualMap{
+		//Type:   "piecewise",
+		Calculable: true,
+		Max:        float32(nextMultipleOfTen(maxValue)),
+		Show:       true,
+		Orient:     "horizontal",
+		Left:       "center",
+		Top:        fmt.Sprintf("%d", 50),
+		TextStyle: &opts.TextStyle{
+			Color: "white",
+		},
+	}
+}
+
+func globalTitleSettings(title string) opts.Title {
+	return opts.Title{
+		Title: title,
+		Top:   "15",
+		Left:  "center",
+	}
+}
+
+func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData, calendarType CalendarType) *charts.HeatMap {
 	var dailyStepsPerYear map[int][]opts.HeatMapData = make(map[int][]opts.HeatMapData)
 	var maxSteps int = 0
+	var coveredMonthsPerYear map[int]map[int]bool = make(map[int]map[int]bool)
 	for _, dayData := range all {
 		if dayData == nil || dayData.Steps == nil {
 			continue
@@ -46,7 +143,13 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.H
 		// format date to YYYY-MM-DD
 		value := [2]interface{}{dayData.Date.Format(time.DateOnly), steps}
 		year := dayData.Date.Year()
+		month := int(dayData.Date.Month())
 		dailyStepsPerYear[year] = append(dailyStepsPerYear[year], opts.HeatMapData{Value: value, Name: value[0].(string)})
+
+		if _, ok := coveredMonthsPerYear[year]; !ok {
+			coveredMonthsPerYear[year] = make(map[int]bool)
+			coveredMonthsPerYear[year][month] = true
+		}
 	}
 
 	years := make([]int, 0, len(dailyStepsPerYear))
@@ -55,37 +158,15 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.H
 	}
 	sort.Ints(years)
 
-	const verticalOffset int = 120
-
 	chart := charts.NewHeatMap()
 	chart.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{
-			Title: "Daily Steps Count",
-			Top:   "30",
-			Left:  "center",
-		}),
-		charts.WithInitializationOpts(opts.Initialization{
-			Theme:  "dark",
-			Height: fmt.Sprintf("%dpx", verticalOffset+len(years)*(verticalOffset+30)),
-			//Width:  fmt.Sprintf("%dpx", 15*52+60),
-		}),
+		globalChartSettings(calendarType, len(years)),
+		charts.WithTitleOpts(globalTitleSettings("Daily Steps")),
 		charts.WithTooltipOpts(opts.Tooltip{
 			Trigger: "item",
 			Show:    true,
 		}),
-		charts.WithVisualMapOpts(
-			opts.VisualMap{
-				Type:   "piecewise",
-				Min:    0,
-				Max:    float32(nextMultipleOfTen(maxSteps)),
-				Show:   true,
-				Orient: "horizontal",
-				Left:   "center",
-				Top:    "65",
-				TextStyle: &opts.TextStyle{
-					Color: "white",
-				},
-			}),
+		charts.WithVisualMapOpts(globalVisualMapSettings(maxSteps)),
 		charts.WithLegendOpts(opts.Legend{
 			Show: false,
 		}),
@@ -97,29 +178,7 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.H
 			charts.WithCalendarIndex(id),
 		)
 
-		chart.AddCalendar(&opts.Calendar{
-			Orient:   "horizontal",
-			Silent:   false,
-			Range:    []string{fmt.Sprintf("%d", year)},
-			Top:      fmt.Sprintf("%d", verticalOffset+id*(verticalOffset+30)),
-			Left:     "60",
-			Right:    "30",
-			CellSize: "15",
-			ItemStyle: &opts.ItemStyle{
-				BorderWidth: 0.5,
-			},
-			YearLabel: &opts.CalendarLabel{
-				Show: true,
-			},
-			DayLabel: &opts.CalendarLabel{
-				Show:  true,
-				Color: "white",
-			},
-			MonthLabel: &opts.CalendarLabel{
-				Show:  true,
-				Color: "white",
-			},
-		})
+		chart.AddCalendar(globalCalendarSettings(calendarType, id, year, coveredMonthsPerYear, all[0].Date))
 	}
 
 	return chart
@@ -138,58 +197,45 @@ func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivi
 	// TODO: handle
 	for _, activity := range _allActivityCatalog {
 		// All the activities IDs refer to the activity_description IDS
-
-		for _, description := range activity.Activities {
-			if description.ID == activityType.ID {
-				activityType.Name = activity.Name
-				break
-			}
-		}
-
 		for _, subcategory := range activity.SubCategories {
 			for _, activityDescription := range subcategory.Activities {
 				if activityDescription.ID == activityType.ID {
-					activityType.Name = activity.Name
+					// TODO questo é rotto
+					if activityDescription.HasSpeed {
+						defaultActivityIndicator = "Distance"
+					} else {
+						defaultActivityIndicator = "Time"
+					}
 					break
 				}
 			}
 		}
+		fmt.Println("not found for ", activity.Name, activityType.ID)
 
-	}
-
-	switch activityType.Name {
-	case "Sport", "Weights":
-		defaultActivityIndicator = "ActiveDuration"
-		measurementUnit = "minutes"
-	default:
-		defaultActivityIndicator = "Distance"
-		measurementUnit = "km"
-	}
-
-	if (*activities)[0].DistanceUnit != "nd" {
-		measurementUnit = (*activities)[0].DistanceUnit
 	}
 
 	for _, activity := range *activities {
 		// Depending on the activity type, we use different default indicators for the heatmap
 		// Distance is a good default indicator for Walking, Running, Treadmill, Swimming, Biking, Aerobic Workout...
-		activityIndicator := activity.Distance
-		defaultActivityIndicator = "Distance"
-
-		measurementUnit = activity.DistanceUnit
-
-		// Sport is very generic and often automatically added by Fitbit, so we use the ActiveDuration instead
-		// We do the same for Weights
-		switch activity.ActivityName {
-		case "Sport", "Weights":
+		var activityIndicator float64
+		if defaultActivityIndicator == "Distance" {
+			activityIndicator = activity.Distance
+		} else {
 			activityIndicator = float64(activity.ActiveDuration) * msToMin
+		}
+		if measurementUnit == "" {
+			if activity.DistanceUnit == "nd" {
+				measurementUnit = "min"
+			} else {
+				measurementUnit = activity.DistanceUnit
+			}
 		}
 
 		if activityIndicator > maxIndicator {
 			maxIndicator = activityIndicator
 		}
 		// format date to YYYY-MM-DD
-		value := [2]interface{}{activity.StartTime.Format(time.DateOnly), activityIndicator}
+		value := [2]interface{}{activity.StartTime.Format(time.DateOnly), math.Round(activityIndicator*100) / 100}
 		year := activity.StartTime.Year()
 		month := int(activity.StartTime.Month())
 		if _, ok := coveredMonthsPerYear[year]; !ok {
@@ -205,43 +251,17 @@ func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivi
 	}
 	sort.Ints(years)
 
-	var contentWidth int
-	switch calendarType {
-	case WeeklyCalendar, MonthlyCalendar:
-		contentWidth = cellSize * 25
-	case YearlyCalendar:
-		contentWidth = cellSize * 52
-	}
-
 	chart := charts.NewHeatMap()
 	chart.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{
-			Title: fmt.Sprintf("Daily %s %s [%s]", activityType.Name, defaultActivityIndicator, measurementUnit),
-			Top:   "30",
-			Left:  "center",
-		}),
-		charts.WithInitializationOpts(opts.Initialization{
-			Theme:  "dark",
-			Height: fmt.Sprintf("%dpx", verticalOffset+len(years)*(verticalOffset+30)),
-			Width:  fmt.Sprintf("%dpx", contentWidth+marginLeft+marginRight),
-		}),
+		charts.WithTitleOpts(
+			globalTitleSettings(fmt.Sprintf("Daily %s %s [%s]", activityType.Name, defaultActivityIndicator, measurementUnit)),
+		),
+		globalChartSettings(calendarType, len(years)),
 		charts.WithTooltipOpts(opts.Tooltip{
 			Trigger: "item",
 			Show:    true,
 		}),
-		charts.WithVisualMapOpts(
-			opts.VisualMap{
-				Type:   "piecewise",
-				Min:    0,
-				Max:    float32(nextMultipleOfTen(int(maxIndicator))),
-				Show:   true,
-				Orient: "horizontal",
-				Left:   "center",
-				Top:    "65",
-				TextStyle: &opts.TextStyle{
-					Color: "white",
-				},
-			}),
+		charts.WithVisualMapOpts(globalVisualMapSettings(int(maxIndicator))),
 		charts.WithLegendOpts(opts.Legend{
 			Show: false,
 		}),
@@ -252,58 +272,7 @@ func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivi
 			charts.WithCoordinateSystem("calendar"),
 			charts.WithCalendarIndex(id),
 		)
-
-		// Depending on the number of months covered by the data, we define a different range
-		// in order to create a calendar without too many empty cells
-
-		months := make([]int, 0, len(coveredMonthsPerYear[year]))
-		for k := range coveredMonthsPerYear[year] {
-			months = append(months, k)
-		}
-		sort.Ints(months)
-
-		var calendarRange []string = make([]string, 0, 2)
-		var orient string = "horizontal"
-		if calendarType == MonthlyCalendar {
-			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[0]))
-			if months[0] == 12 {
-				calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year+1, 1))
-			} else {
-				calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[0]+1))
-			}
-		} else if calendarType == YearlyCalendar {
-			calendarRange = append(calendarRange, fmt.Sprintf("%d", year))
-		} else if calendarType == WeeklyCalendar {
-			// Weekly calendar: get an activity date, extract the first day of the week and use it as the starting point
-			weekStartDay := GetStartDayOfWeek((*activities)[0].StartTime)
-			calendarRange = append(calendarRange, weekStartDay.Format(time.DateOnly))
-			calendarRange = append(calendarRange, weekStartDay.AddDate(0, 0, 7).Format(time.DateOnly))
-			orient = "vertical"
-		}
-
-		chart.AddCalendar(&opts.Calendar{
-			Orient: orient,
-			Silent: false,
-			Range:  calendarRange,
-			Top:    fmt.Sprintf("%d", verticalOffset+id*(verticalOffset+30)),
-			Left:   "60",
-			// Right:    "30", keeping this commented allows us to have cell of the same sizes
-			CellSize: fmt.Sprintf("%d", cellSize),
-			ItemStyle: &opts.ItemStyle{
-				BorderWidth: 0.5,
-			},
-			YearLabel: &opts.CalendarLabel{
-				Show: true,
-			},
-			DayLabel: &opts.CalendarLabel{
-				Show:  true,
-				Color: "white",
-			},
-			MonthLabel: &opts.CalendarLabel{
-				Show:  true,
-				Color: "white",
-			},
-		})
+		chart.AddCalendar(globalCalendarSettings(calendarType, id, year, coveredMonthsPerYear, (*activities)[0].StartTime))
 	}
 
 	return chart

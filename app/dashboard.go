@@ -124,7 +124,7 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 		}
 	}
 
-	dailyStepChart := dailyStepCount(user, allData)
+	dailyStepChart := dailyStepCount(user, allData, calendarType)
 	dailyStepChart.Renderer = newChartRenderer(dailyStepChart, dailyStepChart.Validate)
 	var dailyStepsCountDescription string
 	/*
