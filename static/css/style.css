@@ -85,6 +85,7 @@ button,select{
     text-transform:none
 }
 [type=button],[type=reset],[type=submit],button{
+    appearance: button;
     -webkit-appearance:button;
     background-color:transparent;
     background-image:none
@@ -102,6 +103,7 @@ progress{
     height:auto
 }
 [type=search]{
+    appearance: textfield;
     -webkit-appearance:textfield;
     outline-offset:-2px
 }
@@ -146,8 +148,7 @@ input::placeholder,textarea::placeholder{
     cursor:default
 }
 audio,canvas,embed,iframe,img,object,svg,video{
-    display:block;
-    vertical-align:middle
+    display:block
 }
 img,video{
     max-width:100%;
@@ -940,9 +941,6 @@ img,video{
 .ease-linear{
     transition-timing-function:linear
 }
-*{
-    --reactour-accent:#000000
-}
 input[type=color]{
     border-radius:50%;
     border:1px solid #ccc
@@ -993,7 +991,8 @@ input[type=color]::-webkit-color-swatch{
     margin:0
 }
 .otp-input{
-    -moz-appearance:textfield
+    -moz-appearance:textfield;
+    appearance:textfield;
 }
 @keyframes rotate{
     100%{
@@ -1039,17 +1038,6 @@ input[type=color]::-webkit-color-swatch{
     100%{
         opacity:.5
     }
-}
-.reactour__popover{
-    border-radius:10px;
-    padding-top:28px!important;
-    padding-bottom:20px!important;
-    padding-left:24px!important;
-    padding-right:24px!important
-}
-.reactour__close-button{
-    top:14px!important;
-    right:14px!important
 }
 .placeholder\:opacity-100::placeholder{
     opacity:1
@@ -1375,27 +1363,13 @@ input[type=color]::-webkit-color-swatch{
 
 .box-wrapper{
     display: flex;
+    width: 100%;
     flex-wrap: wrap;
     justify-content: flex-start;
-    align-items: center;
 }
 
 .box {
     display: inline-block;
     flex: 0px;
     margin: 2px;
-    flex-grow: 1;
-}
-
-/* Inserting a collapsed row between two flex items will make 
- * the flex item that comes after it break to a new row */
-.break {
-    flex-basis: 100%;
-    height: 0;
-}
-
-/* Use a collapsed column to break to a new column */
-.break-column {
-    flex-basis: 100%;
-    width: 0;
 }

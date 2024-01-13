@@ -1,6 +1,7 @@
-<a href="#sleep" class="toggle text-xl">
+<div>
+    <a href="#sleep" class="toggle text-xl">
     {{include "dashboard/arrow"}} Sleep
-</a>
+    </a>
 </div>
 <div id="sleep" class="toggle-content is-visible">
     <div id="sleep-efficiency" class="box-wrapper">
@@ -12,7 +13,7 @@
         </div>
     </div>
 
-    <div id="sleep-efficiency" class="box-wrapper">
+    <div id="sleep-aggregated" class="box-wrapper">
         <div class="box">
             {{.sleepAggregatedChart}}
         </div>

@@ -12,151 +12,185 @@
             {{md2html .dailyStepsCountDescription}}
         </div>
     </div>
-
     {{$activityCalendarsDescription := .activityCalendarsDescription}}
     {{$activityStats := .activityStatistics}}
     {{ range $activityName, $activityChart := .activityCalendars }}
-        <div id="activity-{{$activityName}}" class="box-wrapper">
-            <div class="box">
+    <div id="activity-{{$activityName}}" class="box-wrapper">
+        <div class="box">
                 {{$activityChart}}
-            </div>
-            <div class="box">
-                <!-- stats -->
-                {{ $stat := index $activityStats $activityName }}
+        </div>
+        <div class="box">
+            <!-- stats -->
+            {{ $stat := index $activityStats $activityName }}
+            {{ if gt $stat.TotalTime 0.0 }}
+            <div class="flex flex-row justify-between">
                 <div class="flex flex-col">
-                {{ if gt $stat.TotalTime 0.0 }}
-                    <div class="flex flex-row justify-between">
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ min2ddhhmm $stat.TotalTime }}
-                            </div>
-                            <div class="text-sm">
-                                Total Time
-                            </div>
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ min2ddhhmm $stat.AverageTime }}
-                            </div>
-                            <div class="text-sm">
-                                Average Time
-                            </div>
-                        </div>
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm $stat.TotalTime }}
                     </div>
-                {{ end }}
-                {{ if gt $stat.TotalDistance 0.0 }}
-                     <div class="flex flex-row justify-between">
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ $stat.TotalDistance }}
-                            </div>
-                            <div class="text-sm">
-                                Total Distance
-                            </div>
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ $stat.AverageDistance }}
-                            </div>
-                            <div class="text-sm">
-                                Average Distance
-                            </div>
-                        </div>
+                    <div class="text-sm">
+                        Total Time
                     </div>
-                {{ end }}
-                {{ if gt $stat.TotalCalories 0 }}
-                    <div class="flex flex-row justify-between">
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ $stat.TotalCalories }}
-                            </div>
-                            <div class="text-sm">
-                                Total Calories
-                            </div>
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ $stat.AverageCalories }}
-                            </div>
-                            <div class="text-sm">
-                                Average Calories
-                            </div>
-                        </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm $stat.AverageTime }}
                     </div>
-                {{ end }}
-                {{ if gt $stat.TotalSteps 0 }}
-                    <div class="flex flex-row justify-between">
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ $stat.TotalSteps }}
-                            </div>
-                            <div class="text-sm">
-                                Total Steps
-                            </div>
-                        </div>
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ $stat.AverageSteps }}
-                            </div>
-                            <div class="text-sm">
-                                Average Steps
-                            </div>
-                        </div>
+                    <div class="text-sm">
+                        Average Time
                     </div>
-                {{ end }}
-                {{ if or (
-                    or (gt $stat.TotalActiveZoneMinutes 0) (gt $stat.TotalMinutesInFatBurn 0)
-                    or (gt $stat.TotalMinutesInCardio 0) (gt $stat.TotalMinutesInPeak)
-                ) }}
-                <hr>
-                    <div class="flex flex-row justify-between">
-                        {{ if gt $stat.TotalActiveZoneMinutes 0 }}
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ min2ddhhmm $stat.TotalActiveZoneMinutes }}
-                            </div>
-                            <div class="text-sm">
-                                Total Active Minutes
-                            </div>
-                        </div>
-                        {{ end }}
-                        {{ if gt $stat.TotalMinutesInFatBurn 0 }}
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ min2ddhhmm (float64 $stat.TotalMinutesInFatBurn) }}
-                            </div>
-                            <div class="text-sm">
-                                Total Time in Fat Burn
-                            </div>
-                        </div>
-                        {{ end }}
-                        {{ if gt $stat.TotalMinutesInCardio 0 }}
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ min2ddhhmm (float64 $stat.TotalMinutesInCardio) }}
-                            </div>
-                            <div class="text-sm">
-                                Total Time in Cardio
-                            </div>
-                        </div>
-                        {{ end }}
-                        {{ if gt $stat.TotalMinutesInPeak 0 }}
-                        <div class="flex flex-col">
-                            <div class="text-2xl font-bold">
-                                {{ min2ddhhmm (float64 $stat.TotalMinutesInPeak) }}
-                            </div>
-                            <div class="text-sm">
-                                Total Time in Peak
-                            </div>
-                        </div>
-                        {{ end }}
-                    </div>
-                {{ end }}
                 </div>
             </div>
-            <div class="box">
-                {{ md2html (index $activityCalendarsDescription $activityName) }}
+            {{ end }}
+            {{ if gt $stat.TotalDistance 0.0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.TotalDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Total Distance
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.AverageDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Average Distance
+                    </div>
+                </div>
             </div>
+            {{ end }}
+            {{ if gt $stat.TotalCalories 0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.TotalCalories }}
+                    </div>
+                    <div class="text-sm">
+                        🔥 Total Calories
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.AverageCalories }}
+                    </div>
+                    <div class="text-sm">
+                        🔥 Average Calories
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if gt $stat.TotalSteps 0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.TotalSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Total Steps
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.AverageSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Average Steps
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if or (
+                or (gt $stat.TotalActiveZoneMinutes 0) (gt $stat.TotalMinutesInFatBurn 0)
+                or (gt $stat.TotalMinutesInCardio 0) (gt $stat.TotalMinutesInPeak)
+            ) }}
+            <hr>
+            <div class="flex flex-row justify-between">
+                {{ if gt $stat.TotalActiveZoneMinutes 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm $stat.TotalActiveZoneMinutes }}
+                    </div>
+                    <div class="text-sm">
+                        Total Active Minutes
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.TotalMinutesInFatBurn 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm (float64 $stat.TotalMinutesInFatBurn) }}
+                    </div>
+                    <div class="text-sm">
+                        Total Time in Fat Burn
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.TotalMinutesInCardio 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm (float64 $stat.TotalMinutesInCardio) }}
+                    </div>
+                    <div class="text-sm">
+                        Total Time in Cardio
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.TotalMinutesInPeak 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm (float64 $stat.TotalMinutesInPeak) }}
+                    </div>
+                    <div class="text-sm">
+                        Total Time in Peak
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+            {{ end }}
+            {{ if or (
+                or (gt $stat.MaxElevationGain 0) (gt $stat.MaxPace 0.0)
+                (gt $stat.MaxSpeed 0.0)) }}
+            <hr>
+            <div class="flex flex-row justify-between">
+                {{ if gt $stat.MaxElevationGain 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.MaxElevationGain }}
+                    </div>
+                    <div class="text-sm">
+                        Max Elevation Gain
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.MaxPace 0.0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.MaxPace }}
+                    </div>
+                    <div class="text-sm">
+                        Max Pace
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.MaxSpeed 0.0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.MaxSpeed }}
+                    </div>
+                    <div class="text-sm">
+                        Max Speed
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+            {{ end }}
         </div>
+        <div class="box">
+        {{ md2html (index $activityCalendarsDescription $activityName) }}
+        </div>
+    </div>
     {{ end }}
 </div>
