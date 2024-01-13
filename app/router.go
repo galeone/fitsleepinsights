@@ -60,6 +60,10 @@ func NewRouter() (*echo.Echo, error) {
 
 		return template.HTML(markdown.Render(doc, renderer))
 	}
+	viewConf.Funcs["min2ddhhmm"] = min2ddhhmm
+	viewConf.Funcs["float64"] = func(n int64) float64 {
+		return float64(n)
+	}
 
 	router.Renderer = echoview.New(viewConf)
 

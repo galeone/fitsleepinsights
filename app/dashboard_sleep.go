@@ -3,12 +3,11 @@ package app
 import (
 	"time"
 
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
-func sleepAggregatedStackedBarChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.Bar {
+func sleepAggregatedStackedBarChart(all []*UserData, calendarType CalendarType) *charts.Bar {
 	var dates []string
 	// var sleepDuration []opts.BarData
 	// var minutesToFallAsleep []opts.BarData
@@ -25,11 +24,8 @@ func sleepAggregatedStackedBarChart(user *fitbit_pgdb.AuthorizedUser, all []*Use
 		}
 		// format date to YYYY-MM-DD
 		dates = append(dates, dayData.Date.Format(time.DateOnly))
-		// Duration is in milliseconds, convert it to minutes
-		// sleepDuration = append(sleepDuration, opts.BarData{Value: dayData.SleepLog.Duration / 1000 / 60})
-		// minutesToFallAsleep = append(minutesToFallAsleep, opts.BarData{Value: dayData.SleepLog.MinutesToFallAsleep})
-		minutesAsleep = append(minutesAsleep, opts.BarData{Value: dayData.SleepLog.MinutesAsleep})
 
+		minutesAsleep = append(minutesAsleep, opts.BarData{Value: dayData.SleepLog.MinutesAsleep})
 		deepSleepMinutes = append(deepSleepMinutes, opts.BarData{Value: dayData.SleepLog.Levels.Summary.Deep.Minutes})
 		lightSleepMinutes = append(lightSleepMinutes, opts.BarData{Value: dayData.SleepLog.Levels.Summary.Light.Minutes})
 		remSleepMinutes = append(remSleepMinutes, opts.BarData{Value: dayData.SleepLog.Levels.Summary.Rem.Minutes})
@@ -38,12 +34,9 @@ func sleepAggregatedStackedBarChart(user *fitbit_pgdb.AuthorizedUser, all []*Use
 	chart := charts.NewBar()
 
 	chart.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{
-			Title: "Sleep Data",
-		}),
-		charts.WithInitializationOpts(opts.Initialization{
-			Theme: "dark",
-		}),
+		globalChartSettings(calendarType, 1),
+		charts.WithTitleOpts(globalTitleSettings("Sleep Data")),
+		charts.WithLegendOpts(globalLegendSettings()),
 		charts.WithTooltipOpts(opts.Tooltip{
 			Trigger: "axis",
 			Show:    true,
@@ -81,7 +74,7 @@ func sleepAggregatedStackedBarChart(user *fitbit_pgdb.AuthorizedUser, all []*Use
 	return chart
 }
 
-func sleepEfficiencyChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *charts.Line {
+func sleepEfficiencyLineChart(all []*UserData, calendarType CalendarType) *charts.Line {
 	var dates []string
 	var sleepEfficiency []opts.LineData
 	for _, dayData := range all {
@@ -95,12 +88,9 @@ func sleepEfficiencyChart(user *fitbit_pgdb.AuthorizedUser, all []*UserData) *ch
 	chart := charts.NewLine()
 
 	chart.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{
-			Title: "Sleep Efficiency",
-		}),
-		charts.WithInitializationOpts(opts.Initialization{
-			Theme: "dark",
-		}),
+		charts.WithTitleOpts(globalTitleSettings("Sleep Efficiency")),
+		globalChartSettings(calendarType, 1),
+		charts.WithLegendOpts(globalLegendSettings()),
 		charts.WithTooltipOpts(opts.Tooltip{
 			Trigger: "axis",
 			Show:    true,

@@ -2,133 +2,15 @@ package app
 
 import (
 	"fmt"
-	"math"
 	"sort"
+	"strings"
 	"time"
 
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
-func nextMultipleOfTen(n int) int {
-	// https://stackoverflow.com/a/2403917/2891324
-	return ((n + 9) / 10) * 10
-}
-
-const (
-	verticalOffset   int = 120
-	cellSize         int = 15
-	marginLeft       int = 60
-	marginRight      int = 30
-	minCalendarWidth int = cellSize * 6 * 3
-	maxCalendarWidth int = cellSize * 52
-
-	msToMin float64 = 1.0 / (1000.0 * 60.0)
-)
-
-type CalendarType int
-
-const (
-	WeeklyCalendar CalendarType = iota
-	MonthlyCalendar
-	YearlyCalendar
-)
-
-// globalChartSettings returns the global settings for the calendar charts
-// these are the settings that all the calendars should have in common
-func globalChartSettings(calendarType CalendarType, numYears int) charts.GlobalOpts {
-	var contentWidth int
-	switch calendarType {
-	case WeeklyCalendar, MonthlyCalendar:
-		contentWidth = minCalendarWidth
-	case YearlyCalendar:
-		contentWidth = maxCalendarWidth
-	}
-	return charts.WithInitializationOpts(opts.Initialization{
-		Theme:  "dark",
-		Height: fmt.Sprintf("%dpx", verticalOffset+numYears*(verticalOffset+30)),
-		Width:  fmt.Sprintf("%dpx", contentWidth+marginLeft+marginRight),
-	})
-}
-
-func globalCalendarSettings(calendarType CalendarType, id, year int, coveredMonthsPerYear map[int]map[int]bool, firstActivityDate time.Time) *opts.Calendar {
-	var calendarRange []string = make([]string, 0, 2)
-	var orient string = "horizontal"
-
-	// Depending on the number of months covered by the data, we define a different range
-	// in order to create a calendar without too many empty cells
-	months := make([]int, 0, len(coveredMonthsPerYear[year]))
-	for k := range coveredMonthsPerYear[year] {
-		months = append(months, k)
-	}
-	sort.Ints(months)
-
-	if calendarType == MonthlyCalendar {
-		calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[0]))
-		if months[0] == 12 {
-			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year+1, 1))
-		} else {
-			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[0]+1))
-		}
-	} else if calendarType == YearlyCalendar {
-		calendarRange = append(calendarRange, fmt.Sprintf("%d", year))
-	} else if calendarType == WeeklyCalendar {
-		// Weekly calendar: get an activity date, extract the first day of the week and use it as the starting point
-		weekStartDay := GetStartDayOfWeek(firstActivityDate)
-		calendarRange = append(calendarRange, weekStartDay.Format(time.DateOnly))
-		calendarRange = append(calendarRange, weekStartDay.AddDate(0, 0, 7).Format(time.DateOnly))
-	}
-
-	return &opts.Calendar{
-		Orient: orient,
-		Silent: false,
-		Range:  calendarRange,
-		Top:    fmt.Sprintf("%d", verticalOffset+id*(verticalOffset+30)),
-		Left:   "center", //fmt.Sprintf("%d", marginLeft),
-		// Right:    "30", keeping this commented allows us to have cell of the same sizes
-		CellSize: fmt.Sprintf("%d", cellSize),
-		ItemStyle: &opts.ItemStyle{
-			BorderWidth: 0.5,
-		},
-		YearLabel: &opts.CalendarLabel{
-			Show: true,
-		},
-		DayLabel: &opts.CalendarLabel{
-			Show:  true,
-			Color: "white",
-		},
-		MonthLabel: &opts.CalendarLabel{
-			Show:  true,
-			Color: "white",
-		},
-	}
-}
-
-func globalVisualMapSettings(maxValue int) opts.VisualMap {
-	return opts.VisualMap{
-		//Type:   "piecewise",
-		Calculable: true,
-		Max:        float32(nextMultipleOfTen(maxValue)),
-		Show:       true,
-		Orient:     "horizontal",
-		Left:       "center",
-		Top:        fmt.Sprintf("%d", 50),
-		TextStyle: &opts.TextStyle{
-			Color: "white",
-		},
-	}
-}
-
-func globalTitleSettings(title string) opts.Title {
-	return opts.Title{
-		Title: title,
-		Top:   "15",
-		Left:  "center",
-	}
-}
-
-func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData, calendarType CalendarType) *charts.HeatMap {
+func dailyStepCount(all []*UserData, calendarType CalendarType) *charts.HeatMap {
 	var dailyStepsPerYear map[int][]opts.HeatMapData = make(map[int][]opts.HeatMapData)
 	var maxSteps int = 0
 	var coveredMonthsPerYear map[int]map[int]bool = make(map[int]map[int]bool)
@@ -166,7 +48,7 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData, calendarT
 			Trigger: "item",
 			Show:    true,
 		}),
-		charts.WithVisualMapOpts(globalVisualMapSettings(maxSteps)),
+		charts.WithVisualMapOpts(globalVisualMapSettings(maxSteps, "continuous")),
 		charts.WithLegendOpts(opts.Legend{
 			Show: false,
 		}),
@@ -184,7 +66,7 @@ func dailyStepCount(user *fitbit_pgdb.AuthorizedUser, all []*UserData, calendarT
 	return chart
 }
 
-func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivityTypes, activities *DailyActivities, calendarType CalendarType) *charts.HeatMap {
+func activityCalendar(activityType *UserActivityTypes, activities *DailyActivities, calendarType CalendarType) *charts.HeatMap {
 	var maxIndicator float64
 	var measurementUnit string
 	var defaultActivityIndicator string
@@ -194,24 +76,23 @@ func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivi
 	// Depending on the activityType passed we have different default indicators
 	// and other values to compute the stats. In the global variable _allActivityCatalog
 	// we have the complete list of activities, so we can use it to get the correct values
-	// TODO: handle
+	activityNameLowerCase := strings.ToLower(activityType.Name)
 	for _, activity := range _allActivityCatalog {
 		// All the activities IDs refer to the activity_description IDS
 		for _, subcategory := range activity.SubCategories {
 			for _, activityDescription := range subcategory.Activities {
-				if activityDescription.ID == activityType.ID {
-					// TODO questo é rotto
+				if activityDescription.ID == activityType.ID || strings.ToLower(activityDescription.Name) == activityNameLowerCase {
 					if activityDescription.HasSpeed {
 						defaultActivityIndicator = "Distance"
-					} else {
-						defaultActivityIndicator = "Time"
 					}
 					break
 				}
 			}
 		}
-		fmt.Println("not found for ", activity.Name, activityType.ID)
+	}
 
+	if defaultActivityIndicator == "" {
+		defaultActivityIndicator = "Time"
 	}
 
 	for _, activity := range *activities {
@@ -235,7 +116,7 @@ func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivi
 			maxIndicator = activityIndicator
 		}
 		// format date to YYYY-MM-DD
-		value := [2]interface{}{activity.StartTime.Format(time.DateOnly), math.Round(activityIndicator*100) / 100}
+		value := [2]interface{}{activity.StartTime.Format(time.DateOnly), twoDecimals(activityIndicator)}
 		year := activity.StartTime.Year()
 		month := int(activity.StartTime.Month())
 		if _, ok := coveredMonthsPerYear[year]; !ok {
@@ -261,7 +142,7 @@ func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivi
 			Trigger: "item",
 			Show:    true,
 		}),
-		charts.WithVisualMapOpts(globalVisualMapSettings(int(maxIndicator))),
+		charts.WithVisualMapOpts(globalVisualMapSettings(int(maxIndicator), "continuous")),
 		charts.WithLegendOpts(opts.Legend{
 			Show: false,
 		}),
@@ -276,4 +157,116 @@ func activityCalendar(user *fitbit_pgdb.AuthorizedUser, activityType *UserActivi
 	}
 
 	return chart
+}
+
+type ActivityStats struct {
+	// Totals
+	TotalTime              float64
+	TotalDistance          float64
+	TotalCalories          int64
+	TotalSteps             int64
+	TotalActiveTime        float64
+	TotalActiveZoneMinutes int64
+	TotalMinutesInFatBurn  int64
+	TotalMinutesInCardio   int64
+	TotalMinutesInPeak     int64
+
+	// Averages
+	AverageTime      float64
+	AverageHeartRate float64
+	AveragePace      float64
+	AverageSpeed     float64
+	AverageDistance  float64
+	AverageCalories  float64
+	AverageSteps     float64
+
+	// Max
+	MaxElevationGain int64
+	MaxPace          float64
+	MaxSpeed         float64
+}
+
+type SleepStats struct {
+	TotalSleepTime            float64
+	TotalSleepEfficiency      float64
+	TotalSleepMinutes         float64
+	TotalRemSleepMinutes      float64
+	TotalLightSleepMinutes    float64
+	TotalDeepSleepMinutes     float64
+	TotalWakeSleepMinutes     float64
+	TotalAwakeSleepMinutes    float64
+	TotalRestlessSleepMinutes float64
+	TotalTimeInBed            float64
+	TotalTimeAsleep           float64
+	TotalTimeAwake            float64
+	TotalTimeToFallAsleep     float64
+	TotalTimeAfterWakeup      float64
+	TotalTimeInBedAwake       float64
+	TotalTimeInBedAsleep      float64
+	TotalTimeInBedRestless    float64
+}
+
+func activityStats(activities *DailyActivities) *ActivityStats {
+	var stats ActivityStats
+
+	for _, activity := range *activities {
+		stats.TotalTime += float64(activity.Duration) * msToMin
+		stats.TotalDistance += activity.Distance
+		stats.TotalCalories += activity.Calories
+		stats.TotalSteps += activity.Steps
+		stats.TotalActiveTime += float64(activity.ActiveDuration) * msToMin
+		stats.TotalActiveZoneMinutes += activity.ActiveZoneMinutes.TotalMinutes
+
+		for _, zone := range activity.ActiveZoneMinutes.MinutesInHeartRateZones {
+			switch zone.ZoneName {
+			case "Fat Burn":
+				stats.TotalMinutesInFatBurn += zone.Minutes
+			case "Cardio":
+				stats.TotalMinutesInCardio += zone.Minutes
+			case "Peak":
+				stats.TotalMinutesInPeak += zone.Minutes
+			}
+		}
+
+		if activity.ElevationGain > stats.MaxElevationGain {
+			stats.MaxElevationGain = activity.ElevationGain
+		}
+		if activity.Pace > stats.MaxPace {
+			stats.MaxPace = activity.Pace
+		}
+		if activity.Speed > stats.MaxSpeed {
+			stats.MaxSpeed = activity.Speed
+		}
+
+		stats.AverageHeartRate += float64(activity.AverageHeartRate)
+		stats.AveragePace += activity.Pace
+		stats.AverageSpeed += activity.Speed
+
+	}
+	// Average
+	tot := float64(len(*activities))
+	stats.AverageHeartRate /= tot
+	stats.AveragePace /= tot
+	stats.AverageSpeed /= tot
+	stats.AverageTime = stats.TotalTime / tot
+	stats.AverageDistance = float64(stats.TotalDistance) / tot
+	stats.AverageCalories = float64(stats.TotalCalories) / tot
+	stats.AverageSteps = float64(stats.TotalSteps) / tot
+
+	// Two decimals for all the float values
+	stats.TotalTime = twoDecimals(stats.TotalTime)
+	stats.TotalDistance = twoDecimals(stats.TotalDistance)
+	stats.TotalActiveTime = twoDecimals(stats.TotalActiveTime)
+	stats.AverageHeartRate = twoDecimals(stats.AverageHeartRate)
+	stats.AveragePace = twoDecimals(stats.AveragePace)
+	stats.AverageSpeed = twoDecimals(stats.AverageSpeed)
+	stats.AverageDistance = twoDecimals(stats.AverageDistance)
+	stats.AverageCalories = twoDecimals(stats.AverageCalories)
+	stats.AverageTime = twoDecimals(stats.AverageTime)
+	stats.AverageSteps = twoDecimals(stats.AverageSteps)
+	stats.MaxPace = twoDecimals(stats.MaxPace)
+	stats.MaxSpeed = twoDecimals(stats.MaxSpeed)
+
+	return &stats
+
 }
