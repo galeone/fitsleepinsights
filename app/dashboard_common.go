@@ -186,7 +186,7 @@ func describeChartContent(chart *charts.BaseConfiguration, chartType string, add
 	fmt.Fprintln(&builder, "Add to the description hints and insights about the data.")
 	fmt.Fprintln(&builder, "Talk directly to the user that generated the data.")
 	fmt.Fprintln(&builder, "The description must be at most 200 words long.")
-	fmt.Fprintln(&builder, "The description must be in Markdown.")
+	fmt.Fprintln(&builder, "The description must formatted in Markdown.")
 	fmt.Fprintln(&builder, "Do not say hi, hello, or anything that is not related to the data.")
 	fmt.Fprintln(&builder, "Do not talk about the chart colors, focus only on the data and potential correlations with the sleep/activity habits.")
 
