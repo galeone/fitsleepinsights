@@ -18,7 +18,10 @@ import (
 	"google.golang.org/api/option"
 )
 
+// https://ai.google.dev/models/gemini
 const ChatTemperature float32 = 0.3
+const TokenLength int = 4
+const MaxToken int = 30720
 
 func ChatWithData() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
@@ -73,6 +76,12 @@ func ChatWithData() echo.HandlerFunc {
 
 		description := builder.String()
 
+		if len(description)/TokenLength > MaxToken {
+			// Truncate description final parts
+			description = description[:MaxToken*TokenLength]
+			c.Logger().Warnf("Description too long, truncating to %d tokens", MaxToken)
+		}
+
 		// For text-only input, use the gemini-pro model
 		model := client.GenerativeModel("gemini-pro")
 		temperature := ChatTemperature
@@ -91,18 +100,30 @@ func ChatWithData() echo.HandlerFunc {
 				var msg string
 				if err = websocket.Message.Receive(ws, &msg); err != nil {
 					c.Logger().Error(err)
+					if err = websocket.Message.Send(ws, fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error())); err != nil {
+						c.Logger().Error(err)
+					}
 					break
 				}
 				// write to gemini chat and receive response
 				var response *genai.GenerateContentResponse
-				if response, err = chatSession.SendMessage(ctx, genai.Text(msg)); err != nil {
+
+				// Always instruct the model to look at the data send initially
+				builder.Reset()
+				fmt.Fprintln(&builder, "Analyze the data sent at the beginning of the chat to answer this question:")
+				fmt.Fprintln(&builder, msg)
+				fmt.Fprintln(&builder, "Do not output JSON, never.")
+
+				if response, err = chatSession.SendMessage(ctx, genai.Text(builder.String())); err != nil {
 					c.Logger().Error(err)
+					if err = websocket.Message.Send(ws, fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error())); err != nil {
+						c.Logger().Error(err)
+					}
 					break
 				}
 				// write to socket
 				for _, candidates := range response.Candidates {
 					for _, part := range candidates.Content.Parts {
-
 						// create markdown parser with extensions
 						p := parser.NewWithExtensions(extensions)
 						doc := p.Parse([]byte(fmt.Sprintf("%s", part)))
@@ -114,9 +135,8 @@ func ChatWithData() echo.HandlerFunc {
 
 						if err = websocket.Message.Send(ws, string(markdown.Render(doc, renderer))); err != nil {
 							c.Logger().Error(err)
-							break
+							continue
 						}
-						time.Sleep(1 * time.Second)
 					}
 				}
 			}
