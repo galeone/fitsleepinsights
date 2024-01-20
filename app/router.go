@@ -93,6 +93,14 @@ func NewRouter() (*echo.Echo, error) {
 	router.GET("/dashboard/:year/:month", MonthlyDashboard(), RequireFitbit())
 	router.GET("/dashboard/:year", YearlyDashboard(), RequireFitbit())
 
+	router.GET("/chat", ChatWithData(), RequireFitbit())
+	router.GET("/chat/week", ChatWithData(), RequireFitbit())
+	router.GET("/chat/month", ChatWithData(), RequireFitbit())
+	router.GET("/chat/year", ChatWithData(), RequireFitbit())
+	router.GET("/chat/:year/:month/:day", ChatWithData(), RequireFitbit())
+	router.GET("/chat/:year/:month", ChatWithData(), RequireFitbit())
+	router.GET("/chat/:year", ChatWithData(), RequireFitbit())
+
 	router.Static("/static", "static")
 
 	// INTERNAL routes used for:

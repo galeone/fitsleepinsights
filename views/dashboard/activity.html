@@ -8,11 +8,7 @@
         <div class="box">
             {{.dailyStepsCountChart}}
         </div>
-        <div class="box">
-            {{md2html .dailyStepsCountDescription}}
-        </div>
     </div>
-    {{$activityCalendarsDescription := .activityCalendarsDescription}}
     {{$activityStats := .activityStatistics}}
     {{ range $activityName, $activityChart := .activityCalendars }}
     <div id="activity-{{$activityName}}" class="box-wrapper">
@@ -33,7 +29,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col">
-                    <div class="text-2xl font-bold">
+                    <div class="text-2xl font-bold text-right">
                         {{ min2ddhhmm $stat.AverageTime }}
                     </div>
                     <div class="text-sm">
@@ -53,7 +49,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col">
-                    <div class="text-2xl font-bold">
+                    <div class="text-2xl font-bold text-right">
                         {{ $stat.AverageDistance }}
                     </div>
                     <div class="text-sm">
@@ -69,15 +65,15 @@
                         {{ $stat.TotalCalories }}
                     </div>
                     <div class="text-sm">
-                        🔥 Total Calories
+                        Total Calories 🔥
                     </div>
                 </div>
                 <div class="flex flex-col">
-                    <div class="text-2xl font-bold">
+                    <div class="text-2xl font-bold text-right">
                         {{ $stat.AverageCalories }}
                     </div>
                     <div class="text-sm">
-                        🔥 Average Calories
+                        Average Calories 🔥
                     </div>
                 </div>
             </div>
@@ -93,7 +89,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col">
-                    <div class="text-2xl font-bold">
+                    <div class="text-2xl font-bold text-right">
                         {{ $stat.AverageSteps }}
                     </div>
                     <div class="text-sm">
@@ -119,7 +115,7 @@
                 </div>
                 {{ end }}
                 {{ if gt $stat.TotalMinutesInFatBurn 0 }}
-                <div class="flex flex-col">
+                <div class="flex flex-col mr-2">
                     <div class="text-2xl font-bold">
                         {{ min2ddhhmm (float64 $stat.TotalMinutesInFatBurn) }}
                     </div>
@@ -129,7 +125,7 @@
                 </div>
                 {{ end }}
                 {{ if gt $stat.TotalMinutesInCardio 0 }}
-                <div class="flex flex-col">
+                <div class="flex flex-col mr-2">
                     <div class="text-2xl font-bold">
                         {{ min2ddhhmm (float64 $stat.TotalMinutesInCardio) }}
                     </div>
@@ -140,7 +136,7 @@
                 {{ end }}
                 {{ if gt $stat.TotalMinutesInPeak 0 }}
                 <div class="flex flex-col">
-                    <div class="text-2xl font-bold">
+                    <div class="text-2xl font-bold text-right">
                         {{ min2ddhhmm (float64 $stat.TotalMinutesInPeak) }}
                     </div>
                     <div class="text-sm">
@@ -177,7 +173,7 @@
                 {{ end }}
                 {{ if gt $stat.MaxSpeed 0.0 }}
                 <div class="flex flex-col">
-                    <div class="text-2xl font-bold">
+                    <div class="text-2xl font-bold text-right">
                         {{ $stat.MaxSpeed }}
                     </div>
                     <div class="text-sm">
@@ -187,9 +183,6 @@
                 {{ end }}
             </div>
             {{ end }}
-        </div>
-        <div class="box">
-        {{ md2html (index $activityCalendarsDescription $activityName) }}
         </div>
     </div>
     {{ end }}
