@@ -8,6 +8,102 @@
         <div class="box">
             {{.dailyStepsCountChart}}
         </div>
+        <div class="box">
+            <!-- stats -->
+            {{ if gt .dailyStepsStatistics.TotalSteps 0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.TotalSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Total Steps
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ .dailyStepsStatistics.AverageSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Average Steps
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if gt .dailyStepsStatistics.TotalDistance 0.0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.TotalDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Total Distance
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ .dailyStepsStatistics.AverageDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Average Distance
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if gt .dailyStepsStatistics.TotalCalories 0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.TotalCalories }}
+                    </div>
+                    <div class="text-sm">
+                        Total Calories 🔥
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ .dailyStepsStatistics.AverageCalories }}
+                    </div>
+                    <div class="text-sm">
+                        Average Calories 🔥
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            <hr>
+            <div class="flex flex-row justify-between">
+                {{ if gt .dailyStepsStatistics.MaxSteps 0 }}
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.MaxSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Max Steps
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt .dailyStepsStatistics.MaxDistance 0.0 }}
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.MaxDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Max Distance
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt .dailyStepsStatistics.MaxCalories 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ .dailyStepsStatistics.MaxCalories }}
+                    </div>
+                    <div class="text-sm">
+                        Max Calories 🔥
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+        </div>
     </div>
     {{$activityStats := .activityStatistics}}
     {{ range $activityName, $activityChart := .activityCalendars }}

@@ -10,18 +10,56 @@ import (
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
-func dailyStepCount(all []*UserData, calendarType CalendarType) *charts.HeatMap {
+func dailyStepCount(all []*UserData, calendarType CalendarType) (*charts.HeatMap, *DailyStepsStats) {
 	var dailyStepsPerYear map[int][]opts.HeatMapData = make(map[int][]opts.HeatMapData)
-	var maxSteps int = 0
 	var coveredMonthsPerYear map[int]map[int]bool = make(map[int]map[int]bool)
+	var stats DailyStepsStats
+	counters := map[string]int{
+		"steps":    0,
+		"calories": 0,
+		"distance": 0,
+	}
+
 	for _, dayData := range all {
 		if dayData == nil || dayData.Steps == nil {
 			continue
 		}
-		steps := int(dayData.Steps.Value)
-		if steps > maxSteps {
-			maxSteps = steps
+		counters["steps"]++
+		steps := int64(dayData.Steps.Value)
+		if steps > stats.MaxSteps {
+			stats.MaxSteps = steps
 		}
+		if steps < stats.MinSteps || stats.MinSteps == 0 {
+			stats.MinSteps = steps
+		}
+		stats.TotalSteps += steps
+
+		// Calories
+		if dayData.Calories != nil {
+			counters["calories"]++
+			calories := int64(dayData.Calories.Value)
+			if calories > stats.MaxCalories {
+				stats.MaxCalories = calories
+			}
+			if calories < stats.MinCalories || stats.MinCalories == 0 {
+				stats.MinCalories = calories
+			}
+			stats.TotalCalories += calories
+		}
+
+		// Distance
+		if dayData.Distance != nil {
+			counters["distance"]++
+			distance := float64(dayData.Distance.Value)
+			if distance > stats.MaxDistance {
+				stats.MaxDistance = distance
+			}
+			if distance < stats.MinDistance || stats.MinDistance == 0 {
+				stats.MinDistance = distance
+			}
+			stats.TotalDistance += distance
+		}
+
 		// format date to YYYY-MM-DD
 		value := [2]interface{}{dayData.Date.Format(time.DateOnly), steps}
 		year := dayData.Date.Year()
@@ -33,6 +71,20 @@ func dailyStepCount(all []*UserData, calendarType CalendarType) *charts.HeatMap 
 			coveredMonthsPerYear[year][month] = true
 		}
 	}
+
+	// Average
+	if counters["steps"] > 0 {
+		stats.AverageSteps = twoDecimals(float64(stats.TotalSteps) / float64(counters["steps"]))
+
+	}
+	if counters["calories"] > 0 {
+		stats.AverageCalories = twoDecimals(float64(stats.TotalCalories) / float64(counters["calories"]))
+	}
+	if counters["distance"] > 0 {
+		stats.AverageDistance = twoDecimals(stats.TotalDistance / float64(counters["distance"]))
+	}
+	stats.MaxDistance = twoDecimals(stats.MaxDistance)
+	stats.TotalDistance = twoDecimals(stats.TotalDistance)
 
 	years := make([]int, 0, len(dailyStepsPerYear))
 	for k := range dailyStepsPerYear {
@@ -48,7 +100,7 @@ func dailyStepCount(all []*UserData, calendarType CalendarType) *charts.HeatMap 
 			Trigger: "item",
 			Show:    true,
 		}),
-		charts.WithVisualMapOpts(globalVisualMapSettings(maxSteps, "continuous")),
+		charts.WithVisualMapOpts(globalVisualMapSettings(stats.MaxSteps, "continuous")),
 		charts.WithLegendOpts(opts.Legend{
 			Show: false,
 		}),
@@ -63,7 +115,7 @@ func dailyStepCount(all []*UserData, calendarType CalendarType) *charts.HeatMap 
 		chart.AddCalendar(globalCalendarSettings(calendarType, id, year, coveredMonthsPerYear, all[0].Date))
 	}
 
-	return chart
+	return chart, &stats
 }
 
 func activityCalendar(activityType *UserActivityTypes, activities *DailyActivities, calendarType CalendarType) *charts.HeatMap {
@@ -142,7 +194,7 @@ func activityCalendar(activityType *UserActivityTypes, activities *DailyActiviti
 			Trigger: "item",
 			Show:    true,
 		}),
-		charts.WithVisualMapOpts(globalVisualMapSettings(int(maxIndicator), "continuous")),
+		charts.WithVisualMapOpts(globalVisualMapSettings(int64(maxIndicator), "continuous")),
 		charts.WithLegendOpts(opts.Legend{
 			Show: false,
 		}),
@@ -157,6 +209,23 @@ func activityCalendar(activityType *UserActivityTypes, activities *DailyActiviti
 	}
 
 	return chart
+}
+
+type DailyStepsStats struct {
+	TotalSteps   int64
+	MaxSteps     int64
+	MinSteps     int64
+	AverageSteps float64
+
+	TotalDistance   float64
+	MaxDistance     float64
+	MinDistance     float64
+	AverageDistance float64
+
+	TotalCalories   int64
+	MaxCalories     int64
+	MinCalories     int64
+	AverageCalories float64
 }
 
 type ActivityStats struct {

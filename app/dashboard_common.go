@@ -34,7 +34,7 @@ const (
 	YearlyCalendar
 )
 
-func nextMultipleOfTen(n int) int {
+func nextMultipleOfTen(n int64) int64 {
 	// https://stackoverflow.com/a/2403917/2891324
 	return ((n + 9) / 10) * 10
 }
@@ -127,7 +127,7 @@ func globalCalendarSettings(calendarType CalendarType, id, year int, coveredMont
 	}
 }
 
-func globalVisualMapSettings(maxValue int, visualMapType string) opts.VisualMap {
+func globalVisualMapSettings(maxValue int64, visualMapType string) opts.VisualMap {
 	return opts.VisualMap{
 		Type:       visualMapType,
 		Calculable: true,

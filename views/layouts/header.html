@@ -1,4 +1,4 @@
-<header class="top-0 left-0 w-full bg-transparent" style="color: rgb(255, 255, 255);" dir="ltr">
+<header class="top-0 left-0 {{if .isLoggedIn }}top-header{{else}}w-full{{ end }} bg-transparent" style="color: rgb(255, 255, 255);" dir="ltr">
 <div class="px-4 py-4 flex items-center justify-between relative lg:px-6">
     <a href="/">
         <h3 class="bg-transparent font-bold text-xl lg:text-2xl xl:text-3xl">FitSleepInsights</h3>

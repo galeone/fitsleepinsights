@@ -78,13 +78,14 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 	wg.Wait()
 
 	var dailyStepChart *charts.HeatMap
+	var dailyStepsStatistics *DailyStepsStats
 	var sleepEfficiencyChart *charts.Line
 	var sleepAggregatedChart *charts.Bar
 	wg.Add(3)
 
 	go func() {
 		defer wg.Done()
-		dailyStepChart = dailyStepCount(allData, calendarType)
+		dailyStepChart, dailyStepsStatistics = dailyStepCount(allData, calendarType)
 		dailyStepChart.Renderer = newChartRenderer(dailyStepChart, dailyStepChart.Validate)
 
 	}()
@@ -110,6 +111,7 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 		"sleepEfficiencyChart": renderChart(sleepEfficiencyChart),
 
 		"dailyStepsCountChart": renderChart(dailyStepChart),
+		"dailyStepsStatistics": dailyStepsStatistics,
 
 		"sleepAggregatedChart": renderChart(sleepAggregatedChart),
 

@@ -415,7 +415,10 @@ img,video{
     width:50%
 }
 .w-1\/3{
-    width:33.333333%
+    width:33%
+}
+.w-2\/3 {
+    width: 66%
 }
 .w-10{
     width:2.5rem
@@ -1348,8 +1351,11 @@ input[type=color]::-webkit-color-swatch{
 }
 
 #main{
-    width:98%;
-    margin:auto
+    width:66%;
+    margin-left:1%;
+}
+.top-header {
+    width: 66%;
 }
 .toggle-content {
 	display: none;
@@ -1383,11 +1389,9 @@ input[type=color]::-webkit-color-swatch{
 /* Chat container */
 #chat-container {
     position: fixed;
-    top: 92px;
-    /* tweak */
+    top: 0px;
     right: 0;
-    width: 33.3333%;
-    /* 33% of the width */
+    width: 34%;
     height: 100vh;
     background-color: #333;
     padding: 20px 20px 20px 20px;
@@ -1398,7 +1402,7 @@ input[type=color]::-webkit-color-swatch{
 
 /* Chat messages */
 .chat-messages {
-    height: 85%;
+    height: 96%;
     overflow: auto;
     padding: 20px;
 }
@@ -1467,6 +1471,21 @@ input[type=color]::-webkit-color-swatch{
         width: 100%;
         top: 60%;
         height: 40vh;
+    }
+    #main {
+        width: 100%;
+        margin: 0;
+        margin-bottom: 15%;
+    }
+    .top-header {
+        width: 100%;
+        margin: 0;
+    }
+    .chat-messages {
+        height: 92%;
+    }
+    .box {
+        flex-grow: 1;
     }
 }
 
