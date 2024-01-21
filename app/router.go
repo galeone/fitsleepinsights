@@ -64,6 +64,9 @@ func NewRouter() (*echo.Echo, error) {
 	viewConf.Funcs["float64"] = func(n int64) float64 {
 		return float64(n)
 	}
+	viewConf.Funcs["timeOnly"] = func(t time.Time) string {
+		return t.Format(time.TimeOnly)
+	}
 
 	router.Renderer = echoview.New(viewConf)
 

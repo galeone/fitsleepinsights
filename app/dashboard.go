@@ -79,9 +79,8 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 
 	var dailyStepChart *charts.HeatMap
 	var dailyStepsStatistics *DailyStepsStats
-	var sleepEfficiencyChart *charts.Line
-	var sleepAggregatedChart *charts.Bar
-	wg.Add(3)
+	var sleepBoard *SleepDashboard
+	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
@@ -92,14 +91,9 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 
 	go func() {
 		defer wg.Done()
-		sleepEfficiencyChart = sleepEfficiencyLineChart(allData, calendarType)
-		sleepEfficiencyChart.Renderer = newChartRenderer(sleepEfficiencyChart, sleepEfficiencyChart.Validate)
-	}()
-
-	go func() {
-		defer wg.Done()
-		sleepAggregatedChart = sleepAggregatedStackedBarChart(allData, calendarType)
-		sleepAggregatedChart.Renderer = newChartRenderer(sleepAggregatedChart, sleepAggregatedChart.Validate)
+		sleepBoard = sleepDashboard(allData, calendarType)
+		sleepBoard.AggregatedStackedBarChart.Renderer = newChartRenderer(sleepBoard.AggregatedStackedBarChart, sleepBoard.AggregatedStackedBarChart.Validate)
+		sleepBoard.EfficiencyLineChart.Renderer = newChartRenderer(sleepBoard.EfficiencyLineChart, sleepBoard.EfficiencyLineChart.Validate)
 	}()
 
 	wg.Wait()
@@ -108,12 +102,12 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 	return c.Render(http.StatusOK, "dashboard/dashboard", echo.Map{
 		"title": "Dashboard - FitSleepInsights",
 
-		"sleepEfficiencyChart": renderChart(sleepEfficiencyChart),
+		"sleepEfficiencyChart": renderChart(sleepBoard.EfficiencyLineChart),
+		"sleepAggregatedChart": renderChart(sleepBoard.AggregatedStackedBarChart),
+		"sleepStatistics":      sleepBoard.Stats,
 
 		"dailyStepsCountChart": renderChart(dailyStepChart),
 		"dailyStepsStatistics": dailyStepsStatistics,
-
-		"sleepAggregatedChart": renderChart(sleepAggregatedChart),
 
 		"activityCalendars":  activityCalendars,
 		"activityStatistics": activityStatistics,

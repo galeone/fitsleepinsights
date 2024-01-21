@@ -255,26 +255,6 @@ type ActivityStats struct {
 	MaxSpeed         float64
 }
 
-type SleepStats struct {
-	TotalSleepTime            float64
-	TotalSleepEfficiency      float64
-	TotalSleepMinutes         float64
-	TotalRemSleepMinutes      float64
-	TotalLightSleepMinutes    float64
-	TotalDeepSleepMinutes     float64
-	TotalWakeSleepMinutes     float64
-	TotalAwakeSleepMinutes    float64
-	TotalRestlessSleepMinutes float64
-	TotalTimeInBed            float64
-	TotalTimeAsleep           float64
-	TotalTimeAwake            float64
-	TotalTimeToFallAsleep     float64
-	TotalTimeAfterWakeup      float64
-	TotalTimeInBedAwake       float64
-	TotalTimeInBedAsleep      float64
-	TotalTimeInBedRestless    float64
-}
-
 func activityStats(activities *DailyActivities) *ActivityStats {
 	var stats ActivityStats
 

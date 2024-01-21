@@ -8,11 +8,57 @@
         <div class="box">
         {{.sleepEfficiencyChart}}
         </div>
-    </div>
-
-    <div id="sleep-aggregated" class="box-wrapper">
         <div class="box">
             {{.sleepAggregatedChart}}
+        </div>
+        <div class="box">
+            <!-- stats -->
+            {{ if gt .sleepStatistics.MaxDuration 0.0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm .sleepStatistics.MaxDuration }}
+                    </div>
+                    <div class="text-sm">
+                        Max Duration
+                    </div>
+                </div>
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold text-right">
+                        {{ min2ddhhmm .sleepStatistics.AverageDuration }}
+                    </div>
+                    <div class="text-sm">
+                        Average Duration
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ min2ddhhmm .sleepStatistics.MinDuration }}
+                    </div>
+                    <div class="text-sm">
+                        Min Duration
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold">
+                        {{ timeOnly .sleepStatistics.AverageStartTime }}
+                    </div>
+                    <div class="text-sm">
+                        Average Start Time
+                    </div>
+                </div>
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold text-right">
+                        {{ timeOnly .sleepStatistics.AverageEndTime }}
+                    </div>
+                    <div class="text-sm">
+                        Average End Time
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
