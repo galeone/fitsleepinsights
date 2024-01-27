@@ -12,6 +12,9 @@
             {{.sleepAggregatedChart}}
         </div>
         <div class="box">
+            {{.sleepHrvChart}}
+        </div>
+        <div class="box">
             <!-- stats -->
             {{ if gt .sleepStatistics.MaxDuration 0.0 }}
             <div class="flex flex-row justify-between">

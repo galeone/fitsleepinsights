@@ -77,14 +77,14 @@ func NewRouter() (*echo.Echo, error) {
 	// Login route is auth
 	// Logout is the cookie removal
 	router.GET("/login", Auth())
-	router.GET("/logout", func(c echo.Context) error {
-		c.SetCookie(&http.Cookie{
-			Name:   "token",
-			MaxAge: -1,
-			Path:   "/",
-		})
-		return c.Redirect(http.StatusFound, "/")
-	}, RequireFitbit())
+	router.GET("/logout", func(c echo.Context) (err error) {
+		var cookie *http.Cookie
+		if cookie, err = c.Cookie("token"); err == nil {
+			cookie.MaxAge = -1
+			c.SetCookie(cookie)
+		}
+		return c.Redirect(http.StatusTemporaryRedirect, "/")
+	})
 
 	// The default dashboard is the monthly dashboard
 	router.GET("/dashboard", MonthlyDashboard(), RequireFitbit())

@@ -1,0 +1,34 @@
+<div>
+    <a href="#health" class="toggle text-xl">
+        {{include "dashboard/arrow"}} Health
+    </a>
+</div>
+<div id="health" class="toggle-content is-visible">
+    <div id="sleep-efficiency" class="box-wrapper">
+        <div class="box">
+            {{.breathingRateChart}}
+        </div>
+        <div class="box">
+            {{.heartRateVariabilityChart}}
+        </div>
+        <div class="box">
+            {{.oxygenSaturationChart}}
+        </div>
+        <div class="box">
+            {{.restingHeartRateChart}}
+        </div>
+        <div class="box">
+            {{.skinTemperatureChart}}
+        </div>
+        <div class="box">
+            {{.bmiChart}}
+        </div>
+        <div class="box">
+            {{.weightChart}}
+        </div>
+
+        <div class="box">
+            <!-- stats -->
+        </div>
+    </div>
+</div>

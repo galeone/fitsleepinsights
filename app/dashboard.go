@@ -80,7 +80,8 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 	var dailyStepChart *charts.HeatMap
 	var dailyStepsStatistics *DailyStepsStats
 	var sleepBoard *SleepDashboard
-	wg.Add(2)
+	var healthBoard *HealthDashboard
+	wg.Add(3)
 
 	go func() {
 		defer wg.Done()
@@ -92,8 +93,21 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 	go func() {
 		defer wg.Done()
 		sleepBoard = sleepDashboard(allData, calendarType)
-		sleepBoard.AggregatedStackedBarChart.Renderer = newChartRenderer(sleepBoard.AggregatedStackedBarChart, sleepBoard.AggregatedStackedBarChart.Validate)
-		sleepBoard.EfficiencyLineChart.Renderer = newChartRenderer(sleepBoard.EfficiencyLineChart, sleepBoard.EfficiencyLineChart.Validate)
+		sleepBoard.AggregatedStages.Renderer = newChartRenderer(sleepBoard.AggregatedStages, sleepBoard.AggregatedStages.Validate)
+		sleepBoard.Efficiency.Renderer = newChartRenderer(sleepBoard.Efficiency, sleepBoard.Efficiency.Validate)
+		sleepBoard.HeartRateVariabilityDeepSleep.Renderer = newChartRenderer(sleepBoard.HeartRateVariabilityDeepSleep, sleepBoard.HeartRateVariabilityDeepSleep.Validate)
+	}()
+
+	go func() {
+		defer wg.Done()
+		healthBoard = healthDashboard(allData, calendarType)
+		healthBoard.BreathingRate.Renderer = newChartRenderer(healthBoard.BreathingRate, healthBoard.BreathingRate.Validate)
+		healthBoard.HeartRateVariability.Renderer = newChartRenderer(healthBoard.HeartRateVariability, healthBoard.HeartRateVariability.Validate)
+		healthBoard.OxygenSaturation.Renderer = newChartRenderer(healthBoard.OxygenSaturation, healthBoard.OxygenSaturation.Validate)
+		healthBoard.RestingHeartRate.Renderer = newChartRenderer(healthBoard.RestingHeartRate, healthBoard.RestingHeartRate.Validate)
+		healthBoard.SkinTemperature.Renderer = newChartRenderer(healthBoard.SkinTemperature, healthBoard.SkinTemperature.Validate)
+		healthBoard.BMI.Renderer = newChartRenderer(healthBoard.BMI, healthBoard.BMI.Validate)
+		healthBoard.Weight.Renderer = newChartRenderer(healthBoard.Weight, healthBoard.Weight.Validate)
 	}()
 
 	wg.Wait()
@@ -102,8 +116,9 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 	return c.Render(http.StatusOK, "dashboard/dashboard", echo.Map{
 		"title": "Dashboard - FitSleepInsights",
 
-		"sleepEfficiencyChart": renderChart(sleepBoard.EfficiencyLineChart),
-		"sleepAggregatedChart": renderChart(sleepBoard.AggregatedStackedBarChart),
+		"sleepEfficiencyChart": renderChart(sleepBoard.Efficiency),
+		"sleepAggregatedChart": renderChart(sleepBoard.AggregatedStages),
+		"sleepHrvChart":        renderChart(sleepBoard.HeartRateVariabilityDeepSleep),
 		"sleepStatistics":      sleepBoard.Stats,
 
 		"dailyStepsCountChart": renderChart(dailyStepChart),
@@ -111,6 +126,15 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 
 		"activityCalendars":  activityCalendars,
 		"activityStatistics": activityStatistics,
+
+		"breathingRateChart":        renderChart(healthBoard.BreathingRate),
+		"heartRateVariabilityChart": renderChart(healthBoard.HeartRateVariability),
+		"oxygenSaturationChart":     renderChart(healthBoard.OxygenSaturation),
+		"restingHeartRateChart":     renderChart(healthBoard.RestingHeartRate),
+		"skinTemperatureChart":      renderChart(healthBoard.SkinTemperature),
+		"bmiChart":                  renderChart(healthBoard.BMI),
+		"weightChart":               renderChart(healthBoard.Weight),
+		"healthStatistics":          healthBoard.Stats,
 
 		"isLoggedIn": true,
 

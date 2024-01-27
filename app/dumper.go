@@ -1005,6 +1005,37 @@ func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) 
 	return
 }
 
+func (d *dumper) userBreathingRate(startDate, endDate *time.Time) (err error) {
+	var value *fitbit_types.BreathingRate
+	if value, err = d.fb.UserBreathingRate(startDate, endDate); err != nil {
+		d.logError(err)
+		return
+	}
+	tx := _db.Begin()
+	for _, t := range value.Br {
+		timestep := types.BreathingRate{
+			BreathingRateTimePoint: t,
+			UserID:                 d.User.ID,
+			Date:                   t.DateTime.Time,
+		}
+
+		// No error = found
+		if err = tx.Model(types.BreathingRate{}).Where(&timestep).Scan(&timestep); err == nil {
+			// log.Println("Skipping ", t)
+			continue
+		}
+		if err = tx.Create(&timestep); err != nil {
+			d.logError(err)
+			break
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		d.logError(err)
+	}
+
+	return
+}
+
 func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err error) {
 	var value *fitbit_types.CardioFitnessScore
 	if value, err = d.fb.UserCardioFitnessScore(startDate, endDate); err != nil {
@@ -1370,6 +1401,7 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 	isYesterday := newEndDate.Equal(yesterday)
 	for newEndDate.Before(yesterday) || isYesterday {
 		d.userSkinTemperature(&newStartDate, &newEndDate)
+		d.userBreathingRate(&newStartDate, &newEndDate)
 		d.userCoreTemperature(&newStartDate, &newEndDate)
 		d.userOxygenSaturation(&newStartDate, &newEndDate)
 		d.userCardioFitnessScore(&newStartDate, &newEndDate)

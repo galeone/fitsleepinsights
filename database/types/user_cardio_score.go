@@ -13,10 +13,24 @@ import (
 )
 
 type BreathingRate struct {
-	types.BreathingRate
-	ID     int64               `igor:"primary_key"`
-	User   pgdb.AuthorizedUser `sql:"-"`
-	UserID int64
+	types.BreathingRateTimePoint
+	ID       int64               `igor:"primary_key"`
+	User     pgdb.AuthorizedUser `sql:"-"`
+	UserID   int64
+	DateTime types.FitbitDate `sql:"-"` // it's a date
+	Date     time.Time
+}
+
+func (BreathingRate) Headers() []string {
+	return []string{
+		"BreathingRate",
+	}
+}
+
+func (f *BreathingRate) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Value.BreathingRate, 'f', 2, 64),
+	}
 }
 
 func (BreathingRate) TableName() string {

@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     ws.onopen = function() {
         document.querySelector('.chat-messages').innerHTML = '';
-        appendMessage("Hi! <br> I analyzed your data and I'm ready to answer your questions. <br> Ask me anything!", false)
+        appendMessage("Hi, I'm your AI assistant 🤖<br>I analyzed your data and I'm ready to answer your questions.", false)
         chatInput.removeAttribute("disabled");
         chatButton.removeAttribute("disabled");
     }

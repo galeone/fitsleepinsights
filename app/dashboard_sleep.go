@@ -16,9 +16,10 @@ type SleepStats struct {
 }
 
 type SleepDashboard struct {
-	AggregatedStackedBarChart *charts.Bar
-	EfficiencyLineChart       *charts.Line
-	Stats                     *SleepStats
+	AggregatedStages              *charts.Bar
+	Efficiency                    *charts.Line
+	HeartRateVariabilityDeepSleep *charts.Line
+	Stats                         *SleepStats
 }
 
 func sleepDashboard(all []*UserData, calendarType CalendarType) *SleepDashboard {
@@ -31,9 +32,11 @@ func sleepDashboard(all []*UserData, calendarType CalendarType) *SleepDashboard 
 	var wakeSleepMinutes []opts.BarData
 
 	var sleepEfficiency []opts.LineData
+	var heartRateVariability []opts.LineData
 
 	var stats SleepStats
 	var counter int64
+	var hrvCounter int64
 
 	var unixStartTime int64
 	var unixEndTime int64
@@ -71,6 +74,11 @@ func sleepDashboard(all []*UserData, calendarType CalendarType) *SleepDashboard 
 		}
 		if realDurationInMinutes < stats.MinDuration || stats.MinDuration == 0 {
 			stats.MinDuration = realDurationInMinutes
+		}
+
+		if dayData.HeartRateVariability != nil {
+			hrvCounter++
+			heartRateVariability = append(heartRateVariability, opts.LineData{Value: dayData.HeartRateVariability.DeepRmssd})
 		}
 
 	}
@@ -119,7 +127,6 @@ func sleepDashboard(all []*UserData, calendarType CalendarType) *SleepDashboard 
 	}))
 
 	sleepEfficiencyLineChart := charts.NewLine()
-
 	sleepEfficiencyLineChart.SetGlobalOptions(
 		charts.WithTitleOpts(globalTitleSettings("Sleep Efficiency")),
 		globalChartSettings(calendarType, 1),
@@ -133,15 +140,34 @@ func sleepDashboard(all []*UserData, calendarType CalendarType) *SleepDashboard 
 		}),
 	)
 	sleepEfficiencyLineChart.SetXAxis(dates)
-
 	sleepEfficiencyLineChart.AddSeries("Actual", sleepEfficiency, charts.WithLineChartOpts(opts.LineChart{
 		Smooth: true,
 	}))
 
+	hrvDeepSleepLineChart := charts.NewLine()
+
+	hrvDeepSleepLineChart.SetGlobalOptions(
+		charts.WithTitleOpts(globalTitleSettings("Heat Rate Variability in Deep Sleep")),
+		globalChartSettings(calendarType, 1),
+		charts.WithLegendOpts(globalLegendSettings()),
+		charts.WithTooltipOpts(opts.Tooltip{
+			Trigger: "axis",
+			Show:    true,
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type: "inside",
+		}),
+	)
+	hrvDeepSleepLineChart.SetXAxis(dates)
+	hrvDeepSleepLineChart.AddSeries("Actual", heartRateVariability, charts.WithLineChartOpts(opts.LineChart{
+		Smooth: true,
+	}))
+
 	return &SleepDashboard{
-		AggregatedStackedBarChart: aggregatedStackedBarChart,
-		EfficiencyLineChart:       sleepEfficiencyLineChart,
-		Stats:                     &stats,
+		AggregatedStages:              aggregatedStackedBarChart,
+		Efficiency:                    sleepEfficiencyLineChart,
+		HeartRateVariabilityDeepSleep: hrvDeepSleepLineChart,
+		Stats:                         &stats,
 	}
 }
 

@@ -549,6 +549,7 @@ type UserData struct {
 	BMI                  *types.BMISeries
 	BodyFat              *types.BodyFatSeries
 	BodyWeight           *types.BodyWeightSeries
+	BreathingRate        *types.BreathingRate
 	CaloriesBMR          *types.CaloriesBMRSeries
 	Calories             *types.CaloriesSeries
 	Distance             *types.DistanceSeries
@@ -594,6 +595,7 @@ func (UserData) Headers() []string {
 	ret = append(ret, types.ElevationSeries{}.Headers()...)
 	ret = append(ret, types.SkinTemperature{}.Headers()...)
 	ret = append(ret, types.CoreTemperature{}.Headers()...)
+	ret = append(ret, types.BreathingRate{}.Headers()...)
 	ret = append(ret, types.OxygenSaturation{}.Headers()...)
 	ret = append(ret, types.CardioFitnessScore{}.Headers()...)
 	ret = append(ret, types.HeartRateVariabilityTimeSeries{}.Headers()...)
@@ -707,13 +709,18 @@ func (u *UserData) Values() []string {
 		ret = append(ret, make([]string, len(types.SkinTemperature{}.Headers()))...)
 	} else {
 		ret = append(ret, u.SkinTemperature.Values()...)
-
 	}
 
 	if u.CoreTemperature == nil {
 		ret = append(ret, make([]string, len(types.CoreTemperature{}.Headers()))...)
 	} else {
 		ret = append(ret, u.CoreTemperature.Values()...)
+	}
+
+	if u.BreathingRate == nil {
+		ret = append(ret, make([]string, len(types.BreathingRate{}.Headers()))...)
+	} else {
+		ret = append(ret, u.BreathingRate.Values()...)
 	}
 
 	if u.OxygenSaturation == nil {
