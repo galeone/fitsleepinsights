@@ -5,7 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/vertexai v0.6.0
 	github.com/foolin/goview v0.3.0
-	github.com/galeone/fitbit/v2 v2.0.1
+	github.com/galeone/fitbit/v2 v2.0.2
 	github.com/galeone/igor v1.0.10
 	github.com/galeone/rts v1.0.0
 	github.com/galeone/tcx v1.0.0

@@ -1016,7 +1016,8 @@ func (d *dumper) userBreathingRate(startDate, endDate *time.Time) (err error) {
 		timestep := types.BreathingRate{
 			BreathingRateTimePoint: t,
 			UserID:                 d.User.ID,
-			Date:                   t.DateTime.Time,
+			DateTime:               t.DateTime.Time,
+			BreathingRate:          t.Value.BreathingRate,
 		}
 
 		// No error = found
