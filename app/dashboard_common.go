@@ -31,6 +31,11 @@ const (
 const (
 	WeeklyCalendar CalendarType = iota
 	MonthlyCalendar
+	BiMonthlyCalendar
+	TriMonthlyCalendar
+	QuadriMonthlyCalendar
+	PentaMonthlyCalendar
+	HexaMonthlyCalendar
 	YearlyCalendar
 )
 
@@ -62,8 +67,12 @@ func min2ddhhmm(totalMin float64) string {
 func globalChartSettings(calendarType CalendarType, numYears int) charts.GlobalOpts {
 	var contentWidth int
 	switch calendarType {
-	case WeeklyCalendar, MonthlyCalendar:
+	case WeeklyCalendar, MonthlyCalendar, BiMonthlyCalendar, TriMonthlyCalendar:
 		contentWidth = minCalendarWidth
+	case QuadriMonthlyCalendar, PentaMonthlyCalendar:
+		contentWidth = minCalendarWidth + cellSize*2
+	case HexaMonthlyCalendar:
+		contentWidth = minCalendarWidth + cellSize*4
 	case YearlyCalendar:
 		contentWidth = maxCalendarWidth
 	}
@@ -95,11 +104,28 @@ func globalCalendarSettings(calendarType CalendarType, id, year int, coveredMont
 		}
 	} else if calendarType == YearlyCalendar {
 		calendarRange = append(calendarRange, fmt.Sprintf("%d", year))
-	} else if calendarType == WeeklyCalendar {
-		// Weekly calendar: get an activity date, extract the first day of the week and use it as the starting point
-		weekStartDay := GetStartDayOfWeek(firstActivityDate)
-		calendarRange = append(calendarRange, weekStartDay.Format(time.DateOnly))
-		calendarRange = append(calendarRange, weekStartDay.AddDate(0, 0, 7).Format(time.DateOnly))
+	} else {
+		// Get an activity date, extract the first day of the week and use it as the starting point
+		startDay := GetStartDayOfWeek(firstActivityDate)
+		if calendarType == WeeklyCalendar {
+			calendarRange = append(calendarRange, startDay.Format(time.DateOnly))
+			calendarRange = append(calendarRange, startDay.AddDate(0, 0, 7).Format(time.DateOnly))
+		} else {
+			months := 1
+			if calendarType == BiMonthlyCalendar {
+				months = 2
+			} else if calendarType == TriMonthlyCalendar {
+				months = 3
+			} else if calendarType == QuadriMonthlyCalendar {
+				months = 4
+			} else if calendarType == PentaMonthlyCalendar {
+				months = 5
+			} else if calendarType == HexaMonthlyCalendar {
+				months = 6
+			}
+			calendarRange = append(calendarRange, startDay.Format(time.DateOnly))
+			calendarRange = append(calendarRange, startDay.AddDate(0, months, 0).Format(time.DateOnly))
+		}
 	}
 
 	return &opts.Calendar{

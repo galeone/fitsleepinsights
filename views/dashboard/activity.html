@@ -194,10 +194,10 @@
                 </div>
             </div>
             {{ end }}
-            {{ if or (
-                or (gt $stat.TotalActiveZoneMinutes 0) (gt $stat.TotalMinutesInFatBurn 0)
-                or (gt $stat.TotalMinutesInCardio 0) (gt $stat.TotalMinutesInPeak)
-            ) }}
+            {{ if or
+                (or (gt $stat.TotalActiveZoneMinutes 0) (gt $stat.TotalMinutesInFatBurn 0))
+                (or (gt $stat.TotalMinutesInCardio 0) (gt $stat.TotalMinutesInPeak 0))
+            }}
             <hr>
             <div class="flex flex-row justify-between">
                 {{ if gt $stat.TotalActiveZoneMinutes 0 }}

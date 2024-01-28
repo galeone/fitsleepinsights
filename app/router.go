@@ -89,6 +89,7 @@ func NewRouter() (*echo.Echo, error) {
 	// The default dashboard is the monthly dashboard
 	router.GET("/dashboard", MonthlyDashboard(), RequireFitbit())
 	// The weekly dashboard remains, but it's ugly
+	router.GET("/dashboard/:startYear/:startMonth/:startDay/:endYear/:endMonth/:endDay", CustomDashboard(), RequireFitbit())
 	router.GET("/dashboard/week", WeeklyDashboard(), RequireFitbit())
 	router.GET("/dashboard/month", MonthlyDashboard(), RequireFitbit())
 	router.GET("/dashboard/year", YearlyDashboard(), RequireFitbit())

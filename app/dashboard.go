@@ -138,23 +138,8 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 
 		"isLoggedIn": true,
 
-		"isWeekly":  calendarType == WeeklyCalendar,
-		"isMonthly": calendarType == MonthlyCalendar,
-		"isYearly":  calendarType == YearlyCalendar,
-
 		"startDate": startDate.Format(time.DateOnly),
 		"endDate":   endDate.Format(time.DateOnly),
-
-		"nextWeek":  endDate.AddDate(0, 0, 1).Format(time.DateOnly),
-		"prevWeek":  startDate.AddDate(0, 0, -1).Format(time.DateOnly),
-		"nextMonth": endDate.AddDate(0, 1, 0).Format("2006-01"),
-		"prevMonth": startDate.AddDate(0, -1, 0).Format("2006-01"),
-		"nextYear":  endDate.AddDate(1, 0, 0).Format("2006"),
-		"prevYear":  startDate.AddDate(-1, 0, 0).Format("2006"),
-
-		"currentWeek":  startDate.Format(time.DateOnly),
-		"currentMonth": startDate.Format("2006-01"),
-		"currentYear":  startDate.Format("2006"),
 	})
 }
 
@@ -207,6 +192,7 @@ func WeeklyDashboard() echo.HandlerFunc {
 
 func MonthlyDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
+
 		var user *fitbit_pgdb.AuthorizedUser
 		if user, err = getUser(c); err != nil {
 			return err
@@ -243,5 +229,44 @@ func YearlyDashboard() echo.HandlerFunc {
 		}
 
 		return dashboard(c, user, startDate, endDate, YearlyCalendar)
+	}
+}
+
+func CustomDashboard() echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
+		var user *fitbit_pgdb.AuthorizedUser
+		if user, err = getUser(c); err != nil {
+			return err
+		}
+
+		var startDate, endDate time.Time
+		if startDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("startYear"), c.Param("startMonth"), c.Param("startDay"))); err != nil {
+			return err
+		}
+		if endDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("endYear"), c.Param("endMonth"), c.Param("endDay"))); err != nil {
+			return err
+		}
+
+		calendarType := MonthlyCalendar
+
+		if endDate.Sub(startDate) < 7*24*time.Hour {
+			calendarType = WeeklyCalendar
+		} else if endDate.Sub(startDate) < 31*24*time.Hour {
+			calendarType = MonthlyCalendar
+		} else if endDate.Sub(startDate) < 62*24*time.Hour {
+			calendarType = BiMonthlyCalendar
+		} else if endDate.Sub(startDate) < 93*24*time.Hour {
+			calendarType = TriMonthlyCalendar
+		} else if endDate.Sub(startDate) < 124*24*time.Hour {
+			calendarType = QuadriMonthlyCalendar
+		} else if endDate.Sub(startDate) < 155*24*time.Hour {
+			calendarType = PentaMonthlyCalendar
+		} else if endDate.Sub(startDate) < 186*24*time.Hour {
+			calendarType = HexaMonthlyCalendar
+		} else if endDate.Sub(startDate) < 365*24*time.Hour {
+			calendarType = YearlyCalendar
+		}
+
+		return dashboard(c, user, startDate, endDate, calendarType)
 	}
 }

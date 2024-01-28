@@ -85,7 +85,7 @@
             picker.on('select', (e) => {
                 let startDate = picker.getStartDate().format('YYYY/MM/DD');
                 let endDate = picker.getEndDate().format('YYYY/MM/DD');
-                window.location.href = "/dashboard?startDate=" + startDate + "&endDate=" + endDate
+                window.location.href = "/dashboard/" + startDate + "/" + endDate
             })
         }
     })

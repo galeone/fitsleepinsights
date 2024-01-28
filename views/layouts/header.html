@@ -2,8 +2,9 @@
     <nav>
         <ul class="menu {{if .isLoggedIn }}top-header{{else}}w-full{{ end }}">
             <li class="logo"><a href="/">FitSleepInsights</a></li>
-            <li class="item"><a href="#">Home</a></li>
-            <li class="item"><a href="#">About</a></li>
+            <li class="item"><a href="/dashboard">Home</a></li>
+            <li class="item"><a href="/about">About</a></li>
+            <!--
             <li class="item has-submenu">
                 <a tabindex="0">Services</a>
                 <ul class="submenu">
@@ -22,7 +23,8 @@
                 </ul>
             </li>
             <li class="item"><a href="#">Blog</a></li>
-            <li class="item"><a href="#">Contact</a>
+            -->
+            <li class="item"><a href="/contact">Contact</a>
             </li>
             {{ if .isLoggedIn }}
                 <li class="item button secondary"><a href="/logout">Log Out</a></li>
