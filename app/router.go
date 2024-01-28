@@ -88,8 +88,9 @@ func NewRouter() (*echo.Echo, error) {
 
 	// The default dashboard is the monthly dashboard
 	router.GET("/dashboard", MonthlyDashboard(), RequireFitbit())
-	// The weekly dashboard remains, but it's ugly
 	router.GET("/dashboard/:startYear/:startMonth/:startDay/:endYear/:endMonth/:endDay", CustomDashboard(), RequireFitbit())
+	// All the dashboard routes below are defined but already superseded by the one above
+	// decide with to do. Perhaps when clicking on some shortcut we can point to these, or link to them somehow...
 	router.GET("/dashboard/week", WeeklyDashboard(), RequireFitbit())
 	router.GET("/dashboard/month", MonthlyDashboard(), RequireFitbit())
 	router.GET("/dashboard/year", YearlyDashboard(), RequireFitbit())
@@ -97,13 +98,7 @@ func NewRouter() (*echo.Echo, error) {
 	router.GET("/dashboard/:year/:month", MonthlyDashboard(), RequireFitbit())
 	router.GET("/dashboard/:year", YearlyDashboard(), RequireFitbit())
 
-	router.GET("/chat", ChatWithData(), RequireFitbit())
-	router.GET("/chat/week", ChatWithData(), RequireFitbit())
-	router.GET("/chat/month", ChatWithData(), RequireFitbit())
-	router.GET("/chat/year", ChatWithData(), RequireFitbit())
-	router.GET("/chat/:year/:month/:day", ChatWithData(), RequireFitbit())
-	router.GET("/chat/:year/:month", ChatWithData(), RequireFitbit())
-	router.GET("/chat/:year", ChatWithData(), RequireFitbit())
+	router.GET("/chat/:startYear/:startMonth/:startDay/:endYear/:endMonth/:endDay", ChatWithData(), RequireFitbit())
 
 	router.Static("/static", "static")
 

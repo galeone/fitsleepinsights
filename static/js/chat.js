@@ -27,7 +27,7 @@ function appendMessage(message, user) {
     chatButton.removeAttribute("class");
     chatButton.classList.add("fa-regular", "fa-paper-plane");
 
-    // We suppose the chatlist already scrolled to the bottom
+    // We suppose the chat list already scrolled to the bottom
     // so we scroll it down a bit to show the new message
     chatMessages.scrollTop += 100;
 }
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function() {
         uri = 'wss:';
     }
     uri += '//' + loc.host;
-    uri += location.pathname.replace("/dashboard", "/chat");
+    uri += "/chat/" + document.getElementById("ranges").getAttribute("data-ranges").replaceAll("-", "/");
 
     ws = new WebSocket(uri)
 

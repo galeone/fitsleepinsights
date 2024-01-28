@@ -8,6 +8,8 @@
 <div class="text-center mt-3">
     <input type="text" id="date-range" value="{{.startDate}} - {{.endDate}}">
 </div>
+<!--the data-range is used by the chat to create the connection to the correct endpoint-->
+<div id="ranges" style="display: none" data-ranges="{{.startDate}}/{{.endDate}}"></div>
 
 {{include "dashboard/sleep"}}
 {{include "dashboard/activity"}}

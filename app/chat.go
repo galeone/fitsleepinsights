@@ -20,8 +20,11 @@ import (
 
 // https://ai.google.dev/models/gemini
 const ChatTemperature float32 = 0.3
-const TokenLength int = 4
+
+// The info in the link are actually wrong, the model is trained on a max sequence length of 30720
+// That's not the max token length, but the max sequence length
 const MaxToken int = 30720
+const MaxSequenceLength int = MaxToken
 
 func ChatWithData() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
@@ -35,14 +38,20 @@ func ChatWithData() echo.HandlerFunc {
 		if fetcher, err = NewFetcher(user); err != nil {
 			return err
 		}
+
 		var startDate, endDate time.Time
-		if startDate, endDate, err = startDateEndDateFromParams(c); err != nil {
+		if startDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("startYear"), c.Param("startMonth"), c.Param("startDay"))); err != nil {
+			return err
+		}
+		if endDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("endYear"), c.Param("endMonth"), c.Param("endDay"))); err != nil {
 			return err
 		}
 
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 
+		// AllData is wrong. We are putting too many data and the model is having a hard time.
+		// We should find a way to only send the information that we are also visualizing in the dashboard
 		var allData []*UserData
 		go func() {
 			defer wg.Done()
@@ -76,10 +85,11 @@ func ChatWithData() echo.HandlerFunc {
 
 		description := builder.String()
 
-		if len(description)/TokenLength > MaxToken {
+		// Truncate description if too long
+		if len(description) > MaxSequenceLength {
 			// Truncate description final parts
-			description = description[:MaxToken*TokenLength]
-			c.Logger().Warnf("Description too long, truncating to %d tokens", MaxToken)
+			description = description[:MaxSequenceLength]
+			c.Logger().Warnf("Description too long, truncating to a length of %d", MaxSequenceLength)
 		}
 
 		// For text-only input, use the gemini-pro model
