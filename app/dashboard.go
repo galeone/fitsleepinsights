@@ -142,6 +142,9 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 		"isMonthly": calendarType == MonthlyCalendar,
 		"isYearly":  calendarType == YearlyCalendar,
 
+		"startDate": startDate.Format(time.DateOnly),
+		"endDate":   endDate.Format(time.DateOnly),
+
 		"nextWeek":  endDate.AddDate(0, 0, 1).Format(time.DateOnly),
 		"prevWeek":  startDate.AddDate(0, 0, -1).Format(time.DateOnly),
 		"nextMonth": endDate.AddDate(0, 1, 0).Format("2006-01"),
