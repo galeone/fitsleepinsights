@@ -1,4 +1,4 @@
-FROM golang:1.21 AS builder
+FROM golang:1.22 AS builder
 WORKDIR /go/src/fitsleepingishts
 COPY . .
 RUN CGO_ENABLED=0 go build -o /go/bin/fitsleepingishts
