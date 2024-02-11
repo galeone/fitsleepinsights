@@ -32,9 +32,9 @@ func healthDashboard(all []*UserData, calendarType CalendarType) *HealthDashboar
 	var skinTemperature []opts.BarData
 	var breathingRate, heartRateVariability, restingHeartRate []opts.LineData
 	oxygenSaturation := map[string][]opts.LineData{
-		"average": []opts.LineData{},
-		"min":     []opts.LineData{},
-		"max":     []opts.LineData{},
+		"average": {},
+		"min":     {},
+		"max":     {},
 	}
 
 	var bmi, weight []opts.LineData
