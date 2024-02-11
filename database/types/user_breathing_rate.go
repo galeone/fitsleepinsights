@@ -5,9 +5,40 @@
 package types
 
 import (
-	pgdb "github.com/galeone/fitbit-pgdb"
-	"github.com/galeone/fitbit/types"
+	"strconv"
+	"time"
+
+	pgdb "github.com/galeone/fitbit-pgdb/v3"
+	"github.com/galeone/fitbit/v2/types"
 )
+
+type BreathingRate struct {
+	types.BreathingRateTimePoint
+	ID       int64               `igor:"primary_key"`
+	User     pgdb.AuthorizedUser `sql:"-"`
+	UserID   int64
+	DateTime time.Time
+	// BreathingRate is nested in a struct in the API,
+	// We expose its value as the column BreathingRate
+	Value         types.BreathingRateValue `sql:"-"`
+	BreathingRate float64
+}
+
+func (BreathingRate) Headers() []string {
+	return []string{
+		"BreathingRate",
+	}
+}
+
+func (f *BreathingRate) Values() []string {
+	return []string{
+		strconv.FormatFloat(f.Value.BreathingRate, 'f', 2, 64),
+	}
+}
+
+func (BreathingRate) TableName() string {
+	return "breathing_rate"
+}
 
 type BreathingRateTimePoint struct {
 	types.BreathingRateTimePoint

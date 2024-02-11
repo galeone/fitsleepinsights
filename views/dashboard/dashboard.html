@@ -1,0 +1,95 @@
+{{define "head"}}
+<script src="https://go-echarts.github.io/go-echarts-assets/assets/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.1/dist/index.umd.min.js"></script>
+<script src="/static/js/dark.js"></script>
+{{end}}
+
+{{define "content"}}
+<div class="text-center mt-3">
+    <input type="text" id="date-range" value="{{.startDate}} - {{.endDate}}">
+</div>
+<!--the data-range is used by the chat to create the connection to the correct endpoint-->
+<div id="ranges" style="display: none" data-ranges="{{.startDate}}/{{.endDate}}"></div>
+
+{{include "dashboard/sleep"}}
+{{include "dashboard/activity"}}
+{{include "dashboard/health"}}
+{{include "dashboard/chat"}}
+<script>
+    const date = new easepick.DateTime();
+    const thisMonth = () => {
+        const d1 = date.clone();
+        d1.setDate(1);
+
+        const d2 = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+        return [new easepick.DateTime(d1), new easepick.DateTime(d2)];
+    };
+    const thisYear = () => {
+        const d1 = date.clone();
+        d1.setDate(1);
+        d1.setMonth(0);
+
+        const d2 = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+        return [new easepick.DateTime(d1), new easepick.DateTime(d2)];
+    };
+
+    const lastMonth = () => {
+        const d1 = date.clone();
+        d1.setMonth(d1.getMonth() - 1);
+        d1.setDate(1);
+
+        const d2 = new Date(date.getFullYear(), date.getMonth(), 0);
+
+        return [new easepick.DateTime(d1), new easepick.DateTime(d2)];
+    };
+
+    const lastYear = () => {
+        const d1 = date.clone();
+        d1.setFullYear(d1.getFullYear() - 1);
+        d1.setMonth(0);
+        d1.setDate(1);
+
+        const d2 = new Date(date.getFullYear(), date.getMonth(), 0);
+
+        return [new easepick.DateTime(d1), new easepick.DateTime(d2)];
+    };
+    const picker = new easepick.create({
+        element: "#date-range",
+        css: [
+            "https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.1/dist/index.css",
+            "/static/css/calendar-override.css"
+        ],
+        zIndex: 10,
+        plugins: [
+            "RangePlugin",
+            "PresetPlugin"
+        ],
+        PresetPlugin: {
+            position: "left",
+            customPreset: {
+                "Last 7 days": [
+                    new easepick.DateTime(new Date().setDate(new Date().getDate() - 7)),
+                    new easepick.DateTime()
+                ],
+                "Last 30 days": [
+                    new easepick.DateTime(new Date().setDate(new Date().getDate() - 30)),
+                    new easepick.DateTime()
+                ],
+                "This month": thisMonth(),
+                "Last month": lastMonth(),
+                "This year": thisYear(),
+                "Last year": lastYear(),
+            }
+        },
+        setup(picker) {
+            picker.on('select', (e) => {
+                let startDate = picker.getStartDate().format('YYYY/MM/DD');
+                let endDate = picker.getEndDate().format('YYYY/MM/DD');
+                window.location.href = "/dashboard/" + startDate + "/" + endDate
+            })
+        }
+    })
+</script>
+{{end}}

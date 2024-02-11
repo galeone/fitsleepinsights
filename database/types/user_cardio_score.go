@@ -8,20 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	pgdb "github.com/galeone/fitbit-pgdb"
-	"github.com/galeone/fitbit/types"
+	pgdb "github.com/galeone/fitbit-pgdb/v3"
+	"github.com/galeone/fitbit/v2/types"
 )
-
-type BreathingRate struct {
-	types.BreathingRate
-	ID     int64               `igor:"primary_key"`
-	User   pgdb.AuthorizedUser `sql:"-"`
-	UserID int64
-}
-
-func (BreathingRate) TableName() string {
-	return "breathing_rate"
-}
 
 type CardioFitnessScore struct {
 	types.CardioScoreTimePoint

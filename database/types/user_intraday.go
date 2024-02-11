@@ -7,8 +7,8 @@ package types
 import (
 	"time"
 
-	pgdb "github.com/galeone/fitbit-pgdb"
-	"github.com/galeone/fitbit/types"
+	pgdb "github.com/galeone/fitbit-pgdb/v3"
+	"github.com/galeone/fitbit/v2/types"
 )
 
 type CaloriesSeriesIntraday struct {

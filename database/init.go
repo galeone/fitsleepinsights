@@ -7,14 +7,10 @@ package database
 
 import (
 	_ "embed"
-	"fmt"
-	"os"
 
 	"github.com/galeone/igor"
 	_ "github.com/joho/godotenv/autoload"
 )
-
-var _db *igor.Database
 
 var (
 	//go:embed schema/user.sql
@@ -61,20 +57,26 @@ var (
 
 	//go:embed schema/alter.sql
 	alter string
+
+	//go:embed schema/ml.sql
+	ml string
 )
 
 func init() {
+	// Database instance only local to this init function, used to initialize the database and the application startup.
+	// The global database instance is initialized in app/globals.go.
+	var db *igor.Database
 	var err error
 
-	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_NAME"))
-	if _db, err = igor.Connect(connectionString); err != nil {
+	if db, err = igor.Connect(_connectionString); err != nil {
 		panic(err.Error())
 	}
+	defer db.DB().Close()
 
 	//logger := log.New(os.Stdout, "igor: ", log.LUTC)
-	//_db.Log(logger)
+	//db.Log(logger)
 
-	tx := _db.Begin()
+	tx := db.Begin()
 
 	// There's only one dependency between sql files: user_hr_timeseries.sql
 	// uses a table defined in user_activity.sql.
@@ -160,12 +162,12 @@ func init() {
 		panic(err.Error())
 	}
 
+	if err = tx.Exec(ml); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
 	if err = tx.Commit(); err != nil {
 		panic(err.Error())
 	}
-}
-
-// Get returns the valid instance to the *igor.Database
-func Get() *igor.Database {
-	return _db
 }

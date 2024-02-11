@@ -1,4 +1,4 @@
-# PredictBit (Sleepbit)
+# Fit Sleep Insights
 
 Web application that connects with your [Fitbit](https://www.fitbit.com/) account and tries to do explainable predictions of your sleep quality - using all the available data.
 
@@ -33,17 +33,17 @@ The web application, together with the `client` and the `database` asks the user
 2. Create the user and the database
 
 ```bash
-sudo -i -u postgres createuser -U postgres sleepbit
-sudo -i -u postgres createdb -U postgres sleepbit sleepbit
+sudo -i -u postgres createuser -U postgres fitsleepinsights
+sudo -i -u postgres createdb -U postgres fitsleepinsights fitsleepinsights
 ```
 
 3. Grant the create privilege (required from PostgreSQL 15+):
 
 ```
-psql -U postgres -d sleepbit -c "GRANT USAGE, CREATE ON SCHEMA public TO sleepbit;"
+psql -U postgres -d fitsleepinsights -c "GRANT USAGE, CREATE ON SCHEMA public TO fitsleepinsights;"
 ```
 
-Done. On startup sleepbit creates the schema if not present.
+Done. On startup the application creates the schema if not present.
 
 
 ### Running
@@ -54,7 +54,7 @@ Yup, running is important.
 go run main.go
 ```
 
-Or you can install it with `go install` and execute `sleepbit`.
+Or you can install it with `go install` and execute `fitsleepinsights`.
 
 The application can be configured via `.env` file.
 
@@ -71,11 +71,19 @@ FITBIT_CLIENT_SECRET=""
 FITBIT_REDIRECT_URL=""
 
 # Use the same values used in the Database setup section
-DB_USER=sleepbit
-DB_PASS=sleepbit
-DB_NAME=sleepbit
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=fitsleepinsights
+DB_PASS=fitsleepinsights
+DB_NAME=fitsleepinsights
+
 
 # Web application settings
-DOMAIN=sleepbit.com
+DOMAIN=fitsleepinsights.app
 PORT=8989
+
+# Vertex AI
+VAI_LOCATION="europe-west6"
+VAI_PROJECT_ID="project id"
+VAI_SERVICE_ACCOUNT_KEY="full path"
 ```

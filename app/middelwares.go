@@ -5,11 +5,11 @@
 package app
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
-	"github.com/galeone/fitbit"
-	"github.com/galeone/fitbit/types"
+	"github.com/galeone/fitbit/v2"
+	"github.com/galeone/fitbit/v2/types"
 	"github.com/labstack/echo/v4"
 )
 
@@ -23,46 +23,42 @@ func RequireFitbit() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if c.Get("fitbit") == nil {
-				authorizer := fitbit.NewAuthorizer(_db, _clientID, _clientSecret, _redirectURL)
+				// The authorizing cookie handling is the same that we do in /redirect
+				// (see routes_oauth2.go).
+				// We do it also here because RequireFitbit is the middleware that
+				// is used in all the routes that require the fitbit API.
+				// And we check that if authorizing is set, than we should do the auth + redirect flow
+				// for some reason (maybe the user has deleted the cookies).
 
-				// If there's the auth cookie, we could be in the
-				// authorization phase, and thus we set it.
-				// Anyway, if it's not present, it's not a problem IF
-				// and only IF there's the "token" cookie that contains
-				// the access token.
-				// At least one of these 2 conditions should be met
-				var condition bool
+				authorizer := fitbit.NewAuthorizer(_db, _clientID, _clientSecret, _redirectURL)
 				var cookie *http.Cookie
 				if cookie, err = c.Cookie("authorizing"); err == nil {
 					var authorizing *types.AuthorizingUser
 					if authorizing, err = _db.AuthorizingUser(cookie.Value); err != nil {
-						fmt.Printf("[RequireFitbit] _db.AuthorizingUser: %s", err)
+						log.Printf("[RequireFitbit] _db.AuthorizingUser: %s", err)
 						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 					}
 					authorizer.SetAuthorizing(authorizing)
-					condition = true
-				}
-
-				// Authorization token (after exchange)
-				if cookie, err = c.Cookie("token"); err == nil {
-					var dbToken *types.AuthorizedUser
-					if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
-						fmt.Printf("[RequireFitbit] _db.AuthorizedUser: %s", err)
-						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
-					}
-					if dbToken.UserID == "" {
-						fmt.Printf("Invalid token. Please login again")
-						return c.Redirect(http.StatusTemporaryRedirect, "/auth")
-					}
-					authorizer.SetToken(dbToken)
-					condition = true
-				}
-
-				if !condition {
 					// This route requires the token or the auth cookie
 					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 				}
 
+				// Authorization token (after exchange)
+				if cookie, err = c.Cookie("token"); err != nil {
+					// No cookies set
+					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
+				}
+
+				var dbToken *types.AuthorizedUser
+				if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
+					log.Printf("[RequireFitbit] _db.AuthorizedUser: %s", err)
+					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
+				}
+				if dbToken.UserID == "" {
+					log.Println(err)
+					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
+				}
+				authorizer.SetToken(dbToken)
 				c.Set("fitbit", authorizer)
 			}
 			return next(c)

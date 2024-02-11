@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	pgdb "github.com/galeone/fitbit-pgdb"
-	"github.com/galeone/fitbit/types"
+	pgdb "github.com/galeone/fitbit-pgdb/v3"
+	"github.com/galeone/fitbit/v2/types"
 )
 
 type SleepStageDetail struct {
@@ -49,8 +49,8 @@ type SleepLog struct {
 
 func (SleepLog) Headers() []string {
 	return []string{
-		"Duration",
-		"Efficiency",
+		"SleepDuration",
+		"SleepEfficiency",
 		"MinutesAfterWakeup",
 		"MinutesAsleep",
 		"MinutesAwake",

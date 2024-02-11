@@ -5,16 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/galeone/fitbit"
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb"
-	fitbit_types "github.com/galeone/fitbit/types"
-	"github.com/galeone/sleepbit/database/types"
+	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
+	"github.com/galeone/fitbit/v2"
+	fitbit_types "github.com/galeone/fitbit/v2/types"
+	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/labstack/echo/v4"
 )
 
@@ -548,6 +549,7 @@ type UserData struct {
 	BMI                  *types.BMISeries
 	BodyFat              *types.BodyFatSeries
 	BodyWeight           *types.BodyWeightSeries
+	BreathingRate        *types.BreathingRate
 	CaloriesBMR          *types.CaloriesBMRSeries
 	Calories             *types.CaloriesSeries
 	Distance             *types.DistanceSeries
@@ -593,6 +595,7 @@ func (UserData) Headers() []string {
 	ret = append(ret, types.ElevationSeries{}.Headers()...)
 	ret = append(ret, types.SkinTemperature{}.Headers()...)
 	ret = append(ret, types.CoreTemperature{}.Headers()...)
+	ret = append(ret, types.BreathingRate{}.Headers()...)
 	ret = append(ret, types.OxygenSaturation{}.Headers()...)
 	ret = append(ret, types.CardioFitnessScore{}.Headers()...)
 	ret = append(ret, types.HeartRateVariabilityTimeSeries{}.Headers()...)
@@ -602,7 +605,8 @@ func (UserData) Headers() []string {
 
 func (u *UserData) Values() []string {
 	ret := []string{
-		u.Date.Format("2006-01-02"),
+		// Date format required by Vertex AI
+		u.Date.Format(time.RFC3339),
 	}
 
 	if u.Activities == nil {
@@ -705,13 +709,18 @@ func (u *UserData) Values() []string {
 		ret = append(ret, make([]string, len(types.SkinTemperature{}.Headers()))...)
 	} else {
 		ret = append(ret, u.SkinTemperature.Values()...)
-
 	}
 
 	if u.CoreTemperature == nil {
 		ret = append(ret, make([]string, len(types.CoreTemperature{}.Headers()))...)
 	} else {
 		ret = append(ret, u.CoreTemperature.Values()...)
+	}
+
+	if u.BreathingRate == nil {
+		ret = append(ret, make([]string, len(types.BreathingRate{}.Headers()))...)
+	} else {
+		ret = append(ret, u.BreathingRate.Values()...)
 	}
 
 	if u.OxygenSaturation == nil {
@@ -741,7 +750,8 @@ func (u *UserData) Values() []string {
 	return ret
 }
 
-func (f *fetcher) Fetch(date time.Time) UserData {
+// FetchByDate fetches all the user data for the provided date.
+func (f *fetcher) FetchByDate(date time.Time) *UserData {
 	userData := UserData{
 		Date: date,
 	}
@@ -770,42 +780,110 @@ func (f *fetcher) Fetch(date time.Time) UserData {
 	userData.CardioFitnessScore, _ = f.userCardioFitnessScore(date)
 	userData.HeartRateVariability, _ = f.userHeartRateVariability(date)
 	userData.SleepLog, _ = f.userSleepLogList(date)
+	return &userData
+}
+
+// FetchByRange fetches all the user data between startDate and endDate.
+func (f *fetcher) FetchByRange(startDate, endDate time.Time) []*UserData {
+	// TODO refactor the fetcher private methods to accept a range instead of a single date
+	// and use that methods here
+	var userData []*UserData
+	currentDate := startDate
+	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
+		userData = append(userData, f.FetchByDate(currentDate))
+		currentDate = currentDate.AddDate(0, 0, 1)
+	}
 	return userData
 }
 
-type FetchAllStrategy int
+type UserActivityTypes struct {
+	ID   int64
+	Name string
+}
+
+// UserActivityTypes fetches all the user activities types.
+// e.g. Weights, Walk, Run, etc.
+func (f *fetcher) UserActivityTypes() ([]UserActivityTypes, error) {
+	var activities []UserActivityTypes
+	if err := _db.Model(types.ActivityLog{}).Select("distinct(activity_type_id) as id, activity_name as name").Where(`user_id = ?`, f.user.ID).Scan(&activities); err != nil {
+		return nil, err
+	}
+	return activities, nil
+}
+
+// AllActivityCatalog fetches all the activities types.
+// This is a global value, not user specific.
+func (f fetcher) AllActivityCatalog() ([]types.Category, error) {
+	var categories []types.Category
+	if err := _db.Model(types.Category{}).Scan(&categories); err != nil {
+		return nil, err
+	}
+
+	for id, category := range categories {
+		var activities []types.ActivityDescription
+		// We can ignore the errors because there could be categories without activities
+		_ = _db.Model(types.ActivityDescription{}).Where(&types.ActivityDescription{Category: category.ID}).Scan(&activities)
+		categories[id].Activities = activities
+
+		var subCategories []types.SubCategory
+		_ = _db.Model(types.SubCategory{}).Where(&types.SubCategory{Category: category.ID}).Scan(&subCategories)
+
+		for subID, subCategory := range subCategories {
+			var activities []types.ActivityDescription
+			_ = _db.Model(types.ActivityDescription{}).Where(&types.ActivityDescription{Subcategory: subCategory.ID}).Scan(&activities)
+			subCategories[subID].Activities = activities
+		}
+
+		categories[id].SubCategories = subCategories
+	}
+
+	return categories, nil
+}
+
+type FetchStrategy int
 
 const (
-	FetchAllWithSleepLog FetchAllStrategy = iota
+	FetchAllWithSleepLog FetchStrategy = iota
 	FetchAllWithActivityLog
+	FetchAll
 )
 
-// FetchAll fetches all the user data. It uses the oldest sleep log date as first date
-// and yesterday as last date.
-func (f *fetcher) FetchAll(strategy FetchAllStrategy) ([]*UserData, error) {
-	// Get all the dates
-	var dates []time.Time
+// Fetch fetches all the user data.
+// If strategy is FetchAllWithSleepLog it uses the oldest sleep log date as first date.
+// If strategy is FetchAllWithActivityLog it uses the oldest activity log date as first date.
+// If strategy is Fetch it uses the oldest date between the oldest sleep log date and the oldest activity log date.
+// In any case, the last date is yesterday.
+func (f *fetcher) Fetch(strategy FetchStrategy) ([]*UserData, error) {
+	// Get the oldestLogDate
+	var oldestLogDate time.Time
 	yesterday := time.Now().AddDate(0, 0, -1).Truncate(time.Hour * 24)
 	switch strategy {
 	case FetchAllWithSleepLog:
-		if err := _db.Model(types.SleepLog{}).Select("distinct date(date_of_sleep) as d").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Order("d desc").Scan(&dates); err != nil {
+		if err := _db.Model(types.SleepLog{}).Select("min(date(date_of_sleep))").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestLogDate); err != nil {
 			return nil, err
 		}
 	case FetchAllWithActivityLog:
-		if err := _db.Model(types.ActivityLog{}).Select("distinct date(start_time) as d").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Order("d desc").Scan(&dates); err != nil {
+		if err := _db.Model(types.ActivityLog{}).Select("min(date(start_time))").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestLogDate); err != nil {
 			return nil, err
 		}
-	}
-	if len(dates) == 0 {
-		return nil, errors.New("user has zero activities")
+	case FetchAll:
+		var oldestSleepDate time.Time
+		var oldestActivityDate time.Time
+		if err := _db.Model(types.SleepLog{}).Select("min(date(date_of_sleep))").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestSleepDate); err != nil {
+			return nil, err
+		}
+		if err := _db.Model(types.ActivityLog{}).Select("min(date(start_time))").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestActivityDate); err != nil {
+			return nil, err
+		}
+		if oldestSleepDate.Before(oldestActivityDate) {
+			oldestLogDate = oldestSleepDate
+		} else {
+			oldestLogDate = oldestActivityDate
+		}
+
 	}
 
-	var userDataList []*UserData
-	for _, date := range dates {
-		userData := f.Fetch(date)
-		userDataList = append(userDataList, &userData)
-	}
-	return userDataList, nil
+	return f.FetchByRange(oldestLogDate, yesterday), nil
 }
 
 func Fetch() echo.HandlerFunc {
@@ -824,26 +902,19 @@ func Fetch() echo.HandlerFunc {
 		}
 
 		if fetcher, err := NewFetcher(&user); err == nil {
-			yesterday := time.Now().Add(-time.Duration(24) * time.Hour).Truncate(time.Hour * 24)
-
-			userData := fetcher.Fetch(yesterday)
-			fmt.Println(userData.Date)
-			fmt.Println(userData.HeartRate)
-			fmt.Println(userData.HeartRateVariability)
-
-			if all, err := fetcher.FetchAll(FetchAllWithSleepLog); err == nil {
+			if all, err := fetcher.Fetch(FetchAllWithSleepLog); err == nil {
 				if csv, err := userDataToCSV(all); err == nil {
-					// Save completecsv to file
+					// Save complete csv to file
 					file, _ := os.Create("complete.csv")
 					io.WriteString(file, csv)
 				} else {
-					fmt.Println(err)
+					log.Println(err)
 				}
 			} else {
-				fmt.Println(err)
+				log.Println(err)
 			}
 		} else {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 		}
 
 		return err

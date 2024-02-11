@@ -5,12 +5,12 @@
 package app
 
 import (
-	"fmt"
+	"log"
 	"time"
 
-	"github.com/galeone/fitbit"
-	"github.com/galeone/fitbit/client"
-	"github.com/galeone/fitbit/types"
+	"github.com/galeone/fitbit/v2"
+	"github.com/galeone/fitbit/v2/client"
+	"github.com/galeone/fitbit/v2/types"
 	"github.com/galeone/tcx"
 	"github.com/labstack/echo/v4"
 )
@@ -38,17 +38,17 @@ func TestGET() echo.HandlerFunc {
 
 		for _, activity := range logs.Activities {
 			if activity.TcxLink != "" {
-				fmt.Println("GPS tracked activity")
+				log.Println("GPS tracked activity")
 				var tcxDB *tcx.TCXDB
 				if tcxDB, err = fb.UserActivityTCX(activity.LogID); err != nil {
 					return
 				}
 				if tcxDB.Acts != nil {
-					fmt.Println("activities found")
+					log.Println("activities found")
 
 					for _, v := range tcxDB.Acts.Act {
 						for i, lap := range v.Laps {
-							fmt.Printf("Lap: %d.\n%v\n", i, lap)
+							log.Printf("Lap: %d.\n%v\n", i, lap)
 						}
 					}
 				}
@@ -59,54 +59,54 @@ func TestGET() echo.HandlerFunc {
 		if series, err = fb.UserActivityCaloriesTimeseries(&yesterday, &now); err != nil {
 			return
 		}
-		fmt.Println("yesterday - today")
+		log.Println("yesterday - today")
 		for day := range series.TimeSeries {
-			fmt.Println(series.TimeSeries[day])
+			log.Println(series.TimeSeries[day])
 		}
 
-		fmt.Println("only today")
+		log.Println("only today")
 		if series, err = fb.UserActivityCaloriesTimeseries(&now, nil); err != nil {
 			return
 		}
 		for day := range series.TimeSeries {
-			fmt.Println(series.TimeSeries[day])
+			log.Println(series.TimeSeries[day])
 		}
 
 		var intradayCalories *types.CaloriesSeriesIntraday
 		twentyMinAgo := now.Add(-20 * time.Minute)
 		if intradayCalories, err = fb.UserCaloriesIntraday(&twentyMinAgo, &now); err != nil { //, &now); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
-		fmt.Println(intradayCalories)
+		log.Println(intradayCalories)
 
 		var brIntraday *types.BreathingRateIntraday
 		if brIntraday, err = fb.UserBreathingRateIntraday(&now, nil); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
-		fmt.Println(brIntraday)
+		log.Println(brIntraday)
 
 		var hrIntraday *types.HeartRateIntraday
 		if hrIntraday, err = fb.UserHeartRateIntraday(&now, nil); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
-		fmt.Println(hrIntraday)
+		log.Println(hrIntraday)
 
 		var hrvIntraday *types.HeartRateVariabilityIntraday
 		if hrvIntraday, err = fb.UserHeartRateVariabilityIntraday(&now, nil); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return err
 		}
-		fmt.Println(hrvIntraday)
+		log.Println(hrvIntraday)
 
 		var spo2Intraday *types.OxygenSaturationIntraday
 		if spo2Intraday, err = fb.UserOxygenSaturationIntraday(&now, nil); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return err
 		}
-		fmt.Println(spo2Intraday)
+		log.Println(spo2Intraday)
 
 		return nil
 	}

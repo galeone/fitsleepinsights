@@ -10,13 +10,14 @@ package app
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/galeone/fitbit"
-	"github.com/galeone/fitbit/types"
-	"github.com/galeone/sleepbit/database"
+	"github.com/galeone/fitbit/v2"
+	"github.com/galeone/fitbit/v2/types"
+	"github.com/galeone/fitsleepinsights/database"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -52,9 +53,19 @@ func Auth() func(echo.Context) error {
 			Value: authorizer.CSRFToken().String(),
 			// No Expires = Session cookie
 			HttpOnly: true,
+			Path:     "/",
 		})
 
-		if err = _db.InsertAuhorizingUser(&authorizing); err != nil {
+		// Every time we are in /auth, we want to remove the token cookie
+		if _, err = c.Cookie("token"); err == nil {
+			c.SetCookie(&http.Cookie{
+				Name:   "token",
+				MaxAge: -1,
+				Path:   "/",
+			})
+		}
+
+		if err = _db.InsertAuthorizingUser(&authorizing); err != nil {
 			return err
 		}
 
@@ -72,10 +83,20 @@ func Auth() func(echo.Context) error {
 // The access token univocally identifies the user. The token expires when the
 // access token expires.
 func Redirect() func(echo.Context) error {
-	return func(c echo.Context) error {
-		// We can assume authorizer is present and valid
-		// because this route is protected by the RequireFitbit middleware
-		authorizer := c.Get("fitbit").(*fitbit.Authorizer)
+	return func(c echo.Context) (err error) {
+		authorizer := fitbit.NewAuthorizer(_db, _clientID, _clientSecret, _redirectURL)
+		var cookie *http.Cookie
+		if cookie, err = c.Cookie("authorizing"); err == nil {
+			var authorizing *types.AuthorizingUser
+			if authorizing, err = _db.AuthorizingUser(cookie.Value); err != nil {
+				log.Printf("[RequireFitbit] _db.AuthorizingUser: %s", err)
+				return c.Redirect(http.StatusTemporaryRedirect, "/auth")
+			}
+			authorizer.SetAuthorizing(authorizing)
+		} else {
+			// No cookies set
+			return c.Redirect(http.StatusTemporaryRedirect, "/auth")
+		}
 
 		state := c.QueryParam("state")
 		if state != authorizer.CSRFToken().String() {
@@ -85,7 +106,6 @@ func Redirect() func(echo.Context) error {
 
 		code := c.QueryParam("code")
 		var token *types.AuthorizedUser
-		var err error
 		if token, err = authorizer.ExchangeAuthorizationCode(code); err != nil {
 			c.Logger().Warnf("ExchangeAuthorizationCode: %s", err.Error())
 			return c.Redirect(http.StatusTemporaryRedirect, "/error?status=exchange")
@@ -102,20 +122,21 @@ func Redirect() func(echo.Context) error {
 		if err = _db.Notify(database.NewUsersChannel, token.AccessToken); err != nil {
 			c.Logger().Error("Unable to sent new user creation notification")
 		}
-		cookie := http.Cookie{
+		cookie = &http.Cookie{
 			Name:     "token",
 			Value:    token.AccessToken,
 			Domain:   _domain,
 			Expires:  time.Now().Add(time.Second * time.Duration(token.ExpiresIn)),
 			HttpOnly: true,
 		}
-		c.SetCookie(&cookie)
+		c.SetCookie(cookie)
 
 		// Unset the authorizing cookie
 		c.SetCookie(&http.Cookie{
 			Name:     "authorizing",
 			HttpOnly: true,
 			MaxAge:   -1,
+			Path:     "/",
 		})
 		return c.Redirect(http.StatusTemporaryRedirect, "/dashboard")
 	}

@@ -1,0 +1,285 @@
+<div>
+    <a href="#activity" class="toggle text-xl">
+        {{include "dashboard/arrow"}} Activity
+    </a>
+</div>
+<div id="activity" class="toggle-content is-visible">
+    <div id="daily-steps" class="box-wrapper">
+        <div class="box">
+            {{.dailyStepsCountChart}}
+        </div>
+        <div class="box">
+            <!-- stats -->
+            {{ if gt .dailyStepsStatistics.TotalSteps 0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.TotalSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Total Steps
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ .dailyStepsStatistics.AverageSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Average Steps
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if gt .dailyStepsStatistics.TotalDistance 0.0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.TotalDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Total Distance
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ .dailyStepsStatistics.AverageDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Average Distance
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if gt .dailyStepsStatistics.TotalCalories 0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.TotalCalories }}
+                    </div>
+                    <div class="text-sm">
+                        Total Calories 🔥
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ .dailyStepsStatistics.AverageCalories }}
+                    </div>
+                    <div class="text-sm">
+                        Average Calories 🔥
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            <hr>
+            <div class="flex flex-row justify-between">
+                {{ if gt .dailyStepsStatistics.MaxSteps 0 }}
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.MaxSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Max Steps
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt .dailyStepsStatistics.MaxDistance 0.0 }}
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold">
+                        {{ .dailyStepsStatistics.MaxDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Max Distance
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt .dailyStepsStatistics.MaxCalories 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ .dailyStepsStatistics.MaxCalories }}
+                    </div>
+                    <div class="text-sm">
+                        Max Calories 🔥
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+        </div>
+    </div>
+    {{$activityStats := .activityStatistics}}
+    {{ range $activityName, $activityChart := .activityCalendars }}
+    <div id="activity-{{$activityName}}" class="box-wrapper">
+        <div class="box">
+                {{$activityChart}}
+        </div>
+        <div class="box">
+            <!-- stats -->
+            {{ $stat := index $activityStats $activityName }}
+            {{ if gt $stat.TotalTime 0.0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm $stat.TotalTime }}
+                    </div>
+                    <div class="text-sm">
+                        Total Time
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ min2ddhhmm $stat.AverageTime }}
+                    </div>
+                    <div class="text-sm">
+                        Average Time
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if gt $stat.TotalDistance 0.0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.TotalDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Total Distance
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ $stat.AverageDistance }}
+                    </div>
+                    <div class="text-sm">
+                        Average Distance
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if gt $stat.TotalCalories 0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.TotalCalories }}
+                    </div>
+                    <div class="text-sm">
+                        Total Calories 🔥
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ $stat.AverageCalories }}
+                    </div>
+                    <div class="text-sm">
+                        Average Calories 🔥
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if gt $stat.TotalSteps 0 }}
+            <div class="flex flex-row justify-between">
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.TotalSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Total Steps
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ $stat.AverageSteps }}
+                    </div>
+                    <div class="text-sm">
+                        Average Steps
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+            {{ if or
+                (or (gt $stat.TotalActiveZoneMinutes 0) (gt $stat.TotalMinutesInFatBurn 0))
+                (or (gt $stat.TotalMinutesInCardio 0) (gt $stat.TotalMinutesInPeak 0))
+            }}
+            <hr>
+            <div class="flex flex-row justify-between">
+                {{ if gt $stat.TotalActiveZoneMinutes 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm $stat.TotalActiveZoneMinutes }}
+                    </div>
+                    <div class="text-sm">
+                        Total Active Minutes
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.TotalMinutesInFatBurn 0 }}
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm (float64 $stat.TotalMinutesInFatBurn) }}
+                    </div>
+                    <div class="text-sm">
+                        Total Time in Fat Burn
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.TotalMinutesInCardio 0 }}
+                <div class="flex flex-col mr-2">
+                    <div class="text-2xl font-bold">
+                        {{ min2ddhhmm (float64 $stat.TotalMinutesInCardio) }}
+                    </div>
+                    <div class="text-sm">
+                        Total Time in Cardio
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.TotalMinutesInPeak 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ min2ddhhmm (float64 $stat.TotalMinutesInPeak) }}
+                    </div>
+                    <div class="text-sm">
+                        Total Time in Peak
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+            {{ end }}
+            {{ if or (
+                or (gt $stat.MaxElevationGain 0) (gt $stat.MaxPace 0.0)
+                (gt $stat.MaxSpeed 0.0)) }}
+            <hr>
+            <div class="flex flex-row justify-between">
+                {{ if gt $stat.MaxElevationGain 0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.MaxElevationGain }}
+                    </div>
+                    <div class="text-sm">
+                        Max Elevation Gain
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.MaxPace 0.0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold">
+                        {{ $stat.MaxPace }}
+                    </div>
+                    <div class="text-sm">
+                        Max Pace
+                    </div>
+                </div>
+                {{ end }}
+                {{ if gt $stat.MaxSpeed 0.0 }}
+                <div class="flex flex-col">
+                    <div class="text-2xl font-bold text-right">
+                        {{ $stat.MaxSpeed }}
+                    </div>
+                    <div class="text-sm">
+                        Max Speed
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+    </div>
+    {{ end }}
+</div>

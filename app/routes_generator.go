@@ -11,12 +11,13 @@ package app
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/galeone/fitbit"
+	"github.com/galeone/fitbit/v2"
 	"github.com/galeone/rts"
 	"github.com/labstack/echo/v4"
 
@@ -25,15 +26,15 @@ import (
 
 const APIURL string = "https://api.fitbit.com/1"
 
-func UserAPI(userID, endpoint string) string {
+func userAPI(userID, endpoint string) string {
 	return fmt.Sprintf("%s/user/%s/%s", APIURL, userID, strings.TrimLeft(endpoint, "/"))
 }
 
-func UserAPIDot2(userID, endpoint string) string {
+func userAPIDot2(userID, endpoint string) string {
 	return fmt.Sprintf("%s.2/user/%s/%s", APIURL, userID, strings.TrimLeft(endpoint, "/"))
 }
 
-func FitbitAPI(endpoint string) string {
+func fitbitAPI(endpoint string) string {
 	return fmt.Sprintf("%s/%s", APIURL, strings.TrimLeft(endpoint, "/"))
 }
 
@@ -250,7 +251,7 @@ func GenerateTypes() echo.HandlerFunc {
 		}
 
 		if len(paths) != len(isUser) || len(paths) != len(uriArgs) {
-			fmt.Println(len(paths), len(isUser), len(uriArgs))
+			log.Println(len(paths), len(isUser), len(uriArgs))
 			panic("check the config")
 		}
 		if len(paths) == 0 {
@@ -278,14 +279,14 @@ func GenerateTypes() echo.HandlerFunc {
 			var dest string
 			if userReq {
 				if strings.Contains(path, "/sleep/") {
-					dest = UserAPIDot2(*user, fmt.Sprintf(path, args...))
+					dest = userAPIDot2(*user, fmt.Sprintf(path, args...))
 				} else {
-					dest = UserAPI(*user, fmt.Sprintf(path, args...))
+					dest = userAPI(*user, fmt.Sprintf(path, args...))
 				}
 			} else {
-				dest = FitbitAPI(fmt.Sprintf(path, args...))
+				dest = fitbitAPI(fmt.Sprintf(path, args...))
 			}
-			fmt.Println(dest)
+			log.Println(dest)
 			if res, err = req.Get(dest); err != nil {
 				return err
 			}
@@ -306,15 +307,15 @@ func GenerateTypes() echo.HandlerFunc {
 				genericSb.WriteString(fmt.Sprintf("// %s\n", path))
 				genericSb.Write(pack)
 			}
-			fmt.Println(bodyString)
+			log.Println(bodyString)
 			time.Sleep(time.Second * 1)
 		}
 
 		if _, err = userFile.WriteString(userSb.String()); err != nil {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 		}
 		if _, err = genericFile.WriteString(genericSb.String()); err != nil {
-			fmt.Println(err.Error())
+			log.Println(err.Error())
 		}
 		return
 	}
