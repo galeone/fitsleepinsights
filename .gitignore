@@ -24,8 +24,6 @@ go.work
 fitsleepinsights
 __debug_bin*
 
-.vscode/
-
 
 # Ignore generated credentials from google-github-actions/auth
 gha-creds-*.json
