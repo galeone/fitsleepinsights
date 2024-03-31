@@ -3,6 +3,7 @@
 
 -- nullable
 ALTER TABLE heart_rate_zones ADD COLUMN IF NOT EXISTS heart_rate_activity_id bigint references heart_rate_activities(id);
+ALTER TABLE oauth2_authorized ADD COLUMN IF NOT EXISTS dumping BOOLEAN not null default true;
 
 -- series indexes
 CREATE INDEX IF NOT EXISTS activity_calories_series_idx ON activity_calories_series (id, "date", user_id);

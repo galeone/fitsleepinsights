@@ -13,7 +13,6 @@ import (
 
 	vai "cloud.google.com/go/aiplatform/apiv1beta1"
 	vaipb "cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
 	"github.com/galeone/fitsleepinsights/database/types"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -21,7 +20,7 @@ import (
 	storage "cloud.google.com/go/storage"
 )
 
-func TrainAndDeployPredictor(user *fitbit_pgdb.AuthorizedUser, targetColumn string) (err error) {
+func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) {
 
 	var fetcher *fetcher
 	if fetcher, err = NewFetcher(user); err != nil {
@@ -293,7 +292,7 @@ func TrainAndDeployPredictor(user *fitbit_pgdb.AuthorizedUser, targetColumn stri
 	})
 }
 
-func PredictSleepEfficiency(user *fitbit_pgdb.AuthorizedUser, userData []*UserData) ([]uint8, error) {
+func PredictSleepEfficiency(user *types.User, userData []*UserData) ([]uint8, error) {
 	var err error
 	ctx := context.Background()
 

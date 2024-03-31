@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS oauth2_authorized(
     expires_in bigint not null default 0,
     access_token TEXT not null,
     created_at timestamp without time zone not null DEFAULT NOW(),
+    dumping BOOLEAN not null default true,
     UNIQUE(access_token),
     UNIQUE(user_id)
 );

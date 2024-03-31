@@ -68,7 +68,7 @@ func init() {
 
 type dumper struct {
 	fb   *fitbit_client.Client
-	User *fitbit_pgdb.AuthorizedUser
+	User *types.User
 }
 
 func (d *dumper) logError(err error) {
@@ -102,10 +102,10 @@ func NewDumper(accessToken string) (*dumper, error) {
 		return nil, err
 	}
 
-	var user fitbit_pgdb.AuthorizedUser
-	condition := fitbit_pgdb.AuthorizedUser{}
+	var user types.User
+	condition := types.User{}
 	condition.UserID = abstractUser.UserID
-	if err = _db.Model(fitbit_pgdb.AuthorizedUser{}).Where(&condition).Scan(&user); err != nil {
+	if err = _db.Model(types.User{}).Where(&condition).Scan(&user); err != nil {
 		return nil, err
 	}
 	return &dumper{fb, &user}, err
@@ -1238,6 +1238,11 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 //     triggered by the database notification)
 //   - Periodically by a go routine. In this case, the `after` variable is valid.
 func (d *dumper) DumpNewer(dumpTCX bool) {
+	d.User.Dumping = true
+	if err := _db.Model(types.User{}).Where(types.User{AuthorizedUser: fitbit_pgdb.AuthorizedUser{ID: d.User.ID}}).Updates(d.User); err != nil {
+		d.logError(err)
+		return
+	}
 	var startDate time.Time
 	var endDate *time.Time
 
@@ -1448,6 +1453,12 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 			isYesterday = true
 		}
 	}
+
+	d.User.Dumping = false
+	if err := _db.Model(types.User{}).Where(types.User{AuthorizedUser: fitbit_pgdb.AuthorizedUser{ID: d.User.ID}}).Updates(d.User); err != nil {
+		d.logError(err)
+		return
+	}
 }
 
 func Dump() echo.HandlerFunc {
@@ -1459,10 +1470,10 @@ func Dump() echo.HandlerFunc {
 			return err
 		}
 
-		var user fitbit_pgdb.AuthorizedUser
-		condition := fitbit_pgdb.AuthorizedUser{}
+		var user types.User
+		condition := types.User{}
 		condition.UserID = *userID
-		if err = _db.Model(fitbit_pgdb.AuthorizedUser{}).Where(&condition).Scan(&user); err != nil {
+		if err = _db.Model(types.User{}).Where(&condition).Scan(&user); err != nil {
 			return err
 		}
 

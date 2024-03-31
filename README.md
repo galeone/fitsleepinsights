@@ -37,10 +37,11 @@ sudo -i -u postgres createuser -U postgres fitsleepinsights
 sudo -i -u postgres createdb -U postgres fitsleepinsights fitsleepinsights
 ```
 
-3. Grant the create privilege (required from PostgreSQL 15+):
+3. Grant the create privilege (required from PostgreSQL 15+), and make it superuser (required for the vector extension):
 
 ```
 psql -U postgres -d fitsleepinsights -c "GRANT USAGE, CREATE ON SCHEMA public TO fitsleepinsights;"
+psql -U postgres -d fitsleepinsights -c "ALTER USER fitsleepinsights WITH SUPERUSER;"
 ```
 
 Done. On startup the application creates the schema if not present.

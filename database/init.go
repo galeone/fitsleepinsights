@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-// package datanase initialize the database connection and creates the schema.
+// package database initialize the database connection and creates the schema.
 package database
 
 import (
@@ -60,6 +60,9 @@ var (
 
 	//go:embed schema/ml.sql
 	ml string
+
+	//go:embed schema/llm.sql
+	llm string
 )
 
 func init() {
@@ -163,6 +166,11 @@ func init() {
 	}
 
 	if err = tx.Exec(ml); err != nil {
+		_ = tx.Rollback()
+		panic(err.Error())
+	}
+
+	if err = tx.Exec(llm); err != nil {
 		_ = tx.Rollback()
 		panic(err.Error())
 	}
