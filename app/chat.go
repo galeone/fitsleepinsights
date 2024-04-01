@@ -23,6 +23,14 @@ const ChatTemperature float32 = 0.3
 const MaxToken int = 30720
 const MaxSequenceLength int = MaxToken
 
+type websocketMessage struct {
+	Error   bool   `json:"error"`
+	Message string `json:"message"`
+
+	// begin, content, end, full
+	Marker string `json:"marker"`
+}
+
 func ChatWithData() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// secure, under middleware
@@ -31,7 +39,11 @@ func ChatWithData() echo.HandlerFunc {
 			return err
 		}
 
-		reporter := NewReporter(user)
+		var reporter *Reporter
+		if reporter, err = NewReporter(user); err != nil {
+			return err
+		}
+		defer reporter.Close()
 
 		var startDate, endDate time.Time
 		if startDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("startYear"), c.Param("startMonth"), c.Param("startDay"))); err != nil {
@@ -64,9 +76,6 @@ func ChatWithData() echo.HandlerFunc {
 				return
 			}
 
-			fmt.Println(missingDays)
-
-			// TODO: check if the report for that day exist and create only the query for the missing days
 			var visualizedDataForReport []*UserData
 			for _, missingDay := range missingDays {
 				if dayData, err := fetcher.FetchByDate(missingDay); err != nil {
@@ -118,13 +127,29 @@ func ChatWithData() echo.HandlerFunc {
 
 		websocket.Handler(func(ws *websocket.Conn) {
 			defer ws.Close()
+
+			websocketSend := func(msg, marker string, err ...bool) error {
+				isError := false
+				if len(err) == 1 {
+					isError = err[0]
+				}
+				if err := websocket.JSON.Send(ws, websocketMessage{
+					Message: msg,
+					Error:   isError,
+					Marker:  marker,
+				}); err != nil {
+					return err
+				}
+				return nil
+			}
+
 			extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
 			for {
 				// Read from socket
 				var msg string
 				if err = websocket.Message.Receive(ws, &msg); err != nil {
 					c.Logger().Error(err)
-					if err = websocket.Message.Send(ws, fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error())); err != nil {
+					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
 						c.Logger().Error(err)
 					}
 					break
@@ -134,7 +159,7 @@ func ChatWithData() echo.HandlerFunc {
 				var queryEmbeddings pgvector.Vector
 				if queryEmbeddings, err = reporter.GenerateEmbeddings(msg); err != nil {
 					c.Logger().Error(err)
-					if err = websocket.Message.Send(ws, fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error())); err != nil {
+					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
 						c.Logger().Error(err)
 					}
 					break
@@ -142,7 +167,7 @@ func ChatWithData() echo.HandlerFunc {
 				var reports []string
 				if err = _db.Model(&types.Report{}).Where(&types.Report{UserID: user.ID}).Order(fmt.Sprintf("embedding <-> '%s'", queryEmbeddings.String())).Select("report").Limit(3).Scan(&reports); err != nil {
 					c.Logger().Error(err)
-					if err = websocket.Message.Send(ws, fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error())); err != nil {
+					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
 						c.Logger().Error(err)
 					}
 					break
@@ -158,18 +183,32 @@ func ChatWithData() echo.HandlerFunc {
 				fmt.Fprintln(&builder, "Here's the user question you have to answer:")
 				fmt.Fprintln(&builder, msg)
 
-				// TODO convert to streaming
 				var responseIterator *genai.GenerateContentResponseIterator = chatSession.SendMessageStream(ctx, genai.Text(builder.String()))
+				begin := true
+				marker := "begin"
 				for {
 					// write to socket
+					if responseIterator == nil {
+						marker = "end"
+						if err = websocketSend("\n", marker); err != nil {
+							c.Logger().Error("responseIterator is nil")
+							continue
+						}
+						break
+					}
 					response, err := responseIterator.Next()
 					if err == iterator.Done {
+						marker = "end"
+						if err = websocketSend("\n", marker); err != nil {
+							c.Logger().Error(err)
+							continue
+						}
 						break
 					}
 
 					if err != nil {
 						c.Logger().Error(err)
-						if err = websocket.Message.Send(ws, fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error())); err != nil {
+						if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
 							c.Logger().Error(err)
 						}
 						break
@@ -178,17 +217,26 @@ func ChatWithData() echo.HandlerFunc {
 						for _, part := range candidates.Content.Parts {
 							// create markdown parser with extensions
 							p := parser.NewWithExtensions(extensions)
-							doc := p.Parse([]byte(fmt.Sprintf("%s", part)))
+							reply := fmt.Sprintf("%s", part)
+							doc := p.Parse([]byte(reply))
 
-							// create HTML renderer with extensions
-							htmlFlags := html.CommonFlags | html.HrefTargetBlank
-							opts := html.RendererOptions{Flags: htmlFlags}
-							renderer := html.NewRenderer(opts)
+							// it has markdown inside
+							if len(doc.GetChildren()) > 1 {
+								// create HTML renderer with extensions
+								htmlFlags := html.CommonFlags | html.HrefTargetBlank
+								opts := html.RendererOptions{Flags: htmlFlags}
+								renderer := html.NewRenderer(opts)
+								reply = string(markdown.Render(doc, renderer))
+							}
 
-							if err = websocket.Message.Send(ws, string(markdown.Render(doc, renderer))); err != nil {
+							if !begin {
+								marker = "content"
+							}
+							if err = websocketSend(reply, marker); err != nil {
 								c.Logger().Error(err)
 								continue
 							}
+							begin = false
 						}
 					}
 				}

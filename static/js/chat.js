@@ -1,17 +1,22 @@
-function appendMessage(message, user) {
-    const messageElement = document.createElement('div');
-    if (user) {
+function appendMessage(message, isUser, marker) {
+    var chatMessages = document.querySelector('.chat-messages');
+    let messageElement;
+    if (marker == "full" || marker == "begin") {
+        messageElement = document.createElement('div');
+        messageElement.innerHTML = message;
+        chatMessages.appendChild(messageElement);
+    } else if (marker == "content" || marker == "end") {
+        messageElement = document.querySelector('.chat-messages > div:last-of-type');
+        messageElement.innerHTML += message;
+    }
+    if (isUser) {
         messageElement.classList.add('chat-message-user');
     } else {
         messageElement.classList.add('chat-message-bot');
     }
-    messageElement.innerHTML = message;
-    var chatMessages = document.querySelector('.chat-messages');
-
-    chatMessages.appendChild(messageElement);
-
+    
     var chatButton = document.querySelector('.chat-input button');
-    if (user) {
+    if (isUser) {
         // Scroll to the bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -49,13 +54,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
     ws.onopen = function() {
         document.querySelector('.chat-messages').innerHTML = '';
-        appendMessage("Hi, I'm your AI assistant 🤖<br>I analyzed your data and I'm ready to answer your questions.", false)
+        appendMessage("Hi, I'm your AI assistant 🤖<br>I analyzed your data and I'm ready to answer your questions.", false, "full")
         chatInput.removeAttribute("disabled");
         chatButton.removeAttribute("disabled");
     }
 
     ws.onmessage = function(evt) {
-        appendMessage(evt.data)
+        data = JSON.parse(evt.data);
+        appendMessage(data.message, false, data.marker);     
     }
 
     // Send new message
@@ -66,7 +72,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 return;
             }
             ws.send(message);
-            appendMessage(message, true);
+            appendMessage(message, true, "full");
             event.target.value = '';
             chatInput.va
         }
