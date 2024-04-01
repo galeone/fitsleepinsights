@@ -1,0 +1,43 @@
+{{define "head"}}
+    <style>
+        .container {
+            text-align: center;
+            padding: 2rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #38a3a5;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #main {
+            margin-left: 17%;
+        }
+        @media (max-width: 768px) {
+            #main {
+                width: 100%;
+                margin: 0;
+                margin-bottom: 25%;
+            }
+        }
+    </style>
+{{end}}
+
+{{define "content"}}
+    <div class="container">
+        <h1>Unlock Your Sleep & Activity Insights</h1>
+        <p>FitSleepInsights goes beyond basic tracking. We transform your sleep data and activity levels into clear, actionable
+            insights with personalized dashboards. Want to know how your sleep patterns affect your energy levels? Just ask! Our
+            built-in AI assistant, Gemini, helps you <b>chat with your data</b> and get personalized recommendations for optimal
+            health and well-being.</p>
+        <br><br>
+        <a href="/login">
+            <button>Connect with Fitbit</button>
+        </a>
+    </div>
+{{end}}

@@ -1,4 +1,4 @@
-### Date Range: [StartDate] - [EndDate]
+### Date [LLM to write date]
 
 ## Activity
 
@@ -6,7 +6,7 @@
 - Calories Burned: [LLM to fill from activities_summaries.calories_out]
 - Steps Taken: [LLM to fill from activities_summaries.steps]
 - Distance Traveled: [LLM to fill from activities_summaries.distance / activities_summary_distances.distance]
-
+- List of activities: [LLM to iterate through activities_summary_activities and fill name, duration, calories burned]
 
 ### Active Minutes Breakdown
 
@@ -27,7 +27,6 @@
 - REM Sleep: [LLM to fill from sleep_stage_details where sleep_stage='rem sleep'] (minutes)
 - Time to Fall Asleep: [LLM to fill from sleep_logs.minutes_to_fall_asleep]
 
-
 ## Exercise Activities
 
 - [LLM to iterate through daily_activity_summary_activities / minimal_activities and fill name, duration, calories burned (from activity_logs)]
@@ -46,7 +45,6 @@
 - Distance: [LLM to calculate based on activities_summaries.distance and goals.distance]
 - Steps: [LLM to calculate based on activities_summaries.steps and goals.steps]
 
-
 ## Nutrition
 
 - Total Calories Consumed: [LLM to fill from calories_series.value]
@@ -56,7 +54,8 @@
 - Fat: [LLM to calculate based on food data (assumption needed)]
 
 ### Hydration
-- Total Water Intake: [LLM to fill from calories_series.value where activity_description.name = 'Water']
+
+- Total Water Intake: [LLM to fill]
 
 ## Body Composition
 
@@ -80,10 +79,6 @@
 - Oxygen Saturation: [LLM to fill from oxygen_saturation]
 - Breathing Rate: [LLM to fill from breathing_rate_series / breathing_rate_intraday]
 
-## Notes
+## Summary
 
-[LLM to add any relevant notes or insights]
-
-## Conclusion
-
-[LLM to add any conclusion about the day's data]
+[LLM to write a summary of the day's data and insights]

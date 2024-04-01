@@ -96,16 +96,13 @@ func (r *Reporter) GenerateEmbeddings(prompt string) (embeddings pgvector.Vector
 // GenerateDailyReport generates a daily report for the given user
 func (r *Reporter) GenerateDailyReport(data *UserData) (report *types.Report, err error) {
 	gemini := r.genaiClient.GenerativeModel("gemini-pro")
-	var jsonData []byte
-	if jsonData, err = json.Marshal(data); err != nil {
-		return nil, err
-	}
-	stringData := string(jsonData)
+	temperature := ChatTemperature
+	gemini.Temperature = &temperature
 
 	var builder strings.Builder
 	fmt.Fprintln(&builder, "This is a markdown template you have to fill with the data I will provide you in the next message.")
 	fmt.Fprintf(&builder, "```\n%s```\n\n", dailyReportTemplate)
-	fmt.Fprintln(&builder, "You will find the sections to fill highlighted with \"[LLM to ...]\" with instructions on how to fill the section.")
+	fmt.Fprintln(&builder, "You can find the sections to fill highlighted with \"[LLM to ...]\" with instructions on how to fill the section.")
 	fmt.Fprintln(&builder, "I will send you the data in JSON format in the next message.")
 	introductionString := builder.String()
 
@@ -124,6 +121,12 @@ func (r *Reporter) GenerateDailyReport(data *UserData) (report *types.Report, er
 			Role: "model",
 		},
 	}
+
+	var jsonData []byte
+	if jsonData, err = json.Marshal(data); err != nil {
+		return nil, err
+	}
+	stringData := string(jsonData)
 
 	var response *genai.GenerateContentResponse
 	if response, err = chatSession.SendMessage(r.ctx, genai.Text(stringData)); err != nil {

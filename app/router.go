@@ -86,6 +86,11 @@ func NewRouter() (*echo.Echo, error) {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	})
 
+	router.GET("/", Index())
+	router.GET("/about", About())
+	router.GET("/contact", Contact())
+	router.GET("/privacy", Privacy())
+
 	// The default dashboard is the monthly dashboard
 	router.GET("/dashboard", MonthlyDashboard(), RequireFitbit())
 	router.GET("/dashboard/:startYear/:startMonth/:startDay/:endYear/:endMonth/:endDay", CustomDashboard(), RequireFitbit())
