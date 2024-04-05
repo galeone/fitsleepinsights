@@ -62,9 +62,17 @@ func (r *Reporter) GenerateEmbeddings(prompt string) (embeddings pgvector.Vector
 	}
 
 	// PredictRequest: create the model prediction request
+	// autoTruncate: false
+	// https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings#generative-ai-get-text-embedding-go
+	var autoTruncate *structpb.Value
+	if autoTruncate, err = structpb.NewValue(map[string]interface{}{"autoTruncate": false}); err != nil {
+		return
+	}
+
 	req := &vaipb.PredictRequest{
-		Endpoint:  _vaiEmbeddingsEndpoint,
-		Instances: []*structpb.Value{promptValue},
+		Endpoint:   _vaiEmbeddingsEndpoint,
+		Instances:  []*structpb.Value{promptValue},
+		Parameters: autoTruncate,
 	}
 
 	// PredictResponse: receive the response from the model
@@ -126,10 +134,9 @@ func (r *Reporter) GenerateDailyReport(data *UserData) (report *types.Report, er
 	if jsonData, err = json.Marshal(data); err != nil {
 		return nil, err
 	}
-	stringData := string(jsonData)
 
 	var response *genai.GenerateContentResponse
-	if response, err = chatSession.SendMessage(r.ctx, genai.Text(stringData)); err != nil {
+	if response, err = chatSession.SendMessage(r.ctx, genai.Text(string(jsonData))); err != nil {
 		return nil, err
 	}
 	report = &types.Report{
