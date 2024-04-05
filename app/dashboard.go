@@ -116,7 +116,7 @@ func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, c
 	go func() {
 		defer wg.Done()
 		healthBoard = healthDashboard(allData, calendarType)
-		healthBoard.BreathingRate.Renderer = newChartRenderer(healthBoard.BreathingRate, healthBoard.BreathingRate.Validate)
+		//healthBoard.BreathingRate.Renderer = newChartRenderer(healthBoard.BreathingRate, healthBoard.BreathingRate.Validate)
 		healthBoard.HeartRateVariability.Renderer = newChartRenderer(healthBoard.HeartRateVariability, healthBoard.HeartRateVariability.Validate)
 		healthBoard.OxygenSaturation.Renderer = newChartRenderer(healthBoard.OxygenSaturation, healthBoard.OxygenSaturation.Validate)
 		healthBoard.RestingHeartRate.Renderer = newChartRenderer(healthBoard.RestingHeartRate, healthBoard.RestingHeartRate.Validate)
@@ -146,7 +146,7 @@ func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, c
 		"activityCalendars":  activityCalendars,
 		"activityStatistics": activityStatistics,
 
-		"breathingRateChart":        renderChart(healthBoard.BreathingRate),
+		//"breathingRateChart":        renderChart(healthBoard.BreathingRate),
 		"heartRateVariabilityChart": renderChart(healthBoard.HeartRateVariability),
 		"oxygenSaturationChart":     renderChart(healthBoard.OxygenSaturation),
 		"restingHeartRateChart":     renderChart(healthBoard.RestingHeartRate),

@@ -110,23 +110,25 @@ func healthDashboard(all []*UserData, calendarType CalendarType) *HealthDashboar
 		Color: "#1976FF",
 	}))
 
-	breathingRateLineChart := charts.NewLine()
-	breathingRateLineChart.SetGlobalOptions(
-		charts.WithTitleOpts(globalTitleSettings("Breathing Rate")),
-		globalChartSettings(calendarType, 1),
-		charts.WithLegendOpts(globalLegendSettings()),
-		charts.WithTooltipOpts(opts.Tooltip{
-			Trigger: "axis",
-			Show:    true,
-		}),
-		charts.WithDataZoomOpts(opts.DataZoom{
-			Type: "inside",
-		}),
-	)
-	breathingRateLineChart.SetXAxis(dates)
-	breathingRateLineChart.AddSeries("Actual", breathingRate, charts.WithLineChartOpts(opts.LineChart{
-		Smooth: true,
-	}))
+	/*
+		breathingRateLineChart := charts.NewLine()
+		breathingRateLineChart.SetGlobalOptions(
+			charts.WithTitleOpts(globalTitleSettings("Breathing Rate")),
+			globalChartSettings(calendarType, 1),
+			charts.WithLegendOpts(globalLegendSettings()),
+			charts.WithTooltipOpts(opts.Tooltip{
+				Trigger: "axis",
+				Show:    true,
+			}),
+			charts.WithDataZoomOpts(opts.DataZoom{
+				Type: "inside",
+			}),
+		)
+		breathingRateLineChart.SetXAxis(dates)
+		breathingRateLineChart.AddSeries("Actual", breathingRate, charts.WithLineChartOpts(opts.LineChart{
+			Smooth: true,
+		}))
+	*/
 
 	hrvLineChart := charts.NewLine()
 	hrvLineChart.SetGlobalOptions(
@@ -229,7 +231,7 @@ func healthDashboard(all []*UserData, calendarType CalendarType) *HealthDashboar
 	}))
 
 	return &HealthDashboard{
-		BreathingRate:        breathingRateLineChart,
+		//BreathingRate:        breathingRateLineChart,
 		HeartRateVariability: hrvLineChart,
 		SkinTemperature:      skinTemperatureBarChart,
 		OxygenSaturation:     sp02lineChart,
