@@ -3,11 +3,14 @@ function appendMessage(message, isUser, marker) {
     let messageElement;
     if (marker == "full" || marker == "begin") {
         messageElement = document.createElement('div');
-        messageElement.innerHTML = message;
+        messageElement.innerHTML = marked.parse(message);
         chatMessages.appendChild(messageElement);
     } else if (marker == "content" || marker == "end") {
         messageElement = document.querySelector('.chat-messages > div:last-of-type');
         messageElement.innerHTML += message;
+        if (marker == "end") {
+            messageElement.innerHTML = marked.parse(messageElement.innerHTML);
+        }
     }
     if (isUser) {
         messageElement.classList.add('chat-message-user');
@@ -54,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     ws.onopen = function() {
         document.querySelector('.chat-messages').innerHTML = '';
-        appendMessage("Hi, I'm your AI assistant 🤖<br>I analyzed your data and I'm ready to answer your questions.", false, "full")
+        appendMessage("Hi, I'm your AI assistant 🤖<br>I analyzed the data visualized in the dashboard and I'm ready to answer your questions.", false, "full")
         chatInput.removeAttribute("disabled");
         chatButton.removeAttribute("disabled");
     }

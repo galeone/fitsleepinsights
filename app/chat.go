@@ -8,9 +8,6 @@ import (
 
 	"cloud.google.com/go/vertexai/genai"
 	"github.com/galeone/fitsleepinsights/database/types"
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
 	"github.com/labstack/echo/v4"
 	"github.com/pgvector/pgvector-go"
 	"golang.org/x/net/websocket"
@@ -143,7 +140,7 @@ func ChatWithData() echo.HandlerFunc {
 				return nil
 			}
 
-			extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
+			//extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
 			for {
 				// Read from socket
 				var msg string
@@ -167,7 +164,7 @@ func ChatWithData() echo.HandlerFunc {
 					break
 				}
 				var reports []string
-				// Top-5 related reports, sorted by l2 similarity
+				// Top-3 related reports, sorted by l2 similarity
 				if err = _db.Model(&types.Report{}).Where(&types.Report{UserID: user.ID}).Order(fmt.Sprintf("embedding <-> '%s'", queryEmbeddings.String())).Select("report").Limit(3).Scan(&reports); err != nil {
 					c.Logger().Error(err)
 					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
@@ -219,18 +216,21 @@ func ChatWithData() echo.HandlerFunc {
 					for _, candidates := range response.Candidates {
 						for _, part := range candidates.Content.Parts {
 							// create markdown parser with extensions
-							p := parser.NewWithExtensions(extensions)
 							reply := fmt.Sprintf("%s", part)
-							doc := p.Parse([]byte(reply))
+							/*
+								p := parser.NewWithExtensions(extensions)
 
-							// it has markdown inside
-							if len(doc.GetChildren()) > 2 {
-								// create HTML renderer with extensions
-								htmlFlags := html.CommonFlags | html.HrefTargetBlank
-								opts := html.RendererOptions{Flags: htmlFlags}
-								renderer := html.NewRenderer(opts)
-								reply = string(markdown.Render(doc, renderer))
-							}
+								doc := p.Parse([]byte(reply))
+
+								// it has markdown inside
+								if len(doc.GetChildren()) > 2 {
+									// create HTML renderer with extensions
+									htmlFlags := html.CommonFlags | html.HrefTargetBlank
+									opts := html.RendererOptions{Flags: htmlFlags}
+									renderer := html.NewRenderer(opts)
+									reply = string(markdown.Render(doc, renderer))
+								}
+							*/
 
 							if !begin {
 								marker = "content"
