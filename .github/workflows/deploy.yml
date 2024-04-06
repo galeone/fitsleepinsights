@@ -46,8 +46,7 @@ name: Build and Deploy to Cloud Run
 
 on:
   push:
-    branches:
-      - $default-branch
+    branches: [ main ]
 
 # The secrets have been defined inside the Github settings
 # The env vars MUST be defined here to be accessible with env.VAR
