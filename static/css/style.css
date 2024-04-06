@@ -655,7 +655,7 @@ a {
     #main {
         width: 100%;
         margin: 0;
-        margin-bottom: 25%;
+        margin-bottom: 66%;
     }
 
     .top-header {
@@ -783,4 +783,22 @@ a {
     100% {
         transform: rotate(360deg);
     }
+}
+
+#data-fetch.fetching-data {
+    text-align: center;
+    padding: 20px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#data-fetch.fetching-data img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+}
+
+#data-fetch.fetching-data p {
+    font-size: 16px;
 }

@@ -1,19 +1,20 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"sync"
 	"time"
 
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
 	"github.com/galeone/fitbit/v2"
+	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/labstack/echo/v4"
 )
 
-func getUser(c echo.Context) (*fitbit_pgdb.AuthorizedUser, error) {
+func getUser(c echo.Context) (*types.User, error) {
 	// secure, under middleware
 	var err error
 	authorizer := c.Get("fitbit").(*fitbit.Authorizer)
@@ -22,21 +23,35 @@ func getUser(c echo.Context) (*fitbit_pgdb.AuthorizedUser, error) {
 		return nil, err
 	}
 
-	user := fitbit_pgdb.AuthorizedUser{}
+	user := types.User{}
 	user.UserID = *userID
-	if err = _db.Model(fitbit_pgdb.AuthorizedUser{}).Where(&user).Scan(&user); err != nil {
+	if err = _db.Model(types.User{}).Where(&user).Scan(&user); err != nil {
 		return nil, err
 	}
 	return &user, err
 }
 
-func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endDate time.Time, calendarType CalendarType) (err error) {
+func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, calendarType CalendarType) (err error) {
 	var fetcher *fetcher
 	if fetcher, err = NewFetcher(user); err != nil {
 		return err
 	}
 
-	allData := fetcher.FetchByRange(startDate, endDate)
+	var allData []*UserData
+	if allData, err = fetcher.FetchByRange(startDate, endDate); err != nil {
+		var fetcherError *FetcherError
+		if errors.As(err, &fetcherError) {
+			return c.Render(http.StatusOK, "dashboard/dashboard", echo.Map{
+				"title":      "Dashboard - FitSleepInsights",
+				"isLoggedIn": true,
+				"startDate":  startDate.Format(time.DateOnly),
+				"endDate":    endDate.Format(time.DateOnly),
+				"dumping":    true,
+			})
+		} else {
+			return err
+		}
+	}
 	var activitiesTypes []UserActivityTypes
 	if activitiesTypes, err = fetcher.UserActivityTypes(); err != nil {
 		return err
@@ -101,7 +116,7 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 	go func() {
 		defer wg.Done()
 		healthBoard = healthDashboard(allData, calendarType)
-		healthBoard.BreathingRate.Renderer = newChartRenderer(healthBoard.BreathingRate, healthBoard.BreathingRate.Validate)
+		//healthBoard.BreathingRate.Renderer = newChartRenderer(healthBoard.BreathingRate, healthBoard.BreathingRate.Validate)
 		healthBoard.HeartRateVariability.Renderer = newChartRenderer(healthBoard.HeartRateVariability, healthBoard.HeartRateVariability.Validate)
 		healthBoard.OxygenSaturation.Renderer = newChartRenderer(healthBoard.OxygenSaturation, healthBoard.OxygenSaturation.Validate)
 		healthBoard.RestingHeartRate.Renderer = newChartRenderer(healthBoard.RestingHeartRate, healthBoard.RestingHeartRate.Validate)
@@ -114,7 +129,11 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 
 	// render without .html = use the master layout
 	return c.Render(http.StatusOK, "dashboard/dashboard", echo.Map{
-		"title": "Dashboard - FitSleepInsights",
+		"title":      "Dashboard - FitSleepInsights",
+		"isLoggedIn": true,
+		"startDate":  startDate.Format(time.DateOnly),
+		"endDate":    endDate.Format(time.DateOnly),
+		"dumping":    false,
 
 		"sleepEfficiencyChart": renderChart(sleepBoard.Efficiency),
 		"sleepAggregatedChart": renderChart(sleepBoard.AggregatedStages),
@@ -127,7 +146,7 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 		"activityCalendars":  activityCalendars,
 		"activityStatistics": activityStatistics,
 
-		"breathingRateChart":        renderChart(healthBoard.BreathingRate),
+		//"breathingRateChart":        renderChart(healthBoard.BreathingRate),
 		"heartRateVariabilityChart": renderChart(healthBoard.HeartRateVariability),
 		"oxygenSaturationChart":     renderChart(healthBoard.OxygenSaturation),
 		"restingHeartRateChart":     renderChart(healthBoard.RestingHeartRate),
@@ -135,11 +154,6 @@ func dashboard(c echo.Context, user *fitbit_pgdb.AuthorizedUser, startDate, endD
 		"bmiChart":                  renderChart(healthBoard.BMI),
 		"weightChart":               renderChart(healthBoard.Weight),
 		"healthStatistics":          healthBoard.Stats,
-
-		"isLoggedIn": true,
-
-		"startDate": startDate.Format(time.DateOnly),
-		"endDate":   endDate.Format(time.DateOnly),
 	})
 }
 
@@ -171,7 +185,7 @@ func startDateEndDateFromParams(c echo.Context) (startDate, endDate time.Time, e
 
 func WeeklyDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var user *fitbit_pgdb.AuthorizedUser
+		var user *types.User
 		if user, err = getUser(c); err != nil {
 			return err
 		}
@@ -193,7 +207,7 @@ func WeeklyDashboard() echo.HandlerFunc {
 func MonthlyDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 
-		var user *fitbit_pgdb.AuthorizedUser
+		var user *types.User
 		if user, err = getUser(c); err != nil {
 			return err
 		}
@@ -212,7 +226,7 @@ func MonthlyDashboard() echo.HandlerFunc {
 
 func YearlyDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var user *fitbit_pgdb.AuthorizedUser
+		var user *types.User
 		if user, err = getUser(c); err != nil {
 			return err
 		}
@@ -234,7 +248,7 @@ func YearlyDashboard() echo.HandlerFunc {
 
 func CustomDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
-		var user *fitbit_pgdb.AuthorizedUser
+		var user *types.User
 		if user, err = getUser(c); err != nil {
 			return err
 		}

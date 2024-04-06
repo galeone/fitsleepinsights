@@ -65,3 +65,22 @@ func RequireFitbit() echo.MiddlewareFunc {
 		}
 	}
 }
+
+func validLogin(c echo.Context) bool {
+	// Authorization token (after exchange)
+	var cookie *http.Cookie
+	var err error
+	if cookie, err = c.Cookie("token"); err != nil {
+		// No cookies set
+		return false
+	}
+
+	var dbToken *types.AuthorizedUser
+	if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
+		return false
+	}
+	if dbToken.UserID == "" {
+		return false
+	}
+	return true
+}

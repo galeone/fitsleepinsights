@@ -90,10 +90,8 @@ function toggleMenu() {
     const menu = document.querySelector(".menu");
     if (menu.classList.contains("active")) {
         menu.classList.remove("active");
-        toggleSection.querySelector("a").innerHTML = "<i class='fas fa-bars'></i>";
     } else {
         menu.classList.add("active");
-        toggleSection.querySelector("a").innerHTML = "<i class='fas fa-times'></i>";
     }
 }
 

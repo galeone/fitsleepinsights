@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
 	"github.com/galeone/fitbit/v2"
+	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/labstack/echo/v4"
 )
 
@@ -24,9 +24,9 @@ func TestTrainAndDeploy() echo.HandlerFunc {
 			return err
 		}
 
-		user := fitbit_pgdb.AuthorizedUser{}
+		user := types.User{}
 		user.UserID = *userID
-		if err = _db.Model(fitbit_pgdb.AuthorizedUser{}).Where(&user).Scan(&user); err != nil {
+		if err = _db.Model(types.User{}).Where(&user).Scan(&user); err != nil {
 			return err
 		}
 
@@ -66,9 +66,9 @@ func TestPredictSleepEfficiency() echo.HandlerFunc {
 			return err
 		}
 
-		user := fitbit_pgdb.AuthorizedUser{}
+		user := types.User{}
 		user.UserID = *userID
-		if err = _db.Model(fitbit_pgdb.AuthorizedUser{}).Where(&user).Scan(&user); err != nil {
+		if err = _db.Model(types.User{}).Where(&user).Scan(&user); err != nil {
 			return err
 		}
 
@@ -77,7 +77,7 @@ func TestPredictSleepEfficiency() echo.HandlerFunc {
 			return err
 		}
 
-		todayData := fetcher.FetchByDate(time.Now())
+		todayData, _ := fetcher.FetchByDate(time.Now())
 
 		var sleepEfficiency []uint8
 		if sleepEfficiency, err = PredictSleepEfficiency(&user, []*UserData{todayData}); err != nil {

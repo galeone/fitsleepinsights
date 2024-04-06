@@ -20,7 +20,7 @@ import (
 )
 
 type fetcher struct {
-	user *fitbit_pgdb.AuthorizedUser
+	user *types.User
 }
 
 type DailyActivities []types.ActivityLog
@@ -180,7 +180,7 @@ func (f *DailyActivities) Values() []string {
 }
 
 // NewFetcher creates a new fetcher for the provided user
-func NewFetcher(user *fitbit_pgdb.AuthorizedUser) (*fetcher, error) {
+func NewFetcher(user *types.User) (*fetcher, error) {
 	if user == nil {
 		return nil, errors.New("expected a valid user, nil given instead")
 	}
@@ -751,7 +751,14 @@ func (u *UserData) Values() []string {
 }
 
 // FetchByDate fetches all the user data for the provided date.
-func (f *fetcher) FetchByDate(date time.Time) *UserData {
+func (f *fetcher) FetchByDate(date time.Time) (*UserData, error) {
+	dumping, err := f.isDumping()
+	if err != nil {
+		return nil, err
+	}
+	if dumping {
+		return nil, &FetcherError{errors.New("user is dumping")}
+	}
 	userData := UserData{
 		Date: date,
 	}
@@ -780,20 +787,31 @@ func (f *fetcher) FetchByDate(date time.Time) *UserData {
 	userData.CardioFitnessScore, _ = f.userCardioFitnessScore(date)
 	userData.HeartRateVariability, _ = f.userHeartRateVariability(date)
 	userData.SleepLog, _ = f.userSleepLogList(date)
-	return &userData
+	return &userData, nil
 }
 
 // FetchByRange fetches all the user data between startDate and endDate.
-func (f *fetcher) FetchByRange(startDate, endDate time.Time) []*UserData {
+func (f *fetcher) FetchByRange(startDate, endDate time.Time) ([]*UserData, error) {
+	dumping, err := f.isDumping()
+	if err != nil {
+		return nil, err
+	}
+	if dumping {
+		return nil, &FetcherError{errors.New("user is dumping")}
+	}
 	// TODO refactor the fetcher private methods to accept a range instead of a single date
 	// and use that methods here
 	var userData []*UserData
 	currentDate := startDate
 	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
-		userData = append(userData, f.FetchByDate(currentDate))
+		if dayData, err := f.FetchByDate(currentDate); err != nil {
+			return nil, err
+		} else {
+			userData = append(userData, dayData)
+		}
 		currentDate = currentDate.AddDate(0, 0, 1)
 	}
-	return userData
+	return userData, nil
 }
 
 type UserActivityTypes struct {
@@ -848,12 +866,35 @@ const (
 	FetchAll
 )
 
+type FetcherError struct {
+	err error
+}
+
+func (e *FetcherError) Error() string {
+	return e.err.Error()
+}
+
+func (f *fetcher) isDumping() (bool, error) {
+	dumping := false
+	if err := _db.Model(types.User{}).Select("dumping").Where(types.User{AuthorizedUser: fitbit_pgdb.AuthorizedUser{ID: f.user.ID}}).Scan(&dumping); err != nil {
+		return false, err
+	}
+	return dumping, nil
+}
+
 // Fetch fetches all the user data.
 // If strategy is FetchAllWithSleepLog it uses the oldest sleep log date as first date.
 // If strategy is FetchAllWithActivityLog it uses the oldest activity log date as first date.
 // If strategy is Fetch it uses the oldest date between the oldest sleep log date and the oldest activity log date.
 // In any case, the last date is yesterday.
 func (f *fetcher) Fetch(strategy FetchStrategy) ([]*UserData, error) {
+	dumping, err := f.isDumping()
+	if err != nil {
+		return nil, err
+	}
+	if dumping {
+		return nil, &FetcherError{errors.New("user is dumping")}
+	}
 	// Get the oldestLogDate
 	var oldestLogDate time.Time
 	yesterday := time.Now().AddDate(0, 0, -1).Truncate(time.Hour * 24)
@@ -883,7 +924,7 @@ func (f *fetcher) Fetch(strategy FetchStrategy) ([]*UserData, error) {
 
 	}
 
-	return f.FetchByRange(oldestLogDate, yesterday), nil
+	return f.FetchByRange(oldestLogDate, yesterday)
 }
 
 func Fetch() echo.HandlerFunc {
@@ -895,9 +936,9 @@ func Fetch() echo.HandlerFunc {
 			return err
 		}
 
-		user := fitbit_pgdb.AuthorizedUser{}
+		user := types.User{}
 		user.UserID = *userID
-		if err = _db.Model(fitbit_pgdb.AuthorizedUser{}).Where(&user).Scan(&user); err != nil {
+		if err = _db.Model(types.User{}).Where(&user).Scan(&user); err != nil {
 			return err
 		}
 

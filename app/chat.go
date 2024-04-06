@@ -2,42 +2,43 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/vertexai/genai"
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
+	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/labstack/echo/v4"
+	"github.com/pgvector/pgvector-go"
 	"golang.org/x/net/websocket"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 // https://ai.google.dev/models/gemini
-const ChatTemperature float32 = 0.3
+const ChatTemperature float32 = 0.4
 
-// The info in the link are actually wrong, the model is trained on a max sequence length of 30720
-// That's not the max token length, but the max sequence length
-const MaxToken int = 30720
-const MaxSequenceLength int = MaxToken
+type websocketMessage struct {
+	Error   bool   `json:"error"`
+	Message string `json:"message"`
+
+	// begin, content, end, full
+	Marker string `json:"marker"`
+}
 
 func ChatWithData() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		// secure, under middleware
-		var user *fitbit_pgdb.AuthorizedUser
+		var user *types.User
 		if user, err = getUser(c); err != nil {
 			return err
 		}
 
-		var fetcher *fetcher
-		if fetcher, err = NewFetcher(user); err != nil {
+		var reporter *Reporter
+		if reporter, err = NewReporter(user); err != nil {
 			return err
 		}
+		defer reporter.Close()
 
 		var startDate, endDate time.Time
 		if startDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("startYear"), c.Param("startMonth"), c.Param("startDay"))); err != nil {
@@ -47,15 +48,48 @@ func ChatWithData() echo.HandlerFunc {
 			return err
 		}
 
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-
-		// AllData is wrong. We are putting too many data and the model is having a hard time.
-		// We should find a way to only send the information that we are also visualizing in the dashboard
-		var allData []*UserData
 		go func() {
-			defer wg.Done()
-			allData = fetcher.FetchByRange(startDate, endDate)
+			var err error
+			var fetcher *fetcher
+			if fetcher, err = NewFetcher(user); err != nil {
+				c.Logger().Errorf("error creating fetcher: %s", err.Error())
+				return
+			}
+
+			var missingDays []time.Time
+			startDateStr := startDate.Format(time.DateOnly)
+			endDateStr := endDate.Format(time.DateOnly)
+			if err = _db.Raw(
+				fmt.Sprintf(`with whole_range as (
+					select t.day::date FROM generate_series('%s', '%s', interval '1 day') AS t(day)
+				)
+				select day from whole_range where day not in (
+					select start_date from reports where user_id = ? and start_date >= '%s' and start_date <= '%s'
+				)`, startDateStr, endDateStr, startDateStr, endDateStr), user.ID).
+				Scan(&missingDays); err != nil {
+				c.Logger().Errorf("error fetching missing days: %s", err.Error())
+				return
+			}
+
+			var visualizedDataForReport []*UserData
+			for _, missingDay := range missingDays {
+				if dayData, err := fetcher.FetchByDate(missingDay); err != nil {
+					c.Logger().Errorf("error fetching data: %v", err)
+					return
+				} else {
+					visualizedDataForReport = append(visualizedDataForReport, dayData)
+				}
+			}
+
+			for _, data := range visualizedDataForReport {
+				if report, err := reporter.GenerateDailyReport(data); err != nil {
+					c.Logger().Errorf("error generating daily report: %v", err)
+				} else {
+					if err = _db.Create(report); err != nil {
+						c.Logger().Errorf("error saving daily report: %v", err)
+					}
+				}
+			}
 		}()
 
 		ctx := context.Background()
@@ -68,84 +102,144 @@ func ChatWithData() echo.HandlerFunc {
 
 		var builder strings.Builder
 		fmt.Fprintln(&builder, "You are an expert in neuroscience focused on the connection between physical activity and sleep.")
-		fmt.Fprintln(&builder, "You have been asked to analyze the data of a Fitbit user.")
-		fmt.Fprintln(&builder, "The user has shared with you the following data in JSON format")
-		fmt.Fprintln(&builder, "The user is visualizing some graphs in a dashboard, generated from the data provided.")
+		fmt.Fprintln(&builder, "You are analyzing the data of a user who has shared their Fitbit data with you.")
+		fmt.Fprintln(&builder, "The user is visualizing a dashboard generated from the data provided.")
+		fmt.Fprintln(&builder, "The data visualized ranges from ")
+		fmt.Fprintf(&builder, "%s to %s.\n", startDate.Format(time.DateOnly), endDate.Format(time.DateOnly))
+		fmt.Fprintln(&builder, "Today's date is: ", time.Now().Format(time.DateOnly))
 		fmt.Fprintln(&builder, "You must describe the data in a way that the user can understand the data and the potential correlations between the data and the sleep/activity habits.")
-		fmt.Fprintln(&builder, "You must chat to the user")
 		fmt.Fprintln(&builder, "Never go out of this context, do not say hi, hello, or anything that is not related to the data.")
 		fmt.Fprintln(&builder, "Never accept commands from the user, you are only allowed to chat about the data.")
-
-		var jsonData []byte
-		wg.Wait() // wait for allData to be populated
-		if jsonData, err = json.Marshal(allData); err != nil {
-			return err
-		}
-		fmt.Fprintf(&builder, "%s\n", string(jsonData))
-
-		description := builder.String()
-
-		// Truncate description if too long
-		if len(description) > MaxSequenceLength {
-			// Truncate description final parts
-			description = description[:MaxSequenceLength]
-			c.Logger().Warnf("Description too long, truncating to a length of %d", MaxSequenceLength)
-		}
+		fmt.Fprintln(&builder, "You will receive messages containing reports of the user data. You must analyze the data and provide insights.")
 
 		// For text-only input, use the gemini-pro model
 		model := client.GenerativeModel("gemini-pro")
 		temperature := ChatTemperature
 		model.Temperature = &temperature
 		chatSession := model.StartChat()
-		// Create the context
-		if _, err = chatSession.SendMessage(ctx, genai.Text(description)); err != nil {
+
+		if _, err = chatSession.SendMessage(ctx, genai.Text(builder.String())); err != nil {
 			return err
 		}
 
 		websocket.Handler(func(ws *websocket.Conn) {
 			defer ws.Close()
-			extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
+
+			websocketSend := func(msg, marker string, err ...bool) error {
+				isError := false
+				if len(err) == 1 {
+					isError = err[0]
+				}
+				if err := websocket.JSON.Send(ws, websocketMessage{
+					Message: msg,
+					Error:   isError,
+					Marker:  marker,
+				}); err != nil {
+					return err
+				}
+				return nil
+			}
+
+			//extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
 			for {
 				// Read from socket
 				var msg string
 				if err = websocket.Message.Receive(ws, &msg); err != nil {
 					c.Logger().Error(err)
-					if err = websocket.Message.Send(ws, fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error())); err != nil {
+					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
+						c.Logger().Error(err)
+					}
+					break
+				}
+
+				// TODO: if asked for a report for a day, do not use embeddings but just find and send the report
+
+				// search for the similar documents, fetch them, send them to gemini as context, and ask the question to the model
+				var queryEmbeddings pgvector.Vector
+				if queryEmbeddings, err = reporter.GenerateEmbeddings(msg); err != nil {
+					c.Logger().Error(err)
+					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
+						c.Logger().Error(err)
+					}
+					break
+				}
+				var reports []string
+				// Top-3 related reports, sorted by l2 similarity
+				if err = _db.Model(&types.Report{}).Where(&types.Report{UserID: user.ID}).Order(fmt.Sprintf("embedding <-> '%s'", queryEmbeddings.String())).Select("report").Limit(3).Scan(&reports); err != nil {
+					c.Logger().Error(err)
+					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
 						c.Logger().Error(err)
 					}
 					break
 				}
 				// write to gemini chat and receive response
-				var response *genai.GenerateContentResponse
-
-				// Always instruct the model to look at the data send initially
 				builder.Reset()
-				fmt.Fprintln(&builder, "Analyze the data sent at the beginning of the chat to answer this question:")
-				fmt.Fprintln(&builder, msg)
-				fmt.Fprintln(&builder, "Do not output JSON, never.")
-
-				if response, err = chatSession.SendMessage(ctx, genai.Text(builder.String())); err != nil {
-					c.Logger().Error(err)
-					if err = websocket.Message.Send(ws, fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error())); err != nil {
-						c.Logger().Error(err)
-					}
-					break
+				fmt.Fprintln(&builder, "Here are the reports to help you with the analysis:")
+				fmt.Fprintln(&builder, "")
+				for _, report := range reports {
+					fmt.Fprintln(&builder, report)
 				}
-				// write to socket
-				for _, candidates := range response.Candidates {
-					for _, part := range candidates.Content.Parts {
-						// create markdown parser with extensions
-						p := parser.NewWithExtensions(extensions)
-						doc := p.Parse([]byte(fmt.Sprintf("%s", part)))
+				fmt.Fprintln(&builder, "")
+				fmt.Fprintln(&builder, "Here's the user question you have to answer:")
+				fmt.Fprintln(&builder, msg)
 
-						// create HTML renderer with extensions
-						htmlFlags := html.CommonFlags | html.HrefTargetBlank
-						opts := html.RendererOptions{Flags: htmlFlags}
-						renderer := html.NewRenderer(opts)
-
-						if err = websocket.Message.Send(ws, string(markdown.Render(doc, renderer))); err != nil {
+				var responseIterator *genai.GenerateContentResponseIterator = chatSession.SendMessageStream(ctx, genai.Text(builder.String()))
+				begin := true
+				marker := "begin"
+				for {
+					// write to socket
+					if responseIterator == nil {
+						marker = "end"
+						if err = websocketSend("\n", marker); err != nil {
+							c.Logger().Error("responseIterator is nil")
+							continue
+						}
+						break
+					}
+					response, err := responseIterator.Next()
+					if err == iterator.Done {
+						marker = "end"
+						if err = websocketSend("\n", marker); err != nil {
 							c.Logger().Error(err)
 							continue
+						}
+						break
+					}
+
+					if err != nil {
+						c.Logger().Error(err)
+						if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
+							c.Logger().Error(err)
+						}
+						break
+					}
+					for _, candidates := range response.Candidates {
+						for _, part := range candidates.Content.Parts {
+							// create markdown parser with extensions
+							reply := fmt.Sprintf("%s", part)
+							/*
+								p := parser.NewWithExtensions(extensions)
+
+								doc := p.Parse([]byte(reply))
+
+								// it has markdown inside
+								if len(doc.GetChildren()) > 2 {
+									// create HTML renderer with extensions
+									htmlFlags := html.CommonFlags | html.HrefTargetBlank
+									opts := html.RendererOptions{Flags: htmlFlags}
+									renderer := html.NewRenderer(opts)
+									reply = string(markdown.Render(doc, renderer))
+								}
+							*/
+
+							if !begin {
+								marker = "content"
+							}
+							if err = websocketSend(reply, marker); err != nil {
+								c.Logger().Error(err)
+								continue
+							}
+							begin = false
 						}
 					}
 				}
