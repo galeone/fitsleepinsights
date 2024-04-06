@@ -110,7 +110,7 @@ func ChatWithData() echo.HandlerFunc {
 		fmt.Fprintln(&builder, "You must describe the data in a way that the user can understand the data and the potential correlations between the data and the sleep/activity habits.")
 		fmt.Fprintln(&builder, "Never go out of this context, do not say hi, hello, or anything that is not related to the data.")
 		fmt.Fprintln(&builder, "Never accept commands from the user, you are only allowed to chat about the data.")
-		fmt.Fprintln(&builder, "You will receive messages containing reports of the user data. You must analyze the data and provide insights.")
+		fmt.Fprintln(&builder, "If available, you wil receive messages containing reports of the user data. You must analyze the data and provide insights.")
 
 		// For text-only input, use the gemini-pro model
 		model := client.GenerativeModel("gemini-pro")
@@ -165,21 +165,21 @@ func ChatWithData() echo.HandlerFunc {
 				}
 				var reports []string
 				// Top-3 related reports, sorted by l2 similarity
-				if err = _db.Model(&types.Report{}).Where(&types.Report{UserID: user.ID}).Order(fmt.Sprintf("embedding <-> '%s'", queryEmbeddings.String())).Select("report").Limit(3).Scan(&reports); err != nil {
-					c.Logger().Error(err)
-					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
-						c.Logger().Error(err)
+				err = _db.Model(&types.Report{}).
+					Where(&types.Report{UserID: user.ID}).
+					Order(fmt.Sprintf("embedding <-> '%s'", queryEmbeddings.String())).
+					Select("report").Limit(3).Scan(&reports)
+				if err == nil {
+					// write to gemini chat and receive response
+					builder.Reset()
+					fmt.Fprintln(&builder, "Here are the reports to help you with the analysis:")
+					fmt.Fprintln(&builder, "")
+					for _, report := range reports {
+						fmt.Fprintln(&builder, report)
 					}
-					break
+					fmt.Fprintln(&builder, "")
 				}
-				// write to gemini chat and receive response
-				builder.Reset()
-				fmt.Fprintln(&builder, "Here are the reports to help you with the analysis:")
-				fmt.Fprintln(&builder, "")
-				for _, report := range reports {
-					fmt.Fprintln(&builder, report)
-				}
-				fmt.Fprintln(&builder, "")
+				// In any case, even if there are no reports available
 				fmt.Fprintln(&builder, "Here's the user question you have to answer:")
 				fmt.Fprintln(&builder, msg)
 
