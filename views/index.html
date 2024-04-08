@@ -17,6 +17,7 @@
 
         #main {
             margin-left: 17%;
+            font-size: 1.2em; /* Increase font size for better readability */
         }
         @media (max-width: 768px) {
             #main {
@@ -37,10 +38,17 @@
             built-in AI assistant, Gemini, helps you <b>chat with your data</b> and get personalized recommendations for optimal
             health and well-being.</p>
         <br><br>
-        <p><small>The service is still in beta: the answers are not guaranteed to be accurate, and the service is offered in a best-effort fashion.</small></p>
-        <br><br>
         <a href="/login">
             <button>Connect with Fitbit</button>
         </a>
+        <br><br>
+        <picture>
+            <source media="(max-width: 768px)" srcset="/static/images/mobile.png" />
+            <source media="(min-width: 769px)" srcset="/static/images/desktop.png" />
+            <img alt="fitsleepinsights preview" />
+        </picture>
+        <br><br>
+        <p><small>The service is still in beta: the answers are not guaranteed to be accurate, and the service is offered in a best-effort fashion.</small></p>
+        <br><br>
     </div>
 {{end}}
