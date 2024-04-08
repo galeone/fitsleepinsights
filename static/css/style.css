@@ -65,6 +65,7 @@
     cursor: pointer;
     color: white;
     background-color: transparent;
+    width: 16%;
 }
 
 /* Chat messages */
@@ -669,6 +670,10 @@ a {
 
     .box {
         flex-grow: 1;
+    }
+
+    #date-range {
+        width: 100%;
     }
 }
 
