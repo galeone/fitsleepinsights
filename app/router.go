@@ -80,7 +80,9 @@ func NewRouter() (*echo.Echo, error) {
 	router.GET("/logout", func(c echo.Context) (err error) {
 		var cookie *http.Cookie
 		if cookie, err = c.Cookie("token"); err == nil {
+			cookie.Value = ""
 			cookie.MaxAge = -1
+			cookie.Expires = time.Now().Add(-time.Hour)
 			c.SetCookie(cookie)
 		}
 		return c.Redirect(http.StatusTemporaryRedirect, "/")

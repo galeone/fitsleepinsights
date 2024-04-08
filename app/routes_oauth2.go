@@ -59,9 +59,10 @@ func Auth() func(echo.Context) error {
 		// Every time we are in /auth, we want to remove the token cookie
 		if _, err = c.Cookie("token"); err == nil {
 			c.SetCookie(&http.Cookie{
-				Name:   "token",
-				MaxAge: -1,
-				Path:   "/",
+				Name:    "token",
+				MaxAge:  -1,
+				Expires: time.Now().Add(-time.Hour),
+				Path:    "/",
 			})
 		}
 
@@ -136,6 +137,7 @@ func Redirect() func(echo.Context) error {
 			Name:     "authorizing",
 			HttpOnly: true,
 			MaxAge:   -1,
+			Expires:  time.Now().Add(-time.Hour),
 			Path:     "/",
 		})
 		return c.Redirect(http.StatusTemporaryRedirect, "/dashboard")
