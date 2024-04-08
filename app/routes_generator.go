@@ -113,7 +113,7 @@ func GenerateTypes() echo.HandlerFunc {
 
 			// /1/user/[user-id]/activities/[resource]/date/[start-date][end-date]/[detail-level]/time/[start-time]/[end-time].json
 			// resource in calories | distance | elevation | floors | steps
-			// datail level in 1min | 1min (using 1min, hope 1min has the same response)
+			// detail level in 1min | 1min (using 1min, hope 1min has the same response)
 			"/activities/%s/date/%s/%s/%s/time/%s/%s.json",
 			"/activities/%s/date/%s/%s/%s/time/%s/%s.json",
 			"/activities/%s/date/%s/%s/%s/time/%s/%s.json",

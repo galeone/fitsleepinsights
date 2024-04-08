@@ -4,11 +4,19 @@
     },
     "python.formatting.provider": "none",
     "cSpell.words": [
+        "aiplatform",
         "echarts",
         "fitsleepinsights",
+        "gcloud",
         "genai",
+        "godotenv",
+        "intraday",
+        "joho",
         "labstack",
         "pgdb",
-        "Timeseries"
+        "pgvector",
+        "tfdf",
+        "Timeseries",
+        "vertexai"
     ]
 }

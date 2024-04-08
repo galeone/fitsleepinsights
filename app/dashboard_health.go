@@ -30,7 +30,7 @@ func healthDashboard(all []*UserData, calendarType CalendarType) *HealthDashboar
 	var dates []string
 
 	var skinTemperature []opts.BarData
-	var breathingRate, heartRateVariability, restingHeartRate []opts.LineData
+	var /*breathingRate, */ heartRateVariability, restingHeartRate []opts.LineData
 	oxygenSaturation := map[string][]opts.LineData{
 		"average": {},
 		"min":     {},
@@ -40,8 +40,8 @@ func healthDashboard(all []*UserData, calendarType CalendarType) *HealthDashboar
 	var bmi, weight []opts.LineData
 
 	counters := map[string]int{
-		"skinTemperature":      0,
-		"breathingRate":        0,
+		"skinTemperature": 0,
+		//"breathingRate":        0,
 		"heartRateVariability": 0,
 		"oxygenSaturation":     0,
 		"restingHeartRate":     0,
@@ -60,10 +60,12 @@ func healthDashboard(all []*UserData, calendarType CalendarType) *HealthDashboar
 			skinTemperature = append(skinTemperature, opts.BarData{Value: dayData.SkinTemperature.Value})
 		}
 
-		if dayData.BreathingRate != nil {
-			counters["breathingRate"]++
-			breathingRate = append(breathingRate, opts.LineData{Value: dayData.BreathingRate.BreathingRateTimePoint.Value})
-		}
+		/*
+			if dayData.BreathingRate != nil {
+				counters["breathingRate"]++
+				breathingRate = append(breathingRate, opts.LineData{Value: dayData.BreathingRate.BreathingRateTimePoint.Value})
+			}
+		*/
 
 		if dayData.HeartRateVariability != nil {
 			counters["heartRateVariability"]++

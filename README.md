@@ -28,9 +28,9 @@ The web application, together with the `client` and the `database` asks the user
 
 ### Database setup
 
-1. Install TimescaleDB: https://docs.timescale.com/install/latest/self-hosted/installation-archlinux/
+1. Install PostgreSQL
 
-2. Create the user and the database
+2. Create the user and the database. Note: on MacoOS skip the `sudo -i -u postgres ` part of the commands.
 
 ```bash
 sudo -i -u postgres createuser -U postgres fitsleepinsights
@@ -44,20 +44,9 @@ psql -U postgres -d fitsleepinsights -c "GRANT USAGE, CREATE ON SCHEMA public TO
 psql -U postgres -d fitsleepinsights -c "ALTER USER fitsleepinsights WITH SUPERUSER;"
 ```
 
+4. Install pgvector: https://github.com/pgvector/pgvector
+
 Done. On startup the application creates the schema if not present.
-
-
-### Running
-
-Yup, running is important.
-
-```bash
-go run main.go
-```
-
-Or you can install it with `go install` and execute `fitsleepinsights`.
-
-The application can be configured via `.env` file.
 
 ### Configuration
 
@@ -88,3 +77,15 @@ VAI_LOCATION="europe-west6"
 VAI_PROJECT_ID="project id"
 VAI_SERVICE_ACCOUNT_KEY="full path"
 ```
+
+
+### Running
+
+Yup, running is important.
+
+```bash
+go run main.go
+```
+
+Or you can install it with `go install` and execute `fitsleepinsights`.
+
