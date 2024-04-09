@@ -192,7 +192,6 @@ func ChatWithData() echo.HandlerFunc {
 						marker = "end"
 						if err = websocketSend("\n", marker); err != nil {
 							c.Logger().Error("responseIterator is nil")
-							continue
 						}
 						break
 					}
