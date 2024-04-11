@@ -11,10 +11,6 @@ These are some of the question this project tries to answer.
 
 The goal is to understand what behaviors/activities are good/bad for *your* sleep. People are different, and what makes a person sleep well could make some one else sleep a nightmare. For this reason, the prediction are made *per user* - no data is aggregated. 
 
-## The idea
-
-
-
 ## Technicalities
 
 The application is made of different parts
@@ -25,6 +21,12 @@ The application is made of different parts
 - The web application
 
 The web application, together with the `client` and the `database` asks the user permission on the Fitbit account.
+
+### Docker-Compose
+
+You can chose to configure the application via the `docker-compose.yaml` file, and executed it trough `docker compose` - or you can configure (without depending on Docker) the various components of the application locally.
+
+Below you can find the steps to setup the application locally.
 
 ### Database setup
 
@@ -81,10 +83,20 @@ VAI_SERVICE_ACCOUNT_KEY="full path"
 
 ### Running
 
-Yup, running is important.
+Yup, running is important. There are 2 ways of running the application, depending on how you configured it.
+
+If you installed the database and configured the `.env` file you need simply to run it.
 
 ```bash
 go run main.go
+```
+
+If you configured the `docker-compose.yaml` file, than you can:
+
+```bash
+./run.sh up
+# and to stop it
+./run.sh down
 ```
 
 Or you can install it with `go install` and execute `fitsleepinsights`.
