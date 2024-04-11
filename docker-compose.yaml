@@ -1,0 +1,92 @@
+services:
+  db:
+    container_name: postgres
+    image: pgvector/pgvector:pg16
+    restart: always
+    hostname: postgres
+    shm_size: 128mb
+    volumes:
+      - $PWD/volume/postgresql/data:/var/lib/postgresql/data
+    ports:
+      - "5432"
+    environment:
+      - POSTGRES_PASSWORD=admin123
+      - POSTGRES_USER=postgres
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: pg_isready -U postgres -d fitsleepinsights
+      interval: 3s
+      timeout: 0s
+      retries: 30
+  db-start-scripts:
+    container_name: db-start-scripts
+    image: pgvector/pgvector:pg16
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - 'bash'
+      - '-c'
+      - |
+        PGPASSWORD=admin123 createuser -U postgres fitsleepinsights -p 5432 -h postgres 
+        PGPASSWORD=admin123 createdb -U postgres fitsleepinsights fitsleepinsights -h postgres -p 5432
+        echo "DB & User got created"
+        PGPASSWORD=admin123 psql -h postgres -p 5432 -U postgres -d fitsleepinsights <<EOF
+          GRANT USAGE, CREATE ON SCHEMA public TO fitsleepinsights;
+          ALTER USER fitsleepinsights WITH encrypted password 'fitsleepinsights';
+          ALTER USER fitsleepinsights WITH SUPERUSER;
+        EOF
+  go-app:
+    image: go-app
+    depends_on:
+      db-start-scripts:
+        condition: service_completed_successfully
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    hostname: go-app
+    x-develop:
+      watch:
+        - path: app/
+          action: rebuild
+        - path: views/
+          target: /views/
+          action: sync
+        - path: static/
+          target: /static/
+          action: sync
+    container_name: go-app
+    environment:
+      # Use the same values used in above in Database setup
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=fitsleepinsights
+      - DB_PASS=fitsleepinsights
+      - DB_NAME=fitsleepinsights
+      # Web application settings
+      - DOMAIN=localhost
+      - PORT=8989
+      #FITBIT
+      - FITBIT_CLIENT_ID=""
+      - FITBIT_CLIENT_SECRET=""
+      - FITBIT_REDIRECT_URL=""
+      # Vertex AI
+      - VAI_LOCATION="europe-west6"
+      - VAI_PROJECT_ID="project id"
+      - VAI_SERVICE_ACCOUNT_KEY="full path"
+    ports:
+      - '8989:8989'
+  adminer:
+    image: adminer:4.6.3
+    restart: always
+    environment:
+      ADMINER_DESIGN: "pappu687"
+    ports:
+      - 8080:8080
+
+networks:
+  db:
+    driver: bridge
+volumes:
+  db:
