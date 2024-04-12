@@ -96,11 +96,15 @@ func globalCalendarSettings(calendarType CalendarType, id, year int, coveredMont
 	sort.Ints(months)
 
 	if calendarType == MonthlyCalendar {
+		nextIdx := 0
+		if len(months) == 2 {
+			nextIdx = 1
+		}
 		calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[0]))
-		if months[0] == 12 {
-			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year+1, 1))
+		if months[nextIdx] == 12 {
+			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year+1, months[nextIdx]+1))
 		} else {
-			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[0]+1))
+			calendarRange = append(calendarRange, fmt.Sprintf("%d-%02d", year, months[nextIdx]+1))
 		}
 	} else if calendarType == YearlyCalendar {
 		calendarRange = append(calendarRange, fmt.Sprintf("%d", year))

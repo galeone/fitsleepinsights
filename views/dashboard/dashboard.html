@@ -43,15 +43,6 @@
 
             return [new easepick.DateTime(d1), new easepick.DateTime(d2)];
         };
-        const thisYear = () => {
-            const d1 = date.clone();
-            d1.setDate(1);
-            d1.setMonth(0);
-
-            const d2 = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-
-            return [new easepick.DateTime(d1), new easepick.DateTime(d2)];
-        };
 
         const lastMonth = () => {
             const d1 = date.clone();
@@ -63,16 +54,16 @@
             return [new easepick.DateTime(d1), new easepick.DateTime(d2)];
         };
 
-        const lastYear = () => {
+        const lastNMonths = (n) => {
             const d1 = date.clone();
-            d1.setFullYear(d1.getFullYear() - 1);
-            d1.setMonth(0);
+            d1.setMonth(d1.getMonth() - n);
             d1.setDate(1);
 
             const d2 = new Date(date.getFullYear(), date.getMonth(), 0);
 
             return [new easepick.DateTime(d1), new easepick.DateTime(d2)];
         };
+
         const picker = new easepick.create({
             element: "#date-range",
             css: [
@@ -97,8 +88,11 @@
                     ],
                     "This month": thisMonth(),
                     "Last month": lastMonth(),
-                    "This year": thisYear(),
-                    "Last year": lastYear(),
+                    "Last 2 months": lastNMonths(2),
+                    "Last 3 months": lastNMonths(3),
+                    "Last 4 months": lastNMonths(4),
+                    "Last 5 months": lastNMonths(5),
+                    "Last 6 months": lastNMonths(6),
                 }
             },
             setup(picker) {

@@ -68,8 +68,9 @@ func dailyStepCount(all []*UserData, calendarType CalendarType) (*charts.HeatMap
 
 		if _, ok := coveredMonthsPerYear[year]; !ok {
 			coveredMonthsPerYear[year] = make(map[int]bool)
-			coveredMonthsPerYear[year][month] = true
 		}
+		coveredMonthsPerYear[year][month] = true
+
 	}
 
 	// Average
@@ -173,8 +174,9 @@ func activityCalendar(activityType *UserActivityTypes, activities *DailyActiviti
 		month := int(activity.StartTime.Month())
 		if _, ok := coveredMonthsPerYear[year]; !ok {
 			coveredMonthsPerYear[year] = make(map[int]bool)
-			coveredMonthsPerYear[year][month] = true
 		}
+		coveredMonthsPerYear[year][month] = true
+
 		activityValuePerYear[year] = append(activityValuePerYear[year], opts.HeatMapData{Value: value, Name: value[0].(string)})
 	}
 

@@ -196,7 +196,7 @@ func WeeklyDashboard() echo.HandlerFunc {
 				return err
 			}
 		} else {
-			startDate := GetStartDayOfWeek(time.Now())
+			startDate = GetStartDayOfWeek(time.Now())
 			endDate = startDate.AddDate(0, 0, 7)
 
 		}

@@ -93,8 +93,8 @@ func NewRouter() (*echo.Echo, error) {
 	router.GET("/contact", Contact())
 	router.GET("/privacy", Privacy())
 
-	// The default dashboard is the monthly dashboard
-	router.GET("/dashboard", MonthlyDashboard(), RequireFitbit())
+	// The default dashboard is the weekly dashboard (so there's less data to load)
+	router.GET("/dashboard", WeeklyDashboard(), RequireFitbit())
 	router.GET("/dashboard/:startYear/:startMonth/:startDay/:endYear/:endMonth/:endDay", CustomDashboard(), RequireFitbit())
 	// All the dashboard routes below are defined but already superseded by the one above
 	// decide with to do. Perhaps when clicking on some shortcut we can point to these, or link to them somehow...
