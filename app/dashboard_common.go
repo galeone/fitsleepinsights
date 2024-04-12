@@ -111,25 +111,21 @@ func globalCalendarSettings(calendarType CalendarType, id, year int, coveredMont
 	} else {
 		// Get an activity date, extract the first day of the week and use it as the starting point
 		startDay := GetStartDayOfWeek(firstActivityDate)
-		if calendarType == WeeklyCalendar {
-			calendarRange = append(calendarRange, startDay.Format(time.DateOnly))
-			calendarRange = append(calendarRange, startDay.AddDate(0, 0, 7).Format(time.DateOnly))
-		} else {
-			months := 1
-			if calendarType == BiMonthlyCalendar {
-				months = 2
-			} else if calendarType == TriMonthlyCalendar {
-				months = 3
-			} else if calendarType == QuadriMonthlyCalendar {
-				months = 4
-			} else if calendarType == PentaMonthlyCalendar {
-				months = 5
-			} else if calendarType == HexaMonthlyCalendar {
-				months = 6
-			}
-			calendarRange = append(calendarRange, startDay.Format(time.DateOnly))
-			calendarRange = append(calendarRange, startDay.AddDate(0, months, 0).Format(time.DateOnly))
+		months := 1
+		if calendarType == BiMonthlyCalendar {
+			months = 2
+		} else if calendarType == TriMonthlyCalendar {
+			months = 3
+		} else if calendarType == QuadriMonthlyCalendar {
+			months = 4
+		} else if calendarType == PentaMonthlyCalendar {
+			months = 5
+		} else if calendarType == HexaMonthlyCalendar {
+			months = 6
 		}
+		calendarRange = append(calendarRange, startDay.Format(time.DateOnly))
+		calendarRange = append(calendarRange, startDay.AddDate(0, months, 0).Format(time.DateOnly))
+
 	}
 
 	return &opts.Calendar{
