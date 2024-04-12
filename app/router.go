@@ -108,6 +108,8 @@ func NewRouter() (*echo.Echo, error) {
 	router.GET("/chat/:startYear/:startMonth/:startDay/:endYear/:endMonth/:endDay", ChatWithData(), RequireFitbit())
 
 	router.Static("/static", "static")
+	router.File("/favicon.ico", "static/favicon.ico")
+	router.File("/robots.txt", "static/robots.txt")
 
 	// INTERNAL routes used for:
 
