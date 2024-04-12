@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	fitbit_pgdb "github.com/galeone/fitbit-pgdb/v3"
 	"github.com/galeone/fitbit/v2"
 	fitbit_client "github.com/galeone/fitbit/v2/client"
 	fitbit_types "github.com/galeone/fitbit/v2/types"
@@ -122,7 +121,6 @@ func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
 	for _, t := range value.TimeSeries {
 		timestep := types.ActivityCaloriesSeries{}
 		timestep.UserID = d.User.ID
@@ -137,15 +135,9 @@ func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -177,14 +169,15 @@ func (d *dumper) AllActivityCatalog() (err error) {
 	if catalog, err = d.fb.AllActivityTypes(); err != nil {
 		return err
 	}
-	tx := _db.Begin()
+
 	for _, category := range catalog.Categories {
+		tx := _db.Begin()
 		categoryRow := types.Category{
 			Category: category,
 		}
 		if err = tx.Create(&categoryRow); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
 		for _, subCategory := range category.SubCategories {
@@ -195,7 +188,7 @@ func (d *dumper) AllActivityCatalog() (err error) {
 			}
 			if err = tx.Create(&subCategoryRow); err != nil {
 				d.logError(err)
-				tx.Rollback()
+				_ = tx.Rollback()
 				break
 			}
 			for _, activity := range subCategory.Activities {
@@ -207,7 +200,7 @@ func (d *dumper) AllActivityCatalog() (err error) {
 				}
 				if err = tx.Create(&activityDescription); err != nil {
 					d.logError(err)
-					tx.Rollback()
+					_ = tx.Rollback()
 					break
 				}
 				for _, activityLevel := range activity.ActivityLevels {
@@ -218,21 +211,19 @@ func (d *dumper) AllActivityCatalog() (err error) {
 					}
 					if err = tx.Create(&activityLevelRow); err != nil {
 						d.logError(err)
-						tx.Rollback()
+						_ = tx.Rollback()
 						break
 					}
 				}
 			}
 		}
-		if err != nil {
-			break
+		if err == nil {
+			if err = tx.Commit(); err != nil {
+				d.logError(err)
+			}
 		}
 	}
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
-		}
-	}
+
 	return
 }
 
@@ -296,7 +287,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 
 				if err = tx.Create(&activeZoneMinutes); err != nil {
 					d.logError(err)
-					tx.Rollback()
+					_ = tx.Rollback()
 					break
 				}
 				for _, minInHRZone := range activity.ActiveZoneMinutes.MinutesInHeartRateZones {
@@ -306,7 +297,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 					}
 					if err = tx.Create(&minInHRZoneRow); err != nil {
 						d.logError(err)
-						tx.Rollback()
+						_ = tx.Rollback()
 						break
 					}
 				}
@@ -330,7 +321,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 					}
 					if err = tx.Create(&source); err != nil {
 						d.logError(err)
-						tx.Rollback()
+						_ = tx.Rollback()
 						break
 					}
 				}
@@ -377,7 +368,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 
 			if err = tx.Create(&activityRow); err != nil {
 				d.logError(err)
-				tx.Rollback()
+				_ = tx.Rollback()
 				break
 			}
 
@@ -389,7 +380,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 				}
 				if err = tx.Create(&activityLevelRow); err != nil {
 					d.logError(err)
-					tx.Rollback()
+					_ = tx.Rollback()
 					break
 				}
 			}
@@ -407,7 +398,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 				}
 				if err = tx.Create(&hrZoneRow); err != nil {
 					d.logError(err)
-					tx.Rollback()
+					_ = tx.Rollback()
 					break
 				}
 			}
@@ -481,7 +472,6 @@ func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
 	for _, t := range value.TimeSeries {
 		timestep := types.BMISeries{}
 		timestep.UserID = d.User.ID
@@ -496,15 +486,9 @@ func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -517,7 +501,7 @@ func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.BodyFatSeries{}
 		timestep.UserID = d.User.ID
@@ -532,16 +516,9 @@ func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -554,7 +531,7 @@ func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err er
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.BodyWeightSeries{}
 		timestep.UserID = d.User.ID
@@ -569,15 +546,9 @@ func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err er
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 	return
@@ -589,7 +560,7 @@ func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err e
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.CaloriesBMRSeries{}
 		timestep.UserID = d.User.ID
@@ -604,16 +575,9 @@ func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err e
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -626,7 +590,7 @@ func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err erro
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.CaloriesSeries{}
 		timestep.UserID = d.User.ID
@@ -641,16 +605,9 @@ func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err erro
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -663,7 +620,7 @@ func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err erro
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.DistanceSeries{}
 		timestep.UserID = d.User.ID
@@ -678,16 +635,9 @@ func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err erro
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -700,7 +650,7 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.FloorsSeries{}
 		timestep.UserID = d.User.ID
@@ -715,16 +665,9 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -737,7 +680,7 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, hrActivity := range value.ActivitiesHeart {
 		hrActivityInsert := types.HeartRateActivities{
 			UserID: d.User.ID,
@@ -760,9 +703,10 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 			continue
 		}
 
+		tx := _db.Begin()
 		if err = tx.Create(&hrActivityInsert); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
 
@@ -780,22 +724,22 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 		for _, hrZone := range hrActivity.Value.HeartRateZones {
 			if err = insertHrZone(&hrZone, "DEFAULT"); err != nil {
 				d.logError(err)
-				tx.Rollback()
+				_ = tx.Rollback()
 				break
 			}
 		}
 		for _, customHrZone := range hrActivity.Value.CustomHeartRateZones {
 			if err = insertHrZone(&customHrZone, "CUSTOM"); err != nil {
 				d.logError(err)
-				tx.Rollback()
+				_ = tx.Rollback()
 				break
 			}
 		}
-	}
 
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
+		if err == nil { // otherwise we already rolled back
+			if err = tx.Commit(); err != nil {
+				d.logError(err)
+			}
 		}
 	}
 
@@ -808,7 +752,7 @@ func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.MinutesFairlyActiveSeries{}
 		timestep.UserID = d.User.ID
@@ -823,16 +767,9 @@ func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -845,7 +782,7 @@ func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Tim
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.MinutesLightlyActiveSeries{}
 		timestep.UserID = d.User.ID
@@ -860,19 +797,11 @@ func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Tim
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
 		}
 	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
-		}
-	}
-
 	return
 }
 
@@ -882,7 +811,6 @@ func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
 	for _, t := range value.TimeSeries {
 		timestep := types.MinutesSedentarySeries{}
 		timestep.UserID = d.User.ID
@@ -897,15 +825,9 @@ func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -918,7 +840,6 @@ func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) 
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
 	for _, t := range value.TimeSeries {
 		timestep := types.MinutesVeryActiveSeries{}
 		timestep.UserID = d.User.ID
@@ -933,16 +854,9 @@ func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) 
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -955,7 +869,7 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.StepsSeries{}
 		timestep.UserID = d.User.ID
@@ -970,16 +884,9 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -992,7 +899,7 @@ func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err err
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TimeSeries {
 		timestep := types.ElevationSeries{}
 		timestep.UserID = d.User.ID
@@ -1007,16 +914,9 @@ func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err err
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -1029,7 +929,6 @@ func (d *dumper) userCoreTemperature(startDate, endDate *time.Time) (err error) 
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
 	for _, t := range value.TempCore {
 		timestep := types.CoreTemperature{
 			CoreTemperatureTimePoint: t,
@@ -1042,16 +941,9 @@ func (d *dumper) userCoreTemperature(startDate, endDate *time.Time) (err error) 
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -1064,7 +956,7 @@ func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) 
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.TempSkin {
 		timestep := types.SkinTemperature{
 			SkinTemperatureTimePoint: t,
@@ -1078,15 +970,9 @@ func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) 
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -1099,7 +985,7 @@ func (d *dumper) userBreathingRate(startDate, endDate *time.Time) (err error) {
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.Br {
 		timestep := types.BreathingRate{
 			BreathingRateTimePoint: t,
@@ -1113,18 +999,12 @@ func (d *dumper) userBreathingRate(startDate, endDate *time.Time) (err error) {
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
 		}
 	}
 
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
-		}
-	}
 	return
 }
 
@@ -1134,7 +1014,7 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.CardioScore {
 		timestep := types.CardioFitnessScore{
 			CardioScoreTimePoint: t,
@@ -1145,17 +1025,14 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 		if len(vo2MaxRange) != 2 {
 			err = fmt.Errorf("expected a vo2max range, got: %s", t.Value.Vo2Max)
 			d.logError(err)
-			tx.Rollback()
 			continue
 		}
 		if timestep.Vo2MaxLowerBound, err = strconv.ParseFloat(vo2MaxRange[0], 64); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			continue
 		}
 		if timestep.Vo2MaxUpperBound, err = strconv.ParseFloat(vo2MaxRange[1], 64); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			continue
 		}
 
@@ -1164,16 +1041,9 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -1186,7 +1056,7 @@ func (d *dumper) userOxygenSaturation(startDate, endDate *time.Time) (err error)
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range *values {
 		timestep := types.OxygenSaturation{
 			UserID: d.User.ID,
@@ -1201,16 +1071,9 @@ func (d *dumper) userOxygenSaturation(startDate, endDate *time.Time) (err error)
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -1223,7 +1086,7 @@ func (d *dumper) userHeartRateVariability(startDate, endDate *time.Time) (err er
 		d.logError(err)
 		return
 	}
-	tx := _db.Begin()
+
 	for _, t := range value.Hrv {
 		timestep := types.HeartRateVariabilityTimeSeries{
 			UserID:     d.User.ID,
@@ -1237,16 +1100,10 @@ func (d *dumper) userHeartRateVariability(startDate, endDate *time.Time) (err er
 			// log.Println("Skipping ", t)
 			continue
 		}
-		if err = tx.Create(&timestep); err != nil {
+		if err = _db.Create(&timestep); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = _db.Rollback()
 			break
-		}
-	}
-
-	if err == nil { // otherwise we already rolled back
-		if err = tx.Commit(); err != nil {
-			d.logError(err)
 		}
 	}
 
@@ -1265,7 +1122,6 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 		return
 	}
 
-	tx := _db.Begin()
 	for _, sleepLog := range sleepLogs.Sleep {
 		insert := types.SleepLog{
 			SleepLog:    sleepLog,
@@ -1281,9 +1137,11 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 			// log.Println("Skipping ", insert)
 			continue
 		}
+
+		tx := _db.Begin()
 		if err = tx.Create(&insert); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
 
@@ -1298,22 +1156,22 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 
 		if err = sleepStage(&sleepLog.Levels.Summary.Deep, "DEEP"); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
 		if err = sleepStage(&sleepLog.Levels.Summary.Light, "LIGHT"); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
 		if err = sleepStage(&sleepLog.Levels.Summary.Rem, "REM"); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
 		if err = sleepStage(&sleepLog.Levels.Summary.Wake, "WAKE"); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
 
@@ -1333,17 +1191,15 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 
 		if err = sleepData(sleepLog.Levels.Data); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
 		if err = sleepData(sleepLog.Levels.ShortData); err != nil {
 			d.logError(err)
-			tx.Rollback()
+			_ = tx.Rollback()
 			break
 		}
-	}
 
-	if err == nil { // otherwise we already rolled back
 		if err = tx.Commit(); err != nil {
 			d.logError(err)
 		}
@@ -1358,7 +1214,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 //   - Periodically by a go routine. In this case, the `after` variable is valid.
 func (d *dumper) DumpNewer(dumpTCX bool) {
 	d.User.Dumping = true
-	if err := _db.Model(types.User{}).Where(types.User{AuthorizedUser: fitbit_pgdb.AuthorizedUser{ID: d.User.ID}}).Updates(d.User); err != nil {
+	if err := _db.Updates(d.User); err != nil {
 		d.logError(err)
 		return
 	}
@@ -1574,7 +1430,7 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 	}
 
 	d.User.Dumping = false
-	if err := _db.Model(types.User{}).Where(types.User{AuthorizedUser: fitbit_pgdb.AuthorizedUser{ID: d.User.ID}}).Updates(d.User); err != nil {
+	if err := _db.Updates(d.User); err != nil {
 		d.logError(err)
 		return
 	}
