@@ -1024,16 +1024,25 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 			Date:                 t.DateTime.Time,
 		}
 		vo2MaxRange := strings.Split(t.Value.Vo2Max, "-")
-		if len(vo2MaxRange) != 2 {
-			err = fmt.Errorf("expected a vo2max range, got: %s", t.Value.Vo2Max)
-			d.logError(err)
-			continue
-		}
-		if timestep.Vo2MaxLowerBound, err = strconv.ParseFloat(vo2MaxRange[0], 64); err != nil {
-			d.logError(err)
-			continue
-		}
-		if timestep.Vo2MaxUpperBound, err = strconv.ParseFloat(vo2MaxRange[1], 64); err != nil {
+		if len(vo2MaxRange) == 2 {
+			if timestep.Vo2MaxLowerBound, err = strconv.ParseFloat(vo2MaxRange[0], 64); err != nil {
+				d.logError(err)
+				continue
+			}
+			if timestep.Vo2MaxUpperBound, err = strconv.ParseFloat(vo2MaxRange[1], 64); err != nil {
+				d.logError(err)
+				continue
+			}
+		} else if len(vo2MaxRange) == 1 {
+			var vo2max float64
+			if vo2max, err = strconv.ParseFloat(t.Value.Vo2Max, 64); err != nil {
+				d.logError(err)
+				continue
+			}
+			timestep.Vo2MaxLowerBound = vo2max
+			timestep.Vo2MaxUpperBound = vo2max
+		} else {
+			err = fmt.Errorf("expected a vo2max range (separated by -) or scalar value, got: %s", t.Value.Vo2Max)
 			d.logError(err)
 			continue
 		}
