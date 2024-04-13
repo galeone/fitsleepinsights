@@ -33,9 +33,10 @@ func init() {
 			// initialize _allActivityCatalog here, because we need the access token
 			// even if this is a global variable shared by all the users
 			if len(_allActivityCatalog) == 0 {
+				log.Print("Fetching all activity catalog")
 				f := fetcher{}
 				if _allActivityCatalog, err = f.AllActivityCatalog(); err != nil {
-					log.Print(err)
+					log.Print("Error while fetching all activity catalog: ", err)
 					// if here, we likely haven´t dumped the catalog yet
 					if err = dumper.AllActivityCatalog(); err != nil {
 						log.Print(err)

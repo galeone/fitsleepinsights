@@ -35,7 +35,7 @@ func getUser(c echo.Context) (*types.User, error) {
 func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, calendarType CalendarType) (err error) {
 	var fetcher *fetcher
 	if fetcher, err = NewFetcher(user); err != nil {
-		log.Error(err)
+		log.Error("NewFetcher: ", err)
 		return err
 	}
 
@@ -51,13 +51,13 @@ func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, c
 				"dumping":    true,
 			})
 		} else {
-			log.Error(err)
+			log.Error("fetcher.FetchByRange: ", err, " - ", user.ID, " - ", startDate, " - ", endDate)
 			return err
 		}
 	}
 	var activitiesTypes []UserActivityTypes
 	if activitiesTypes, err = fetcher.UserActivityTypes(); err != nil {
-		log.Error(err)
+		log.Error("fetcher.UserActivityTypes: ", err)
 		return err
 	}
 
@@ -190,14 +190,14 @@ func WeeklyDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var user *types.User
 		if user, err = getUser(c); err != nil {
-			log.Error(err)
+			log.Error("WeeklyDashBoard - getUser: ", err)
 			return err
 		}
 
 		var startDate, endDate time.Time
 		if c.Param("year") != "" && c.Param("month") != "" && c.Param("day") != "" {
 			if startDate, endDate, err = startDateEndDateFromParams(c); err != nil {
-				log.Error(err)
+				log.Error("WeeklyDashBoard - startDateEndDateFromParams: ", err)
 				return err
 			}
 		} else {
@@ -214,13 +214,13 @@ func MonthlyDashboard() echo.HandlerFunc {
 
 		var user *types.User
 		if user, err = getUser(c); err != nil {
-			log.Error(err)
+			log.Error("MonthlyDashboard - getUser: ", err)
 			return err
 		}
 		var startDate, endDate time.Time
 		if c.Param("year") != "" && c.Param("month") != "" {
 			if startDate, endDate, err = startDateEndDateFromParams(c); err != nil {
-				log.Error(err)
+				log.Error("MonthlyDashboard - startDateEndDateFromParams: ", err)
 				return err
 			}
 		} else {
@@ -235,7 +235,7 @@ func YearlyDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var user *types.User
 		if user, err = getUser(c); err != nil {
-			log.Error(err)
+			log.Error("YearlyDashboard - getUser: ", err)
 			return err
 		}
 
@@ -243,7 +243,7 @@ func YearlyDashboard() echo.HandlerFunc {
 
 		if c.Param("year") != "" {
 			if startDate, endDate, err = startDateEndDateFromParams(c); err != nil {
-				log.Error(err)
+				log.Error("YearlyDashboard - startDateEndDateFromParams: ", err)
 				return err
 			}
 		} else {
@@ -259,17 +259,17 @@ func CustomDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var user *types.User
 		if user, err = getUser(c); err != nil {
-			log.Error(err)
+			log.Error("CustomDashboard - getUser: ", err)
 			return err
 		}
 
 		var startDate, endDate time.Time
 		if startDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("startYear"), c.Param("startMonth"), c.Param("startDay"))); err != nil {
-			log.Error(err)
+			log.Error("CustomDashboard - time.Parse: ", err)
 			return err
 		}
 		if endDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("endYear"), c.Param("endMonth"), c.Param("endDay"))); err != nil {
-			log.Error(err)
+			log.Error("CustomDashboard - time.Parse: ", err)
 			return err
 		}
 
