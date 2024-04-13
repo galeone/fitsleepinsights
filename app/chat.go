@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -9,6 +11,7 @@ import (
 	"cloud.google.com/go/vertexai/genai"
 	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"github.com/pgvector/pgvector-go"
 	"golang.org/x/net/websocket"
 	"google.golang.org/api/iterator"
@@ -31,20 +34,24 @@ func ChatWithData() echo.HandlerFunc {
 		// secure, under middleware
 		var user *types.User
 		if user, err = getUser(c); err != nil {
+			log.Error(err)
 			return err
 		}
 
 		var reporter *Reporter
 		if reporter, err = NewReporter(user); err != nil {
+			log.Error(err)
 			return err
 		}
 		defer reporter.Close()
 
 		var startDate, endDate time.Time
 		if startDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("startYear"), c.Param("startMonth"), c.Param("startDay"))); err != nil {
+			log.Error(err)
 			return err
 		}
 		if endDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("endYear"), c.Param("endMonth"), c.Param("endDay"))); err != nil {
+			log.Error(err)
 			return err
 		}
 
@@ -52,7 +59,7 @@ func ChatWithData() echo.HandlerFunc {
 			var err error
 			var fetcher *fetcher
 			if fetcher, err = NewFetcher(user); err != nil {
-				c.Logger().Errorf("error creating fetcher: %s", err.Error())
+				log.Errorf("error creating fetcher: %s", err.Error())
 				return
 			}
 
@@ -67,14 +74,16 @@ func ChatWithData() echo.HandlerFunc {
 					select start_date from reports where user_id = ? and start_date >= '%s' and start_date <= '%s'
 				)`, startDateStr, endDateStr, startDateStr, endDateStr), user.ID).
 				Scan(&missingDays); err != nil {
-				c.Logger().Errorf("error fetching missing days: %s", err.Error())
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Errorf("error fetching missing days: %s", err.Error())
+				}
 				return
 			}
 
 			var visualizedDataForReport []*UserData
 			for _, missingDay := range missingDays {
 				if dayData, err := fetcher.FetchByDate(missingDay); err != nil {
-					c.Logger().Errorf("error fetching data: %v", err)
+					log.Errorf("error fetching data: %v", err)
 					return
 				} else {
 					visualizedDataForReport = append(visualizedDataForReport, dayData)
@@ -83,10 +92,10 @@ func ChatWithData() echo.HandlerFunc {
 
 			for _, data := range visualizedDataForReport {
 				if report, err := reporter.GenerateDailyReport(data); err != nil {
-					c.Logger().Errorf("error generating daily report: %v", err)
+					log.Errorf("error generating daily report: %v", err)
 				} else {
 					if err = _db.Create(report); err != nil {
-						c.Logger().Errorf("error saving daily report: %v", err)
+						log.Errorf("error saving daily report: %v", err)
 					}
 				}
 			}
@@ -96,6 +105,7 @@ func ChatWithData() echo.HandlerFunc {
 		var client *genai.Client
 		const region = "us-central1"
 		if client, err = genai.NewClient(ctx, _vaiProjectID, region, option.WithCredentialsFile(_vaiServiceAccountKey)); err != nil {
+			log.Error(err)
 			return err
 		}
 		defer client.Close()
@@ -119,6 +129,7 @@ func ChatWithData() echo.HandlerFunc {
 		chatSession := model.StartChat()
 
 		if _, err = chatSession.SendMessage(ctx, genai.Text(builder.String())); err != nil {
+			log.Error(err)
 			return err
 		}
 
@@ -135,6 +146,7 @@ func ChatWithData() echo.HandlerFunc {
 					Error:   isError,
 					Marker:  marker,
 				}); err != nil {
+					log.Error(err)
 					return err
 				}
 				return nil
@@ -145,9 +157,9 @@ func ChatWithData() echo.HandlerFunc {
 				// Read from socket
 				var msg string
 				if err = websocket.Message.Receive(ws, &msg); err != nil {
-					c.Logger().Error(err)
+					log.Error(err)
 					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
-						c.Logger().Error(err)
+						log.Error(err)
 					}
 					break
 				}
@@ -157,9 +169,9 @@ func ChatWithData() echo.HandlerFunc {
 				// search for the similar documents, fetch them, send them to gemini as context, and ask the question to the model
 				var queryEmbeddings pgvector.Vector
 				if queryEmbeddings, err = reporter.GenerateEmbeddings(msg); err != nil {
-					c.Logger().Error(err)
+					log.Error(err)
 					if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
-						c.Logger().Error(err)
+						log.Error(err)
 					}
 					break
 				}
@@ -199,16 +211,16 @@ func ChatWithData() echo.HandlerFunc {
 					if err == iterator.Done {
 						marker = "end"
 						if err = websocketSend("\n", marker); err != nil {
-							c.Logger().Error(err)
+							log.Error(err)
 							continue
 						}
 						break
 					}
 
 					if err != nil {
-						c.Logger().Error(err)
+						log.Error(err)
 						if err = websocketSend(fmt.Sprintf("Error! %s<br>Please refresh the page", err.Error()), "full", true); err != nil {
-							c.Logger().Error(err)
+							log.Error(err)
 						}
 						break
 					}
@@ -235,7 +247,7 @@ func ChatWithData() echo.HandlerFunc {
 								marker = "content"
 							}
 							if err = websocketSend(reply, marker); err != nil {
-								c.Logger().Error(err)
+								log.Error(err)
 								continue
 							}
 							begin = false
@@ -244,6 +256,7 @@ func ChatWithData() echo.HandlerFunc {
 				}
 			}
 		}).ServeHTTP(c.Response(), c.Request())
+		log.Error(err)
 		return err
 	}
 }

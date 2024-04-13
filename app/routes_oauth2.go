@@ -10,7 +10,6 @@ package app
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -20,6 +19,7 @@ import (
 	"github.com/galeone/fitsleepinsights/database"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 )
 
 // Auth redirects the user to the fitbit authorization page
@@ -67,11 +67,13 @@ func Auth() func(echo.Context) error {
 		}
 
 		if err = _db.InsertAuthorizingUser(&authorizing); err != nil {
+			log.Errorf("Error inserting authorizing user: %s", err)
 			return err
 		}
 
 		var auth_url *url.URL
 		if auth_url, err = authorizer.AuthorizationURL(); err != nil {
+			log.Errorf("Error creating authorization URL: %s", err)
 			return err
 		}
 
@@ -101,14 +103,14 @@ func Redirect() func(echo.Context) error {
 
 		state := c.QueryParam("state")
 		if state != authorizer.CSRFToken().String() {
-			c.Logger().Warnf("Invalid state in /redirect. Expected %s got %s", authorizer.CSRFToken().String(), state)
+			log.Warnf("Invalid state in /redirect. Expected %s got %s", authorizer.CSRFToken().String(), state)
 			return c.Redirect(http.StatusTemporaryRedirect, "/error?status=csrf")
 		}
 
 		code := c.QueryParam("code")
 		var token *types.AuthorizedUser
 		if token, err = authorizer.ExchangeAuthorizationCode(code); err != nil {
-			c.Logger().Warnf("ExchangeAuthorizationCode: %s", err.Error())
+			log.Warnf("ExchangeAuthorizationCode: %s", err.Error())
 			return c.Redirect(http.StatusTemporaryRedirect, "/error?status=exchange")
 		}
 		// Update the fitbitclient. Now it contains a valid token and HTTP can be used to query the API
@@ -116,6 +118,7 @@ func Redirect() func(echo.Context) error {
 
 		// Save token and redirect user to the application dashboard
 		if err = _db.UpsertAuthorizedUser(token); err != nil {
+			log.Errorf("Error upserting authorized user: %s", err)
 			return err
 		}
 		// Send a database notification over the channel.

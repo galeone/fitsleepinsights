@@ -5,12 +5,12 @@
 package app
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/galeone/fitbit/v2"
 	"github.com/galeone/fitbit/v2/types"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 )
 
 // RequireFitbit is the middleware to use when a route requires
@@ -51,11 +51,11 @@ func RequireFitbit() echo.MiddlewareFunc {
 
 				var dbToken *types.AuthorizedUser
 				if dbToken, err = _db.AuthorizedUser(cookie.Value); err != nil {
-					log.Printf("[RequireFitbit] _db.AuthorizedUser: %s", err)
+					log.Print("[RequireFitbit] _db.AuthorizedUser: ", err)
 					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 				}
 				if dbToken.UserID == "" {
-					log.Println(err)
+					log.Print("Empty UserID, error: ", err)
 					return c.Redirect(http.StatusTemporaryRedirect, "/auth")
 				}
 				authorizer.SetToken(dbToken)

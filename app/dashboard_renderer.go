@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"strings"
+
+	"github.com/labstack/gommon/log"
 
 	chartRender "github.com/go-echarts/go-echarts/v2/render"
 )
@@ -34,7 +35,7 @@ func renderChart(c interface{}) template.HTML {
 	r := c.(chartRender.Renderer)
 	err := r.Render(&buf)
 	if err != nil {
-		log.Printf("Failed to render chart: %s", err)
+		log.Errorf("Failed to render chart: %s", err)
 		return template.HTML("")
 	}
 

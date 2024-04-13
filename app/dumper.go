@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -19,11 +18,12 @@ import (
 	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/galeone/tcx"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 )
 
 func init() {
 	_ = _db.Listen(database.NewUsersChannel, func(payload ...string) {
-		log.Println("notification received")
+		log.Print("notification received")
 		if len(payload) != 1 {
 			panic(fmt.Sprintf("Expected 1 payload on %s, got %d", database.NewUsersChannel, len(payload)))
 		}
@@ -35,20 +35,20 @@ func init() {
 			if len(_allActivityCatalog) == 0 {
 				f := fetcher{}
 				if _allActivityCatalog, err = f.AllActivityCatalog(); err != nil {
-					log.Println(err)
+					log.Print(err)
 					// if here, we likely haven´t dumped the catalog yet
 					if err = dumper.AllActivityCatalog(); err != nil {
-						log.Println(err)
+						log.Print(err)
 					} else {
 						_allActivityCatalog, err = f.AllActivityCatalog()
 						if err != nil {
-							log.Println("This is a problem: ", err)
+							log.Error("This is a problem: ", err)
 						}
 					}
 				}
 			}
 		} else {
-			log.Println("here: ", err.Error(), "at received: ", accessToken)
+			log.Error("here: ", err.Error(), "at received: ", accessToken)
 		}
 
 	})
@@ -60,7 +60,7 @@ func init() {
 		var err error
 		f := fetcher{}
 		if _allActivityCatalog, err = f.AllActivityCatalog(); err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 	}
 }
@@ -72,9 +72,9 @@ type dumper struct {
 
 func (d *dumper) logError(err error) {
 	if _, file, line, ok := runtime.Caller(1); ok {
-		log.Println("file: ", file, "line: ", line, "error: ", err)
+		log.Print("file: ", file, "line: ", line, "error: ", err)
 	} else {
-		log.Println(err)
+		log.Print(err)
 	}
 }
 
@@ -132,7 +132,7 @@ func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (
 
 		// No error = found
 		if err = _db.Model(types.ActivityCaloriesSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -147,6 +147,7 @@ func (d *dumper) userActivityCaloriesTimeseries(startDate, endDate *time.Time) (
 func (d *dumper) userActivityDailyGoal() (err error) {
 	var value *fitbit_types.UserGoal
 	if value, err = d.fb.UserActivityDailyGoal(); err != nil {
+		d.logError(err)
 		return err
 	}
 
@@ -167,6 +168,7 @@ func (d *dumper) userActivityDailyGoal() (err error) {
 func (d *dumper) AllActivityCatalog() (err error) {
 	var catalog *fitbit_types.ActivityCatalog
 	if catalog, err = d.fb.AllActivityTypes(); err != nil {
+		d.logError(err)
 		return err
 	}
 
@@ -274,7 +276,7 @@ func (d *dumper) userActivityLogList(after *time.Time, dumpTCX bool) (err error)
 		for _, activity := range value.Activities {
 			activityRow := types.ActivityLog{}
 			if err = _db.First(&activityRow, activity.LogID); err == nil {
-				// log.Println("skipping activity ", activity.LogID, ": already present")
+				// log.Print("skipping activity ", activity.LogID, ": already present")
 				continue
 			}
 
@@ -483,7 +485,7 @@ func (d *dumper) userBMITimeseries(startDate, endDate *time.Time) (err error) {
 
 		// No error = found
 		if err = _db.Model(types.BMISeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -513,7 +515,7 @@ func (d *dumper) userBodyFatTimeseries(startDate, endDate *time.Time) (err error
 
 		// No error = found
 		if err = _db.Model(types.BodyFatSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -543,7 +545,7 @@ func (d *dumper) userBodyWeightTimeseries(startDate, endDate *time.Time) (err er
 
 		// No error = found
 		if err = _db.Model(types.BodyWeightSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -572,7 +574,7 @@ func (d *dumper) userCaloriesBMRTimeseries(startDate, endDate *time.Time) (err e
 
 		// No error = found
 		if err = _db.Model(types.CaloriesBMRSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -602,7 +604,7 @@ func (d *dumper) userCaloriesTimeseries(startDate, endDate *time.Time) (err erro
 
 		// No error = found
 		if err = _db.Model(types.CaloriesSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -632,7 +634,7 @@ func (d *dumper) userDistanceTimeseries(startDate, endDate *time.Time) (err erro
 
 		// No error = found
 		if err = _db.Model(types.DistanceSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -662,7 +664,7 @@ func (d *dumper) userFloorsTimeseries(startDate, endDate *time.Time) (err error)
 
 		// No error = found
 		if err = _db.Model(types.FloorsSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -699,7 +701,7 @@ func (d *dumper) userHeartRateTimeseries(startDate, endDate *time.Time) (err err
 
 		// No error = found
 		if err = _db.Model(types.HeartRateActivities{}).Where(&hrActivityInsert).Scan(&hrActivityInsert); err == nil {
-			// log.Println("Skipping ", hrActivityInsert)
+			// log.Print("Skipping ", hrActivityInsert)
 			continue
 		}
 
@@ -764,7 +766,7 @@ func (d *dumper) userMinutesFairlyActiveTimeseries(startDate, endDate *time.Time
 
 		// No error = found
 		if err = _db.Model(types.MinutesFairlyActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -794,7 +796,7 @@ func (d *dumper) userMinutesLightlyActiveTimeseries(startDate, endDate *time.Tim
 
 		// No error = found
 		if err = _db.Model(types.MinutesLightlyActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -822,7 +824,7 @@ func (d *dumper) userMinutesSedentaryTimeseries(startDate, endDate *time.Time) (
 
 		// No error = found
 		if err = _db.Model(types.MinutesSedentarySeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -851,7 +853,7 @@ func (d *dumper) userMinutesVeryActiveTimeseries(startDate, endDate *time.Time) 
 
 		// No error = found
 		if err = _db.Model(types.MinutesVeryActiveSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -881,7 +883,7 @@ func (d *dumper) userStepsTimeseries(startDate, endDate *time.Time) (err error) 
 
 		// No error = found
 		if err = _db.Model(types.StepsSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -911,7 +913,7 @@ func (d *dumper) userElevationTimeseries(startDate, endDate *time.Time) (err err
 
 		// No error = found
 		if err = _db.Model(types.ElevationSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -938,7 +940,7 @@ func (d *dumper) userCoreTemperature(startDate, endDate *time.Time) (err error) 
 
 		// No error = found
 		if err = _db.Model(types.CoreTemperature{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -967,7 +969,7 @@ func (d *dumper) userSkinTemperature(startDate, endDate *time.Time) (err error) 
 
 		// No error = found
 		if err = _db.Model(types.SkinTemperature{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -996,7 +998,7 @@ func (d *dumper) userBreathingRate(startDate, endDate *time.Time) (err error) {
 
 		// No error = found
 		if err = _db.Model(types.BreathingRate{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -1038,7 +1040,7 @@ func (d *dumper) userCardioFitnessScore(startDate, endDate *time.Time) (err erro
 
 		// No error = found
 		if err = _db.Model(types.CardioFitnessScore{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -1068,7 +1070,7 @@ func (d *dumper) userOxygenSaturation(startDate, endDate *time.Time) (err error)
 
 		// No error = found
 		if err = _db.Model(types.OxygenSaturation{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -1097,7 +1099,7 @@ func (d *dumper) userHeartRateVariability(startDate, endDate *time.Time) (err er
 
 		// No error = found
 		if err = _db.Model(types.HeartRateVariabilityTimeSeries{}).Where(&timestep).Scan(&timestep); err == nil {
-			// log.Println("Skipping ", t)
+			// log.Print("Skipping ", t)
 			continue
 		}
 		if err = _db.Create(&timestep); err != nil {
@@ -1134,7 +1136,7 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 
 		// No error = found
 		if err = _db.Model(types.SleepLog{}).Where(&insert).Scan(&insert); err == nil {
-			// log.Println("Skipping ", insert)
+			// log.Print("Skipping ", insert)
 			continue
 		}
 
@@ -1211,9 +1213,19 @@ func (d *dumper) userSleepLogList(startDate, endDate *time.Time) (err error) {
 // This function is called:
 //   - When the user gives the permission to the app (on the INSERT on the table
 //     triggered by the database notification)
-//   - Periodically by a go routine. In this case, the `after` variable is valid.
+//   - When the user re-login giving once again the permission to the app
 func (d *dumper) DumpNewer(dumpTCX bool) {
+	defer func() {
+		d.User.Dumping = false
+		log.Print("Dumping data for user ", d.User.ID, " finished")
+		if err := _db.Updates(d.User); err != nil {
+			d.logError(err)
+			return
+		}
+	}()
+
 	d.User.Dumping = true
+	log.Print("Dumping data for user ", d.User.ID)
 	if err := _db.Updates(d.User); err != nil {
 		d.logError(err)
 		return
@@ -1428,12 +1440,6 @@ func (d *dumper) DumpNewer(dumpTCX bool) {
 			isYesterday = true
 		}
 	}
-
-	d.User.Dumping = false
-	if err := _db.Updates(d.User); err != nil {
-		d.logError(err)
-		return
-	}
 }
 
 func Dump() echo.HandlerFunc {
@@ -1455,7 +1461,7 @@ func Dump() echo.HandlerFunc {
 		if dumper, err := NewDumper(user.AccessToken); err == nil {
 			dumper.DumpNewer(false)
 		} else {
-			log.Println(err.Error())
+			log.Error(err.Error())
 			return err
 		}
 		return c.JSON(http.StatusOK, "ok")

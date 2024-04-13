@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 	fitbit_types "github.com/galeone/fitbit/v2/types"
 	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 )
 
 type fetcher struct {
@@ -194,6 +194,9 @@ func NewFetcher(user *types.User) (*fetcher, error) {
 func (f *fetcher) userActivityCaloriesTimeseries(date time.Time) (*types.ActivityCaloriesSeries, error) {
 	value := types.ActivityCaloriesSeries{UserID: f.user.ID, Date: date}
 	if err := _db.Model(types.ActivityCaloriesSeries{}).Where(&value).Scan(&value); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 
@@ -208,6 +211,7 @@ func (f *fetcher) userActivityDailyGoal(date time.Time) (*types.Goal, error) {
 	}
 
 	if err := _db.Model(types.Goal{}).Where(&value).Scan(&value); err != nil {
+		log.Error(err)
 		return nil, err
 	}
 	return &value, nil
@@ -217,6 +221,9 @@ func (f *fetcher) userActivityLogList(date time.Time) (*DailyActivities, error) 
 	activities := DailyActivities{}
 
 	if err := _db.Model(types.ActivityLog{}).Where(`user_id = ? AND date(start_time) = ?`, f.user.ID, date.Format(fitbit_types.DateLayout)).Scan(&activities); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 
@@ -228,6 +235,9 @@ func (f *fetcher) userActivityLogList(date time.Time) (*DailyActivities, error) 
 			}
 
 			if err := _db.Model(types.MinutesInHeartRateZone{}).Where(&condition).Scan(&minutesInHRZone); err != nil {
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Error(err)
+				}
 				return nil, err
 			}
 			for _, minInHRZone := range minutesInHRZone {
@@ -241,6 +251,9 @@ func (f *fetcher) userActivityLogList(date time.Time) (*DailyActivities, error) 
 				ID: activity.SourceID.String,
 			}
 			if err := _db.Model(types.LogSource{}).Where(&source).Scan(&source); err != nil {
+				if !errors.Is(err, sql.ErrNoRows) {
+					log.Error(err)
+				}
 				return nil, err
 			}
 			activities[id].Source.LogSource = source.LogSource
@@ -263,6 +276,9 @@ func (f *fetcher) userActivityWeeklyGoal(date time.Time) (*types.Goal, error) {
 
 	only_date := date.Format(fitbit_types.DateLayout)
 	if err := _db.Model(types.Goal{}).Where(`user_id = ? AND start_date >= ? AND end_date <= ?`, f.user.ID, only_date, only_date).Scan(&value); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &value, nil
@@ -273,6 +289,9 @@ func (f *fetcher) userBMITimeseries(date time.Time) (*types.BMISeries, error) {
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.BMISeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -283,6 +302,9 @@ func (f *fetcher) userBodyFatTimeseries(date time.Time) (*types.BodyFatSeries, e
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.BodyFatSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -293,6 +315,9 @@ func (f *fetcher) userBodyWeightTimeseries(date time.Time) (*types.BodyWeightSer
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.BodyWeightSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -303,6 +328,9 @@ func (f *fetcher) userCaloriesBMRTimeseries(date time.Time) (*types.CaloriesBMRS
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.CaloriesBMRSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -313,6 +341,9 @@ func (f *fetcher) userCaloriesTimeseries(date time.Time) (*types.CaloriesSeries,
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.CaloriesSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -323,6 +354,9 @@ func (f *fetcher) userDistanceTimeseries(date time.Time) (*types.DistanceSeries,
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.DistanceSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -333,6 +367,9 @@ func (f *fetcher) userFloorsTimeseries(date time.Time) (*types.FloorsSeries, err
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.FloorsSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -343,6 +380,9 @@ func (f *fetcher) userHeartRateTimeseries(date time.Time) (*types.HeartRateActiv
 	hrActivity.UserID = f.user.ID
 	hrActivity.Date = date
 	if err := _db.Model(types.HeartRateActivities{}).Where(&hrActivity).Scan(&hrActivity); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	// Ignore errors: there could be activities without HR zones
@@ -369,6 +409,9 @@ func (f *fetcher) userMinutesFairlyActiveTimeseries(date time.Time) (*types.Minu
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.MinutesFairlyActiveSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -379,6 +422,9 @@ func (f *fetcher) userMinutesLightlyActiveTimeseries(date time.Time) (*types.Min
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.MinutesLightlyActiveSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -389,6 +435,9 @@ func (f *fetcher) userMinutesSedentaryTimeseries(date time.Time) (*types.Minutes
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.MinutesSedentarySeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -399,6 +448,9 @@ func (f *fetcher) userMinutesVeryActiveTimeseries(date time.Time) (*types.Minute
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.MinutesVeryActiveSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -409,6 +461,9 @@ func (f *fetcher) userStepsTimeseries(date time.Time) (*types.StepsSeries, error
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.StepsSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -419,6 +474,9 @@ func (f *fetcher) userElevationTimeseries(date time.Time) (*types.ElevationSerie
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.ElevationSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -429,6 +487,9 @@ func (f *fetcher) userCoreTemperature(date time.Time) (*types.CoreTemperature, e
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.CoreTemperature{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -439,6 +500,9 @@ func (f *fetcher) userSkinTemperature(date time.Time) (*types.SkinTemperature, e
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.SkinTemperature{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -449,6 +513,9 @@ func (f *fetcher) userCardioFitnessScore(date time.Time) (*types.CardioFitnessSc
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.CardioFitnessScore{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -459,6 +526,9 @@ func (f *fetcher) userOxygenSaturation(date time.Time) (*types.OxygenSaturation,
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.OxygenSaturation{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -469,6 +539,9 @@ func (f *fetcher) userHeartRateVariability(date time.Time) (*types.HeartRateVari
 	timestep.UserID = f.user.ID
 	timestep.Date = date
 	if err := _db.Model(types.HeartRateVariabilityTimeSeries{}).Where(&timestep).Scan(&timestep); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return &timestep, nil
@@ -480,11 +553,17 @@ func (f *fetcher) userSleepLogList(date time.Time) (*types.SleepLog, error) {
 		DateOfSleep: date,
 	}
 	if err := _db.Model(types.SleepLog{}).Where(&value).Scan(&value); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 
 	sleepStageDetails := []types.SleepStageDetail{}
 	if err := _db.Model(types.SleepStageDetail{}).Where(&types.SleepStageDetail{SleepLogID: value.LogID}).Scan(&sleepStageDetails); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	for _, stage := range sleepStageDetails {
@@ -526,6 +605,9 @@ func (f *fetcher) userSleepLogList(date time.Time) (*types.SleepLog, error) {
 	if err := _db.Model(types.SleepData{}).Where(&types.SleepData{
 		SleepLogID: value.LogID,
 	}).Scan(&sleepData); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	// Data and short data is merged into data
@@ -754,6 +836,7 @@ func (u *UserData) Values() []string {
 func (f *fetcher) FetchByDate(date time.Time) (*UserData, error) {
 	dumping, err := f.isDumping()
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 	if dumping {
@@ -794,6 +877,7 @@ func (f *fetcher) FetchByDate(date time.Time) (*UserData, error) {
 func (f *fetcher) FetchByRange(startDate, endDate time.Time) ([]*UserData, error) {
 	dumping, err := f.isDumping()
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 	if dumping {
@@ -805,6 +889,7 @@ func (f *fetcher) FetchByRange(startDate, endDate time.Time) ([]*UserData, error
 	currentDate := startDate
 	for currentDate.Before(endDate) || currentDate.Equal(endDate) {
 		if dayData, err := f.FetchByDate(currentDate); err != nil {
+			log.Error(err)
 			return nil, err
 		} else {
 			userData = append(userData, dayData)
@@ -824,6 +909,9 @@ type UserActivityTypes struct {
 func (f *fetcher) UserActivityTypes() ([]UserActivityTypes, error) {
 	var activities []UserActivityTypes
 	if err := _db.Model(types.ActivityLog{}).Select("distinct(activity_type_id) as id, activity_name as name").Where(`user_id = ?`, f.user.ID).Scan(&activities); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 	return activities, nil
@@ -834,6 +922,9 @@ func (f *fetcher) UserActivityTypes() ([]UserActivityTypes, error) {
 func (f fetcher) AllActivityCatalog() ([]types.Category, error) {
 	var categories []types.Category
 	if err := _db.Model(types.Category{}).Scan(&categories); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error(err)
+		}
 		return nil, err
 	}
 
@@ -890,6 +981,7 @@ func (f *fetcher) isDumping() (bool, error) {
 func (f *fetcher) Fetch(strategy FetchStrategy) ([]*UserData, error) {
 	dumping, err := f.isDumping()
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 	if dumping {
@@ -901,19 +993,23 @@ func (f *fetcher) Fetch(strategy FetchStrategy) ([]*UserData, error) {
 	switch strategy {
 	case FetchAllWithSleepLog:
 		if err := _db.Model(types.SleepLog{}).Select("min(date(date_of_sleep))").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestLogDate); err != nil {
+			log.Error(err)
 			return nil, err
 		}
 	case FetchAllWithActivityLog:
 		if err := _db.Model(types.ActivityLog{}).Select("min(date(start_time))").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestLogDate); err != nil {
+			log.Error(err)
 			return nil, err
 		}
 	case FetchAll:
 		var oldestSleepDate time.Time
 		var oldestActivityDate time.Time
 		if err := _db.Model(types.SleepLog{}).Select("min(date(date_of_sleep))").Where(`date_of_sleep <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestSleepDate); err != nil {
+			log.Error(err)
 			return nil, err
 		}
 		if err := _db.Model(types.ActivityLog{}).Select("min(date(start_time))").Where(`start_time <= ? AND user_id = ?`, yesterday, f.user.ID).Scan(&oldestActivityDate); err != nil {
+			log.Error(err)
 			return nil, err
 		}
 		if oldestSleepDate.Before(oldestActivityDate) {
@@ -949,13 +1045,13 @@ func Fetch() echo.HandlerFunc {
 					file, _ := os.Create("complete.csv")
 					io.WriteString(file, csv)
 				} else {
-					log.Println(err)
+					log.Error(err)
 				}
 			} else {
-				log.Println(err)
+				log.Error(err)
 			}
 		} else {
-			log.Println(err.Error())
+			log.Error(err.Error())
 		}
 
 		return err

@@ -111,19 +111,18 @@ func NewRouter() (*echo.Echo, error) {
 	router.File("/favicon.ico", "static/favicon.ico")
 	router.File("/robots.txt", "static/robots.txt")
 
-	// INTERNAL routes used for:
-
-	// Generating types and testing the Authorizer
-	router.GET("/generate", GenerateTypes(), RequireFitbit())
-	// Testing the API(*Authorizer)
-	router.GET("/test", TestGET(), RequireFitbit())
-	// Dump all data endpoint (INTERNAL)
-	router.GET("/dump", Dump(), RequireFitbit())
-	// Train and deploy sleep efficiency predictor
-	router.GET("/train", TestTrainAndDeploy(), RequireFitbit())
-	// Predict sleep efficiency
-	router.GET("/predict", TestPredictSleepEfficiency(), RequireFitbit())
-	// Fetch all data endpoint (INTERNAL)
-	router.GET("/fetch", Fetch(), RequireFitbit())
+	/*
+		// INTERNAL routes used for:
+		// Generating types and testing the Authorizer
+		router.GET("/generate", GenerateTypes(), RequireFitbit())
+		// Testing the API(*Authorizer)
+		router.GET("/test", TestGET(), RequireFitbit())
+		// Train and deploy sleep efficiency predictor
+		router.GET("/train", TestTrainAndDeploy(), RequireFitbit())
+		// Predict sleep efficiency
+		router.GET("/predict", TestPredictSleepEfficiency(), RequireFitbit())
+		// Fetch all data endpoint (INTERNAL)
+		router.GET("/fetch", Fetch(), RequireFitbit())
+	*/
 	return router, nil
 }

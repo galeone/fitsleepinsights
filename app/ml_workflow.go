@@ -7,7 +7,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -17,6 +16,8 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/labstack/gommon/log"
+
 	storage "cloud.google.com/go/storage"
 )
 
@@ -24,10 +25,12 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 
 	var fetcher *fetcher
 	if fetcher, err = NewFetcher(user); err != nil {
+		log.Error("error creating fetcher: ", err)
 		return err
 	}
 	var allUserData []*UserData
 	if allUserData, err = fetcher.Fetch(FetchAllWithSleepLog); err != nil {
+		log.Error("error fetching user data: ", err)
 		return err
 	}
 
@@ -35,6 +38,7 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 	// ref: https://cloud.google.com/vertex-ai/docs/tabular-data/classification-regression/prepare-data#csv
 	var csv string
 	if csv, err = userDataToCSV(allUserData); err != nil {
+		log.Error("error converting user data to csv: ", err)
 		return err
 	}
 	ctx := context.Background()
@@ -42,6 +46,7 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 	// Create the storage client using the service account key file.
 	var storageClient *storage.Client
 	if storageClient, err = storage.NewClient(ctx, option.WithCredentialsFile(_vaiServiceAccountKey)); err != nil {
+		log.Error("error creating storage client: ", err)
 		return err
 	}
 	defer storageClient.Close()
@@ -59,6 +64,7 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 			Location: _vaiLocation, // Important to have all the resources in the same location
 			Name:     bucketName,
 		}); err != nil {
+			log.Error("error creating bucket: ", err)
 			return err
 		}
 	}
@@ -74,9 +80,11 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 	if _, err = obj.Attrs(ctx); err == storage.ErrObjectNotExist {
 		w := obj.NewWriter(ctx)
 		if _, err := w.Write([]byte(csv)); err != nil {
+			log.Error("error writing csv to bucket: ", err)
 			return err
 		}
 		if err := w.Close(); err != nil {
+			log.Error("error closing writer: ", err)
 			return err
 		}
 	}
@@ -86,6 +94,7 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 	modelName := fmt.Sprintf("%s-predictor-%d", targetColumn, user.ID)
 	var modelClient *vai.ModelClient
 	if modelClient, err = vai.NewModelClient(ctx, option.WithEndpoint(_vaiEndpoint)); err != nil {
+		log.Error("error creating model client: ", err)
 		return err
 	}
 	defer modelClient.Close()
@@ -94,6 +103,7 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 
 	var customJobClient *vai.JobClient
 	if customJobClient, err = vai.NewJobClient(ctx, option.WithEndpoint(_vaiEndpoint)); err != nil {
+		log.Error("error creating job client: ", err)
 		return err
 	}
 	defer customJobClient.Close()
@@ -144,6 +154,7 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 
 	var resp *vaipb.CustomJob
 	if resp, err = customJobClient.CreateCustomJob(ctx, req); err != nil {
+		log.Error("error creating custom job: ", err)
 		return err
 	}
 
@@ -156,10 +167,11 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 		if resp, err = customJobClient.GetCustomJob(ctx, &vaipb.GetCustomJobRequest{
 			Name: customJobName,
 		}); err != nil {
+			log.Error("error getting custom job: ", err)
 			return err
 		}
 
-		log.Println(resp.GetState())
+		log.Print(resp.GetState())
 		// sleep 1 second
 		time.Sleep(1 * time.Second)
 	}
@@ -180,17 +192,20 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 			ArtifactUri: fmt.Sprintf("gs://%s/%d/model", bucketName, user.ID),
 		},
 	}); err != nil {
+		log.Error("error uploading model: ", err)
 		return err
 	}
 
 	var uploadModelResponse *vaipb.UploadModelResponse
 	if uploadModelResponse, err = uploadOp.Wait(ctx); err != nil {
+		log.Error("error waiting for model upload: ", err)
 		return err
 	}
-	log.Println(uploadModelResponse.GetModel())
+	log.Print(uploadModelResponse.GetModel())
 
 	var endpointClient *vai.EndpointClient
 	if endpointClient, err = vai.NewEndpointClient(ctx, option.WithEndpoint(_vaiEndpoint)); err != nil {
+		log.Error("error creating endpoint client: ", err)
 		return err
 	}
 	defer endpointClient.Close()
@@ -203,6 +218,7 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 			DisplayName: modelName,
 		},
 	}); err != nil {
+		log.Error("error creating endpoint: ", err)
 		return err
 	}
 
@@ -212,13 +228,15 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 	// this information back
 	var endpoint *vaipb.Endpoint
 	if endpoint, err = createEndpointOp.Wait(ctx); err != nil {
+		log.Error("error waiting for endpoint creation: ", err)
 		return err
 	}
 
-	log.Println("endpoint name:", endpoint.GetName())
+	log.Print("endpoint name:", endpoint.GetName())
 
 	var resourcePoolClient *vai.DeploymentResourcePoolClient
 	if resourcePoolClient, err = vai.NewDeploymentResourcePoolClient(ctx, option.WithEndpoint(_vaiEndpoint)); err != nil {
+		log.Error("error creating resource pool client: ", err)
 		return err
 	}
 	defer resourcePoolClient.Close()
@@ -230,16 +248,16 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 	})
 	var item *vaipb.DeploymentResourcePool
 	for item, _ = iter.Next(); err == nil; item, err = iter.Next() {
-		log.Println(item.GetName())
+		log.Print(item.GetName())
 		if strings.Contains(item.GetName(), deploymentResourcePoolId) {
 			deploymentResourcePool = item
-			log.Println("Found deployment resource pool: ", deploymentResourcePool.GetName())
+			log.Print("Found deployment resource pool: ", deploymentResourcePool.GetName())
 			break
 		}
 	}
 
 	if deploymentResourcePool == nil {
-		log.Println("Creating a new deployment resource pool")
+		log.Print("Creating a new deployment resource pool")
 		// Create a deployment resource pool: FOR SHARED RESOURCES ONLY
 		var createDeploymentResourcePoolOp *vai.CreateDeploymentResourcePoolOperation
 		if createDeploymentResourcePoolOp, err = resourcePoolClient.CreateDeploymentResourcePool(ctx, &vaipb.CreateDeploymentResourcePoolRequest{
@@ -256,13 +274,15 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 				},
 			},
 		}); err != nil {
+			log.Error("Error creating deployment resource pool: ", err)
 			return err
 		}
 
 		if deploymentResourcePool, err = createDeploymentResourcePoolOp.Wait(ctx); err != nil {
+			log.Error("Error waiting for deployment resource pool: ", err)
 			return err
 		}
-		log.Println("Created resource pool: ", deploymentResourcePool.GetName())
+		log.Print("Created resource pool: ", deploymentResourcePool.GetName())
 	}
 
 	// Shared doesn't work with custom containers
@@ -278,10 +298,12 @@ func TrainAndDeployPredictor(user *types.User, targetColumn string) (err error) 
 			},
 		},
 	}); err != nil {
+		log.Error("Error deploying model: ", err)
 		return err
 	}
 
 	if _, err = deployModelOp.Wait(ctx); err != nil {
+		log.Error("Error waiting for model deployment: ", err)
 		return err
 	}
 

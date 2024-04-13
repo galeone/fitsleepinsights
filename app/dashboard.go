@@ -12,6 +12,7 @@ import (
 	"github.com/galeone/fitsleepinsights/database/types"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 )
 
 func getUser(c echo.Context) (*types.User, error) {
@@ -34,6 +35,7 @@ func getUser(c echo.Context) (*types.User, error) {
 func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, calendarType CalendarType) (err error) {
 	var fetcher *fetcher
 	if fetcher, err = NewFetcher(user); err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -49,11 +51,13 @@ func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, c
 				"dumping":    true,
 			})
 		} else {
+			log.Error(err)
 			return err
 		}
 	}
 	var activitiesTypes []UserActivityTypes
 	if activitiesTypes, err = fetcher.UserActivityTypes(); err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -102,7 +106,6 @@ func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, c
 		defer wg.Done()
 		dailyStepChart, dailyStepsStatistics = dailyStepCount(allData, calendarType)
 		dailyStepChart.Renderer = newChartRenderer(dailyStepChart, dailyStepChart.Validate)
-
 	}()
 
 	go func() {
@@ -187,12 +190,14 @@ func WeeklyDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var user *types.User
 		if user, err = getUser(c); err != nil {
+			log.Error(err)
 			return err
 		}
 
 		var startDate, endDate time.Time
 		if c.Param("year") != "" && c.Param("month") != "" && c.Param("day") != "" {
 			if startDate, endDate, err = startDateEndDateFromParams(c); err != nil {
+				log.Error(err)
 				return err
 			}
 		} else {
@@ -209,11 +214,13 @@ func MonthlyDashboard() echo.HandlerFunc {
 
 		var user *types.User
 		if user, err = getUser(c); err != nil {
+			log.Error(err)
 			return err
 		}
 		var startDate, endDate time.Time
 		if c.Param("year") != "" && c.Param("month") != "" {
 			if startDate, endDate, err = startDateEndDateFromParams(c); err != nil {
+				log.Error(err)
 				return err
 			}
 		} else {
@@ -228,6 +235,7 @@ func YearlyDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var user *types.User
 		if user, err = getUser(c); err != nil {
+			log.Error(err)
 			return err
 		}
 
@@ -235,6 +243,7 @@ func YearlyDashboard() echo.HandlerFunc {
 
 		if c.Param("year") != "" {
 			if startDate, endDate, err = startDateEndDateFromParams(c); err != nil {
+				log.Error(err)
 				return err
 			}
 		} else {
@@ -250,14 +259,17 @@ func CustomDashboard() echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		var user *types.User
 		if user, err = getUser(c); err != nil {
+			log.Error(err)
 			return err
 		}
 
 		var startDate, endDate time.Time
 		if startDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("startYear"), c.Param("startMonth"), c.Param("startDay"))); err != nil {
+			log.Error(err)
 			return err
 		}
 		if endDate, err = time.Parse(time.DateOnly, fmt.Sprintf("%s-%s-%s", c.Param("endYear"), c.Param("endMonth"), c.Param("endDay"))); err != nil {
+			log.Error(err)
 			return err
 		}
 
