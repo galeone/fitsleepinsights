@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/vertexai v0.7.1
 	github.com/foolin/goview v0.3.0
 	github.com/galeone/fitbit/v2 v2.0.2
-	github.com/galeone/igor v1.0.12
+	github.com/galeone/igor v1.0.13
 	github.com/galeone/rts v1.0.0
 	github.com/galeone/tcx v1.0.0
 	github.com/go-echarts/go-echarts/v2 v2.3.3
