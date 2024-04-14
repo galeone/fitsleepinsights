@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"html/template"
@@ -55,10 +56,13 @@ func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, c
 			return err
 		}
 	}
+
 	var activitiesTypes []UserActivityTypes
 	if activitiesTypes, err = fetcher.UserActivityTypes(); err != nil {
-		log.Error("fetcher.UserActivityTypes: ", err)
-		return err
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error("fetcher.UserActivityTypes: ", err)
+			return err
+		}
 	}
 
 	activityCalendars := make(map[string]template.HTML)
@@ -93,8 +97,6 @@ func dashboard(c echo.Context, user *types.User, startDate, endDate time.Time, c
 			}(activityType)
 		}
 	}
-
-	wg.Wait()
 
 	var dailyStepChart *charts.HeatMap
 	var dailyStepsStatistics *DailyStepsStats
