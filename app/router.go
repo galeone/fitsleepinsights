@@ -124,5 +124,6 @@ func NewRouter() (*echo.Echo, error) {
 		// Fetch all data endpoint (INTERNAL)
 		router.GET("/fetch", Fetch(), RequireFitbit())
 	*/
+	router.GET("/train", TestTrainAndDeploy(), RequireFitbit())
 	return router, nil
 }
