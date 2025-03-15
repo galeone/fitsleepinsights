@@ -1,0 +1,13 @@
+[Unit]
+Description=Fitsleepinsights.app
+After=postgresql.service
+
+[Service]
+Restart=always
+Type=simple
+User=%I
+WorkingDirectory=/home/%I/fitsleepinsights/
+ExecStart=/home/%I/go/bin/fitsleepinsights
+
+[Install]
+WantedBy=multi-user.target
