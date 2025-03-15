@@ -42,7 +42,7 @@ jobs:
           cat fitsleepinsights | ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} "cat > ~/go/bin/fitsleepinsights"
           
           # Deploy the application static files and templates (needed for runtime)
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }}" \
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }}" \
             --exclude='.git/' \
             --exclude='.github/' \
             ./ ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }}:fitsleepinsights/
