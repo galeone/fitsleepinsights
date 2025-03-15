@@ -39,7 +39,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} "sudo systemctl stop fitsleepinsights@${{ env.SSH_USERNAME }}.service || true"
 
           # Deploy the application: just the binary
-          tar cvf - fitsleepinsights | ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} "tar xvf - > ~/go/bin/fitsleepinsights"
+          cat fitsleepinsights | ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} "cat > ~/go/bin/fitsleepinsights"
           
           # Deploy the application static files and templates (needed for runtime)
           rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }}" \
