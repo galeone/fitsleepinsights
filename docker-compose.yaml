@@ -78,7 +78,7 @@ services:
     ports:
       - '8989:8989'
   adminer:
-    image: adminer:4.6.3
+    image: adminer:4.17.1
     restart: always
     environment:
       ADMINER_DESIGN: "pappu687"
