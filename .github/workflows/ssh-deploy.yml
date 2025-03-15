@@ -1,0 +1,52 @@
+name: Build and Deploy to OVH SSH server
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  SSH_HOST: ${{ secrets.SSH_HOST }}
+  SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SSH_PORT: ${{ secrets.SSH_PORT }}
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ env.SSH_PRIVATE_KEY }}
+          
+      - name: Build for SSH deployment
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+      - name: build
+        run: |
+           go build -o fitsleepinsights
+          
+      - name: Deploy to SSH server
+        run: |
+          # Ensure the remote directory exists
+          ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} "mkdir -p ~/fitsleepinsights"
+
+          # Stop the service if it's running
+          ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} "sudo systemctl stop fitsleepinsights@${{ env.SSH_USERNAME }}.service || true"
+
+          # Deploy the application: just the binary
+          cat fitsleepinsights | ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} "cat > ~/go/bin/fitsleepinsights"
+          
+          # Deploy the application static files and templates (needed for runtime)
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }}" \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            ./ ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }}:fitsleepinsights/
+
+          # Start the service
+          ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} "sudo systemctl start fitsleepinsights@${{ env.SSH_USERNAME }}.service"
