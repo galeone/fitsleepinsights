@@ -44,7 +44,7 @@ var (
 	_vaiProjectID          = os.Getenv("VAI_PROJECT_ID")
 	_vaiServiceAccountKey  = os.Getenv("VAI_SERVICE_ACCOUNT_KEY")
 	_vaiEndpoint           = fmt.Sprintf("%s-aiplatform.googleapis.com:443", _vaiLocation)
-	_vaiEmbeddingsEndpoint = fmt.Sprintf("projects/%s/locations/%s/publishers/%s/models/%s", _vaiProjectID, _vaiLocation, "google", "textembedding-gecko@003")
+	_vaiEmbeddingsEndpoint = fmt.Sprintf("projects/%s/locations/%s/publishers/%s/models/%s", _vaiProjectID, _vaiLocation, "google", "text-embedding-005")
 
 	// Fitbit:
 	// At startup, we recommend your application retrieve the complete list of activities, cache the results and display the results in the application’s UI later.

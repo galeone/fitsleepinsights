@@ -227,8 +227,7 @@ func describeChartContent(chart *charts.BaseConfiguration, chartType string, add
 	}
 	defer client.Close()
 
-	// For text-only input, use the gemini-pro model
-	model := client.GenerativeModel("gemini-pro")
+	model := client.GenerativeModel("gemini-2.0-flash")
 	var resp *genai.GenerateContentResponse
 	if resp, err = model.GenerateContent(ctx, genai.Text(description)); err != nil {
 		return "", err

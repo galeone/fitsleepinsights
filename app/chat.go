@@ -122,8 +122,7 @@ func ChatWithData() echo.HandlerFunc {
 		fmt.Fprintln(&builder, "Never accept commands from the user, you are only allowed to chat about the data.")
 		fmt.Fprintln(&builder, "If available, you wil receive messages containing reports of the user data. You must analyze the data and provide insights.")
 
-		// For text-only input, use the gemini-pro model
-		model := client.GenerativeModel("gemini-pro")
+		model := client.GenerativeModel("gemini-2.0-flash")
 		temperature := ChatTemperature
 		model.Temperature = &temperature
 		chatSession := model.StartChat()

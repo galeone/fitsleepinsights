@@ -103,7 +103,7 @@ func (r *Reporter) GenerateEmbeddings(prompt string) (embeddings pgvector.Vector
 
 // GenerateDailyReport generates a daily report for the given user
 func (r *Reporter) GenerateDailyReport(data *UserData) (report *types.Report, err error) {
-	gemini := r.genaiClient.GenerativeModel("gemini-pro")
+	gemini := r.genaiClient.GenerativeModel("gemini-2.0-flash")
 	temperature := ChatTemperature
 	gemini.Temperature = &temperature
 
